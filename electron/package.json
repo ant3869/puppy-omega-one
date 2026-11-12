@@ -59,7 +59,7 @@
     "dist:mac": "electron-builder --mac",
     "dist:win": "electron-builder --win",
     "preview": "electron-vite preview",
-    "test": "tsx --test src/shared/workflow-events.test.ts src/main/services/workflow-transport.test.ts"
+    "test": "tsx --test src/shared/workflow-events.test.ts src/main/services/workflow-transport.test.ts src/main/services/project-safety.test.ts"
   },
   "type": "module",
   "version": "0.1.0"
