@@ -37,7 +37,7 @@ function resolvePython(): string {
     : join(venv, 'bin', 'python');
 }
 
-function resolveLaunchGui(): string | null {
+async function resolveLaunchGui(): Promise<string | null> {
   if (process.env.PUPPY_GUI_LAUNCH) return process.env.PUPPY_GUI_LAUNCH;
   const dir = process.env.PUPPY_GUI_DIR;
   if (dir) return join(dir, 'launch_gui.py');
@@ -49,13 +49,7 @@ function resolveLaunchGui(): string | null {
     join(homedir(), '.code_puppy', 'launch_gui.py')
   ];
   for (const c of candidates) {
-    try {
-      // Sync existence check via fs.statSync would block; use a cheap
-      // require-free check through the async path below instead.
-      void c;
-    } catch {
-      /* ignore */
-    }
+    if (await fileExists(c)) return c;
   }
   return null;
 }
@@ -87,7 +81,7 @@ export async function ensureServer(): Promise<PuppyStatus> {
   }
   if (child) return { running: false, spawnedByUs, port: PORT, url: BASE, error: 'server starting' };
 
-  const launch = resolveLaunchGui();
+  const launch = await resolveLaunchGui();
   if (!launch) {
     return {
       running: false,

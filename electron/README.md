@@ -53,6 +53,7 @@ Needs Code Puppy installed (the venv python). Override it with
 
 ```bash
 npm run build
+npm run typecheck  # tsc --noEmit
 npm run dist:mac   # .dmg
 npm run dist:win   # NSIS .exe
 ```

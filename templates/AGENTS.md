@@ -23,7 +23,9 @@ purpose. If the orchestrator needs a file changed, it briefs a worker.
 Why Sonnet writes and reviews instead of Haiku: on Anthropic's own
 numbers Sonnet scores 70.6% vs Haiku's 39.2% on agentic coding
 (Terminal-Bench 4.0). Haiku does the checkable, read-only work where a
-mistake is cheap to spot. Full reasoning in `docs/MODELS.md`.
+mistake is cheap to spot. Full reasoning in the Puppy Omega One repo's
+`docs/MODELS.md` (it lives in the repo, not in installed projects —
+only `templates/` gets copied in).
 
 ## The loop
 

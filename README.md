@@ -4,7 +4,8 @@
 
 An orchestrator-and-workers setup for Code Puppy, adapted from the
 "Omega" Claude Code pattern (Opus plans, Haiku does the work) to the way
-Code Puppy actually works. **Config + templates, not code.** No backend,
+Code Puppy actually works. **Config + templates at the core** (plus an
+optional Electron shell starter in `electron/`). No backend of its own,
 no service, nothing phones home. You copy the templates into a project,
 Code Puppy picks them up, and the orchestrator runs the loop.
 
