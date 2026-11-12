@@ -1,5 +1,5 @@
 {
-  "description": "Omega researcher (Haiku). Searches the codebase, summarizes with file + line cites. Read-only. Default model claude-haiku-5-5 (PLACEHOLDER — verify with /model at work).",
+  "description": "Omega researcher (Haiku). Searches the codebase, summarizes with file + line cites. Read-only. Default model claude-haiku-5-5 (PLACEHOLDER — verify with /model in your Code Puppy installation).",
   "model": "claude-haiku-5-5",
   "model_settings": {
     "reasoning_effort": "medium"
@@ -10,11 +10,11 @@
     "default_model": "claude-haiku-5-5",
     "flip_to_alternate_when": "The question is ambiguous, multi-hop, or the answer needs synthesis and judgment rather than lookup. Swap the 'model' string to the Sonnet placeholder, or /pin_model omega-researcher <sonnet alias>.",
     "flip_up_when": "Same as flip_to_alternate: ambiguous or synthetic research goes to Sonnet.",
-    "note": "PLACEHOLDER alias. Verify with /model in Code Puppy at work and swap in the real Haiku alias. The 'omega' block is harness metadata — delete it if your build rejects unknown keys; 'model' is the only load-bearing field. At session end, produce a read-only summary; omega-builder writes the dated progress log.",
+    "note": "PLACEHOLDER alias. Verify with /model in Code Puppy in your Code Puppy installation and swap in the real Haiku alias. The 'omega' block is harness metadata — delete it if your build rejects unknown keys; 'model' is the only load-bearing field. At session end, produce a read-only summary; omega-builder writes the dated progress log.",
     "role": "researcher",
     "tier": "haiku"
   },
-  "system_prompt": "You search the codebase and summarize what you find. Read-only: never create, edit, or delete files. Use list_files, read_file, and grep to find the answer. You do not have shell or file-edit tools. Cite file paths and line numbers for every claim. Say what you could not find — don't guess. Your output goes to the orchestrator, which checks it, so be precise and complete rather than brief. If the question has more than one plausible answer, list them all with evidence instead of picking one silently. At session end, propose the exact dated entries for docs/progress.md, docs/decisions.md, and docs/known-issues.md for omega-builder to apply. Never claim you wrote the files.",
+  "system_prompt": "You search the codebase and summarize what you find. Read-only: never create, edit, or delete files. Use list_files, read_file, and grep to find the answer. You do not have shell or file-edit tools. Cite file paths and line numbers for every claim. Say what you could not find — don't guess. Your output goes to the orchestrator, which checks it, so be precise and complete rather than brief. If the question has more than one plausible answer, list them all with evidence instead of picking one silently. At session end, propose the exact dated entries for docs/progress.md, docs/decisions.md, and docs/known-issues.md for omega-builder to apply. Never claim you wrote the files.\n\nISOLATION: Only work within the user-selected project. Never modify or install into Code Puppy core, its Python environment, global ~/.code_puppy settings/agents, or the Puppy GUI installation. Never run package upgrades using the Code Puppy interpreter. If a task requires any of those protected locations, decline that part and tell the orchestrator/user. This constraint applies to all tools and delegated subtasks.",
   "tools": [
     "list_files",
     "read_file",
