@@ -11,3 +11,7 @@ This folder holds the original research the harness was built from.
 
 - `omega-setup-recreation.html` — recreation of the reel's guide built Nov 11, 2026 from Ant's screenshots: the loop diagram, model pricing, and starter files. Open it in a browser to read it.
 - `omega-code-puppy-feasibility.md` — the Nov 12 research write-up mapping Omega onto Code Puppy: what translates 1:1, what doesn't (Code Puppy never reads `CLAUDE.md`, the reel's env vars are dead there, compaction clamps at 50%), the model-tier analysis, and the repo outline this scaffold was built from.
+
+> Historical note: the reference documents record the original research and
+> may describe the old installer behavior. Follow the root README and
+> `docs/ARCHITECTURE.md` for current installation instructions.
