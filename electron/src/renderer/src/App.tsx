@@ -1,139 +1,158 @@
-// App.tsx
-// Puppy Omega One — app shell (icon sidebar + header + page routing).
-// Mirrors ant3869/electron-react-dark-starter src/renderer/src/App.tsx:
-// same w-16 icon sidebar, header with module name, useState page routing,
-// tokens-driven styling. Adds a server-status pill in the header.
-
 import React, { useEffect, useMemo, useState } from 'react';
-import { Play, Activity, FileText, BookOpen, MessageSquare, PawPrint } from 'lucide-react';
-import { tokens } from './lib/tokens';
+import {
+  Activity, BookOpen, FileText, LayoutDashboard, MessageSquare,
+  Play, Settings, PawPrint
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { PuppyStatus } from '@shared/types';
-
+import WorkflowOverviewPage from './pages/WorkflowOverviewPage';
 import RunPage from './pages/RunPage';
 import LivePage from './pages/LivePage';
 import BriefsPage from './pages/BriefsPage';
 import ProgressPage from './pages/ProgressPage';
 import PuppyGuiPage from './pages/PuppyGuiPage';
+import SettingsPage from './pages/SettingsPage';
 
-type ModuleId = 'run' | 'live' | 'briefs' | 'progress' | 'puppy';
+type ModuleId = 'overview' | 'run' | 'puppy' | 'live' | 'briefs' | 'progress' | 'settings';
+type NavItem = { id: ModuleId; label: string; icon: LucideIcon };
 
-const modules: { id: ModuleId; name: string; icon: any }[] = [
-  { id: 'run', name: 'Run a job', icon: Play },
-  { id: 'live', name: 'Live run', icon: Activity },
-  { id: 'briefs', name: 'Briefs', icon: FileText },
-  { id: 'progress', name: 'Progress', icon: BookOpen },
-  { id: 'puppy', name: 'Puppy GUI', icon: MessageSquare }
+const modules: NavItem[] = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'run', label: 'Compose run', icon: Play },
+  { id: 'puppy', label: 'Harness chat', icon: MessageSquare },
+  { id: 'live', label: 'Saved activity', icon: Activity },
+  { id: 'briefs', label: 'Worker briefs', icon: FileText },
+  { id: 'progress', label: 'Project documents', icon: BookOpen }
 ];
 
 export default function App() {
-  const [activeModule, setActiveModule] = useState<ModuleId>('run');
+  const [activeModule, setActiveModule] = useState<ModuleId>('overview');
   const [status, setStatus] = useState<PuppyStatus | null>(null);
+  const [reduceMotion, setReduceMotion] = useState(() => {
+    try {
+      const previous = localStorage.getItem('omega:reduce-motion');
+      if (previous !== null) return previous === 'true';
+    } catch {
+      // Storage may be disabled; system preference still applies.
+    }
+    return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
 
   useEffect(() => {
     let alive = true;
     const poll = async () => {
       try {
-        const s = await window.omega.puppy.getStatus();
-        if (alive) setStatus(s);
+        const next = await window.omega.puppy.getStatus();
+        if (alive) setStatus(next);
       } catch {
         if (alive) setStatus(null);
       }
     };
     void poll();
-    const t = setInterval(poll, 5000);
+    const timer = setInterval(poll, 5000);
     return () => {
       alive = false;
-      clearInterval(t);
+      clearInterval(timer);
     };
   }, []);
 
-  const currentModule = useMemo(() => modules.find((m) => m.id === activeModule), [activeModule]);
+  const currentModule = useMemo(
+    () => [...modules, { id: 'settings' as ModuleId, label: 'Settings', icon: Settings }].find((item) => item.id === activeModule),
+    [activeModule]
+  );
 
-  const render = () => {
+  function changeMotion(value: boolean) {
+    setReduceMotion(value);
+    try {
+      localStorage.setItem('omega:reduce-motion', String(value));
+    } catch {
+      // Preference remains active for this session.
+    }
+  }
+
+  const navigate = (next: ModuleId) => setActiveModule(next);
+
+  function renderPage() {
     switch (activeModule) {
+      case 'overview':
+        return (
+          <WorkflowOverviewPage
+            server={status}
+            reduceMotion={reduceMotion}
+            onCompose={() => navigate('run')}
+            onChat={() => navigate('puppy')}
+            onRuns={() => navigate('live')}
+          />
+        );
       case 'run':
-        return <RunPage onOpenPuppy={() => setActiveModule('puppy')} />;
+        return <RunPage onOpenPuppy={() => navigate('puppy')} />;
+      case 'puppy':
+        return <PuppyGuiPage status={status} />;
       case 'live':
         return <LivePage />;
       case 'briefs':
         return <BriefsPage />;
       case 'progress':
         return <ProgressPage />;
-      case 'puppy':
-        return <PuppyGuiPage status={status} />;
-      default:
-        return <RunPage onOpenPuppy={() => setActiveModule('puppy')} />;
+      case 'settings':
+        return (
+          <SettingsPage
+            status={status}
+            reduceMotion={reduceMotion}
+            onReduceMotionChange={changeMotion}
+            onOpenChat={() => navigate('puppy')}
+          />
+        );
     }
-  };
-
-  const serverLabel = status === null ? 'server: unknown' : status.running ? 'server: up' : 'server: down';
-  const serverColor = status?.running ? tokens.status.pass : tokens.status.fail;
+  }
 
   return (
-    <div className="min-h-screen" style={{ background: tokens.bg.base }}>
-      <div className="relative flex h-screen">
-        {/* Sidebar */}
-        <div
-          className="w-16 flex flex-col items-center py-5 border-r"
-          style={{ background: tokens.bg.surface1, borderColor: tokens.border.default }}
-        >
-          <div
-            className="w-9 h-9 flex items-center justify-center mb-6"
-            style={{ background: tokens.accent.primary, borderRadius: tokens.radius }}
-            title="Puppy Omega One"
+    <div className="omega-shell">
+      <aside className="omega-sidebar" aria-label="Application navigation">
+        <div className="omega-sidebar-logo" title="Puppy Omega One"><PawPrint size={24} strokeWidth={1.9} /></div>
+        <nav aria-label="Main sections">
+          {modules.map((module) => (
+            <button
+              key={module.id}
+              className={'omega-nav-button ' + (activeModule === module.id ? 'is-active' : '')}
+              title={module.label}
+              aria-label={module.label}
+              aria-current={activeModule === module.id ? 'page' : undefined}
+              onClick={() => navigate(module.id)}
+            >
+              <module.icon size={20} strokeWidth={1.7} />
+            </button>
+          ))}
+        </nav>
+        <div className="omega-sidebar-spacer" />
+        <div className="omega-sidebar-bottom">
+          <div className="omega-sidebar-divider" />
+          <button
+            className={'omega-nav-button ' + (activeModule === 'settings' ? 'is-active' : '')}
+            title="Settings"
+            aria-label="Settings"
+            aria-current={activeModule === 'settings' ? 'page' : undefined}
+            onClick={() => navigate('settings')}
           >
-            <PawPrint className="w-5 h-5 text-black" />
+            <Settings size={20} strokeWidth={1.7} />
+          </button>
+        </div>
+      </aside>
+      <div className="omega-shell-main">
+        <header className="omega-shell-header">
+          <div className="omega-shell-location">
+            <strong>OMEGA ONE</strong>
+            <span className="omega-slash">/</span>
+            <span>{currentModule?.label ?? 'Overview'}</span>
           </div>
-
-          <nav className="flex-1 flex flex-col gap-1 w-full px-2">
-            {modules.map((module) => (
-              <button
-                key={module.id}
-                onClick={() => setActiveModule(module.id)}
-                className="relative flex items-center justify-center w-full aspect-square transition-all"
-                style={{
-                  background: activeModule === module.id ? tokens.bg.surface3 : 'transparent',
-                  borderRadius: tokens.radius
-                }}
-                title={module.name}
-              >
-                {activeModule === module.id && (
-                  <div
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5"
-                    style={{ background: tokens.accent.primary, borderRadius: 2 }}
-                  />
-                )}
-                <module.icon
-                  className="w-[18px] h-[18px]"
-                  style={{ color: activeModule === module.id ? tokens.text.primary : tokens.text.tertiary }}
-                />
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Main */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <header
-            className="h-14 flex items-center justify-between px-5 border-b"
-            style={{ background: tokens.bg.surface1, borderColor: tokens.border.default }}
-          >
-            <h1 className="text-sm font-medium" style={{ color: tokens.text.primary }}>
-              {currentModule?.name}
-            </h1>
-            <div className="flex items-center gap-2 text-xs" style={{ color: tokens.text.secondary }}>
-              <span
-                className="inline-block w-2 h-2 rounded-full"
-                style={{ background: serverColor }}
-                title={serverLabel}
-              />
-              {serverLabel}
-              {status?.spawnedByUs ? ' (spawned by this app)' : ''}
-            </div>
-          </header>
-
-          <main className="flex-1 overflow-auto p-5">{render()}</main>
-        </div>
+          <div className="omega-shell-meta">
+            <span>ORCHESTRATION CONSOLE</span>
+            <span className="omega-shell-status"><i className={status?.running ? 'is-online' : ''} /> {status === null ? 'SERVER CHECKING' : status.running ? 'HARNESS CONNECTED' : 'HARNESS OFFLINE'}</span>
+          </div>
+        </header>
+        <main className={'omega-shell-content ' + (activeModule === 'puppy' ? 'is-full' : '')}>
+          {renderPage()}
+        </main>
       </div>
     </div>
   );
