@@ -20,8 +20,8 @@ export default function SettingsPage({
     setChecking(true);
     setResult(null);
     try {
-      const next = await window.omega.puppy.ensureServer();
-      setResult(next.running ? 'Puppy GUI responded successfully.' : next.error ?? 'Puppy GUI is still offline.');
+      const next = await window.omega.puppy.getStatus();
+      setResult(next.running ? 'Puppy GUI responded successfully.' : 'No local Puppy GUI is running. Open Harness Chat, choose a project, then launch explicitly.');
     } catch (error) {
       setResult(error instanceof Error ? error.message : String(error));
     } finally {
@@ -57,11 +57,11 @@ export default function SettingsPage({
         </div>
         <div className="omega-setting-row">
           <span>
-            <strong>Connect or start the existing GUI</strong>
-            <p>Omega does not start Code Puppy when opened. This button explicitly attempts to attach to a local GUI or launch your already-installed GUI. It does not install or update Code Puppy.</p>
+            <strong>Check the existing GUI connection</strong>
+            <p>Omega does not launch Code Puppy on startup. Use Harness Chat to choose a safe project workspace before an explicit GUI launch. Checking the connection here is read-only.</p>
           </span>
           <button className="omega-button omega-button-secondary" onClick={() => void reconnect()} disabled={checking}>
-            <RefreshCw size={14} /> {checking ? 'Connecting…' : 'Connect / start'}
+            <RefreshCw size={14} /> {checking ? 'Checking…' : 'Check status'}
           </button>
         </div>
         {result && <p className="omega-health-error" role="status">{result}</p>}
