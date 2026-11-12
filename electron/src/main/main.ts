@@ -7,7 +7,7 @@
 import { app, BrowserWindow, shell } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
-import { registerPuppyIpc, ensureServer, stopServer } from './services/puppy';
+import { registerPuppyIpc, ensureServer, stopServer, PUPPY_ORIGIN } from './services/puppy';
 
 const preloadPath = fileURLToPath(new URL('../preload/index.mjs', import.meta.url));
 const rendererIndexHtml = fileURLToPath(new URL('../renderer/index.html', import.meta.url));
@@ -42,8 +42,31 @@ function createWindow() {
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    void shell.openExternal(url);
+    try {
+      const target = new URL(url);
+      if (target.protocol === 'https:' || target.protocol === 'http:') {
+        void shell.openExternal(target.toString());
+      }
+    } catch {
+      // Ignore invalid or non-web URLs from renderer content.
+    }
     return { action: 'deny' };
+  });
+
+  mainWindow.webContents.on('will-attach-webview', (event, webPreferences, params) => {
+    try {
+      if (new URL(params.src).origin !== PUPPY_ORIGIN) {
+        event.preventDefault();
+        return;
+      }
+    } catch {
+      event.preventDefault();
+      return;
+    }
+    delete webPreferences.preload;
+    webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
+    webPreferences.sandbox = true;
   });
 
   const url = process.env.ELECTRON_RENDERER_URL;

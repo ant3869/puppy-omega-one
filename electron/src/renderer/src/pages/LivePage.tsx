@@ -27,12 +27,16 @@ export default function LivePage() {
     let alive = true;
     const load = async () => {
       try {
-        const [r, s] = await Promise.all([window.omega.runs.list(), window.omega.puppy.getActiveSession()]);
-        if (!alive) return;
-        setRuns(r);
-        setSession(s);
+        const r = await window.omega.runs.list();
+        if (alive) setRuns(r);
       } catch {
-        /* server down — cards still render from runs.json */
+        if (alive) setRuns([]);
+      }
+      try {
+        const s = await window.omega.puppy.getActiveSession();
+        if (alive) setSession(s);
+      } catch {
+        if (alive) setSession(null);
       }
     };
     void load();
@@ -48,13 +52,16 @@ export default function LivePage() {
   if (!run) {
     return (
       <p className="text-sm" style={{ color: tokens.text.secondary }}>
-        No runs yet. Start one from the Run page.
+        No saved briefs yet. Compose one from the Run page.
       </p>
     );
   }
 
   return (
     <div className="max-w-3xl flex flex-col gap-4">
+      <p className="text-xs" style={{ color: tokens.text.tertiary }}>
+        These are local brief records, not live worker telemetry. Start work by pasting the brief into Puppy GUI.
+      </p>
       <div>
         <h2 className="text-base font-medium" style={{ color: tokens.text.primary }}>{run.goal}</h2>
         <p className="text-xs mt-1" style={{ color: tokens.text.secondary }}>

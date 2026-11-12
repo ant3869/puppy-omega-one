@@ -12,7 +12,7 @@ murphmaxxing.com/vault/omega-agent-orchestration.
 | Opus 5.5 orchestrator, xhigh effort | JSON agent `omega-orchestrator`, `"model": "<opus alias>"`, `model_settings.reasoning_effort: "high"` (no `xhigh` — closest is `high`) | Adapt |
 | Haiku 5.5 workers in `.claude/agents/` | JSON agents in `.code_puppy/agents/` (`omega-builder/reviewer/tester/researcher`), each `"model": "<alias>"` | 1:1, new path |
 | Brief ends with runnable "Done when:", boss re-runs check | Orchestrator system prompt + worker contract; boss has `shell` tool, workers report exact command + output | 1:1 (prompt-level) |
-| Boss writes no code | Enforced by tool allowlist: orchestrator JSON gets `invoke_agent`, `invoke_agent_with_model`, `list_agents`, `read_file`, `grep`, `shell` — no `create_file`/`replace_in_file` | Better than Omega (enforced, not just instructed) |
+| Boss delegates code writes | No dedicated file-write tools; `shell` can still modify files, so this is an agent policy rather than a security boundary | Behavioral constraint |
 | `CLAUDE.md` + `docs/*.md` memory | `.code_puppy/AGENTS.md` (or `./AGENTS.md`) holds the rules; `docs/progress.md`, `docs/decisions.md`, `docs/known-issues.md` are plain files the agent is instructed to read/write each session | Adapt (file rename) |
 | Reflect skill | `skills/reflect/SKILL.md`, agentskills.io format, project-local | 1:1 |
 | `CLAUDE_CODE_SUBAGENT_MODEL=haiku` env vars | Dead in Code Puppy — models are pinned in agent JSON / `/pin_model`, not env vars | Drop |
@@ -114,12 +114,10 @@ run the check with its own hands.
 - **Session start:** the orchestrator reads `AGENTS.md`,
   `docs/progress.md`, `docs/decisions.md`, `docs/known-issues.md`
   before doing anything else.
-- **Session end:** the orchestrator briefs `omega-researcher` to
-  update `docs/progress.md` with a dated log line and add new
-  decisions/gotchas, then runs the `reflect` skill. The skill proposes
-  the smallest edit to a skill or `AGENTS.md` that would have
-  prevented what went wrong this session. **Nothing changes without
-  the human's OK.**
+- **Session end:** `omega-researcher` proposes a dated progress entry
+  and any new decisions/gotchas. `omega-builder` writes approved entries;
+  the orchestrator verifies the files, then invokes `reflect` using
+  `activate_skill`. Reflect proposals require human approval.
 
 ### Day to day
 
@@ -150,19 +148,20 @@ you ── goal + "Done when:" ──▶ omega-orchestrator (Opus, high effort)
                         session end: docs update + reflect skill
 ```
 
-## Tool allowlists (enforced, not just instructed)
+## Tool allowlists (not a sandbox: shell can mutate files)
 
 | Agent | Tools |
 |---|---|
-| orchestrator | `invoke_agent`, `invoke_agent_with_model`, `list_agents`, `read_file`, `grep`, `shell` |
+| orchestrator | `invoke_agent`, `invoke_agent_with_model`, `list_agents`, `read_file`, `grep`, `shell`, `activate_skill` |
 | builder | `create_file`, `replace_in_file`, `read_file`, `grep`, `shell` |
 | reviewer | `read_file`, `grep`, `shell` |
 | tester | `shell`, `read_file`, `grep` |
 | researcher | `read_file`, `grep`, `shell` (read-only commands only) |
 
-The orchestrator's lack of write tools is the point: session-end doc
-updates go through a brief to `omega-researcher`, not through the
-orchestrator writing files itself.
+The orchestrator omits dedicated write tools, but `shell` is capable of
+writing; the no-edit rule depends on compliance. For session-end docs,
+`omega-researcher` drafts a proposed change, `omega-builder` applies
+approved entries, and the orchestrator verifies them with `read_file`.
 
 ## Integration notes (from ant3869/ai-integration-reference)
 

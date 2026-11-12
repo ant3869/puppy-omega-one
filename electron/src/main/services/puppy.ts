@@ -20,10 +20,15 @@ import { dirname, join, resolve } from 'node:path';
 import type { OmegaRun, PuppyStatus } from '../../shared/types';
 
 const PORT = Number(process.env.PUPPY_GUI_PORT ?? 8765);
-const BASE = `http://127.0.0.1:${PORT}`;
+if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
+  throw new Error('PUPPY_GUI_PORT must be an integer between 1 and 65535');
+}
+export const PUPPY_ORIGIN = `http://127.0.0.1:${PORT}`;
+const BASE = PUPPY_ORIGIN;
 
 let child: ChildProcessWithoutNullStreams | null = null;
 let spawnedByUs = false;
+let launchError: string | null = null;
 
 // ---------------------------------------------------------------------------
 // Server lifecycle
@@ -64,20 +69,21 @@ async function fileExists(p: string): Promise<boolean> {
 }
 
 async function healthOk(timeoutMs = 2000): Promise<boolean> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), timeoutMs);
     const res = await fetch(`${BASE}/api/health`, { signal: ctrl.signal });
-    clearTimeout(t);
     return res.ok;
   } catch {
     return false;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
 export async function ensureServer(): Promise<PuppyStatus> {
   if (await healthOk()) {
-    return { running: true, spawnedByUs: false, port: PORT, url: BASE };
+    return { running: true, spawnedByUs, port: PORT, url: BASE };
   }
   if (child) return { running: false, spawnedByUs, port: PORT, url: BASE, error: 'server starting' };
 
@@ -97,6 +103,7 @@ export async function ensureServer(): Promise<PuppyStatus> {
   }
 
   const python = resolvePython();
+  launchError = null;
   child = spawn(python, [launch], {
     cwd: dirname(launch),
     env: { ...process.env, PUPPY_GUI_PORT: String(PORT) },
@@ -105,7 +112,14 @@ export async function ensureServer(): Promise<PuppyStatus> {
   spawnedByUs = true;
   child.stdout.on('data', (d) => console.log('[puppy-gui]', String(d).trim()));
   child.stderr.on('data', (d) => console.warn('[puppy-gui]', String(d).trim()));
+  child.on('error', (error) => {
+    launchError = `Cannot start puppy_gui with ${python}: ${error.message}`;
+    console.error('[puppy]', launchError);
+    child = null;
+    spawnedByUs = false;
+  });
   child.on('exit', (code) => {
+    if (!launchError) launchError = `puppy_gui exited with code ${code}`;
     console.warn('[puppy] server exited', code);
     child = null;
     spawnedByUs = false;
@@ -114,6 +128,7 @@ export async function ensureServer(): Promise<PuppyStatus> {
   // Poll /api/health for up to 30s.
   for (let i = 0; i < 60; i++) {
     if (await healthOk()) return { running: true, spawnedByUs: true, port: PORT, url: BASE };
+    if (launchError) return { running: false, spawnedByUs: false, port: PORT, url: BASE, error: launchError };
     await new Promise((r) => setTimeout(r, 500));
   }
   return { running: false, spawnedByUs: true, port: PORT, url: BASE, error: 'server did not answer /api/health in 30s' };
@@ -150,20 +165,33 @@ function runsFile(): string {
 async function loadRuns(): Promise<OmegaRun[]> {
   try {
     const raw = await fs.readFile(runsFile(), 'utf-8');
-    return JSON.parse(raw) as OmegaRun[];
-  } catch {
-    return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) throw new Error('runs.json must contain an array');
+    return parsed as OmegaRun[];
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw error;
   }
 }
 
 async function saveRuns(runs: OmegaRun[]): Promise<void> {
   await fs.mkdir(dirname(runsFile()), { recursive: true });
-  await fs.writeFile(runsFile(), JSON.stringify(runs, null, 2), 'utf-8');
+  const target = runsFile();
+  const temporary = `${target}.${process.pid}.tmp`;
+  try {
+    await fs.writeFile(temporary, JSON.stringify(runs, null, 2), 'utf-8');
+    await fs.rename(temporary, target);
+  } finally {
+    await fs.rm(temporary, { force: true }).catch(() => undefined);
+  }
 }
 
 // ---------------------------------------------------------------------------
 // IPC registration (mirrors the starter's registerXxxIpc pattern)
+// Serialize writes so rapid saves cannot clobber each other.
 // ---------------------------------------------------------------------------
+
+let runsWriteQueue: Promise<void> = Promise.resolve();
 
 export function registerPuppyIpc(getWindow: () => BrowserWindow | null) {
   void getWindow; // reserved: live event forwarding will push to this window
@@ -196,11 +224,18 @@ export function registerPuppyIpc(getWindow: () => BrowserWindow | null) {
 
   ipcMain.handle('runs:list', () => loadRuns());
   ipcMain.handle('runs:save', async (_e, run: OmegaRun) => {
-    const runs = await loadRuns();
-    const idx = runs.findIndex((r) => r.id === run.id);
-    if (idx >= 0) runs[idx] = run;
-    else runs.unshift(run);
-    await saveRuns(runs);
+    if (!run || typeof run.id !== 'string' || !run.id || typeof run.goal !== 'string') {
+      throw new Error('Invalid run record');
+    }
+    const operation = runsWriteQueue.then(async () => {
+      const runs = await loadRuns();
+      const idx = runs.findIndex((r) => r.id === run.id);
+      if (idx >= 0) runs[idx] = run;
+      else runs.unshift(run);
+      await saveRuns(runs);
+    });
+    runsWriteQueue = operation.catch(() => undefined);
+    await operation;
     return run;
   });
 

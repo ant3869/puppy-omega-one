@@ -27,6 +27,8 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
   const [selected, setSelected] = useState<string[]>(['omega-builder', 'omega-reviewer', 'omega-tester']);
   const [brief, setBrief] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const inputStyle: React.CSSProperties = {
     background: tokens.bg.surface2,
@@ -39,8 +41,8 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
     setSelected((prev) => (prev.includes(agent) ? prev.filter((a) => a !== agent) : [...prev, agent]));
   }
 
-  function composeBrief() {
-    if (!goal.trim() || !doneWhen.trim()) return;
+  async function composeBrief() {
+    if (!goal.trim() || !doneWhen.trim() || saving) return;
     const runId = uid();
     const now = new Date().toISOString();
     const records: DelegationRecord[] = WORKERS.filter((w) => selected.includes(w.agent)).map((w) => ({
@@ -80,9 +82,17 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
       startedAt: now,
       updatedAt: now
     };
-    void window.omega.runs.save(run);
-    setBrief(text);
-    setCopied(false);
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await window.omega.runs.save(run);
+      setBrief(text);
+      setCopied(false);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function copyBrief() {
@@ -94,9 +104,9 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
   return (
     <div className="max-w-2xl flex flex-col gap-4">
       <p className="text-sm" style={{ color: tokens.text.secondary }}>
-        Describe the goal and the check that proves it done. The orchestrator
-        (Opus, <code>claude-opus-5-5</code> placeholder) fans the brief out to
-        the workers below. Model aliases are placeholders — verify with{' '}
+        Describe the goal and its runnable check. This page drafts a brief; it does not dispatch workers.
+        After you paste it into Puppy GUI on the orchestrator agent, that agent can delegate to
+        the selected workers. Model aliases are placeholders — verify with{' '}
         <code>/model</code> in Code Puppy at work.
       </p>
 
@@ -145,12 +155,12 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
 
       <div className="flex gap-2">
         <button
-          onClick={composeBrief}
-          disabled={!goal.trim() || !doneWhen.trim()}
+          onClick={() => void composeBrief()}
+          disabled={saving || !goal.trim() || !doneWhen.trim()}
           className="px-4 py-2 text-sm font-medium disabled:opacity-40"
           style={{ background: tokens.accent.primary, color: '#000', borderRadius: tokens.radius }}
         >
-          Compose brief
+          {saving ? 'Saving…' : 'Compose brief'}
         </button>
         {brief && (
           <>
@@ -172,10 +182,16 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
         )}
       </div>
 
+      {saveError && (
+        <p role="alert" className="text-sm" style={{ color: tokens.status.fail }}>
+          Could not save the brief: {saveError}
+        </p>
+      )}
+
       {brief && (
         <div>
           <p className="text-xs mb-2" style={{ color: tokens.text.secondary }}>
-            Send is not wired yet — paste this brief into the Puppy GUI chat
+            No worker has been launched by this page. Paste this brief into the Puppy GUI chat
             with the <code>omega-orchestrator</code> agent. It will fan out the
             workers and verify each check.
           </p>

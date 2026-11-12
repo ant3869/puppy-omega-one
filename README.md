@@ -24,7 +24,7 @@ Code Puppy picks them up, and the orchestrator runs the loop.
 
 | Piece | What it does |
 |---|---|
-| `omega-orchestrator` (Opus) | Plans the job, writes a brief per worker, checks every result. Writes no code — it has no write tools on purpose. |
+| `omega-orchestrator` (Opus) | Plans the job, writes a brief per worker, checks every result. Writes no code by policy (shell access is not a security boundary). |
 | `omega-builder` (Sonnet) | Writes code to a brief, runs the check, reports what it ran. |
 | `omega-reviewer` (Sonnet) | Reads a diff against a brief, lists what fails it. Fixes nothing. |
 | `omega-tester` (Haiku) | Runs tests, triages the output, says PASS/FAIL first. |
@@ -49,10 +49,11 @@ cost math in `docs/COSTS.md`.
 ```
 
 What it does: copies `templates/` into the target project (skips files
-that already exist unless you pass `-Force` / `--force`), then sets
+that already exist unless you pass `-Force` / `--force`), then adds defaults to
 `puppy.cfg` `compaction_threshold=0.5` (the lowest Code Puppy allows;
 Omega's 40% is unachievable — see `docs/ARCHITECTURE.md`) and
-`summarization_model` to the Haiku placeholder. It prints the manual
+leaves `summarization_model` untouched until you've verified an actual
+model alias in your Code Puppy build. It prints the manual
 steps at the end — read them, two of them need you.
 
 Manual steps after install (the script prints these too):
@@ -60,7 +61,7 @@ Manual steps after install (the script prints these too):
 1. **Verify the model aliases.** In Code Puppy at work, run `/model`.
    Swap the real Opus / Sonnet / Haiku alias strings into
    `.code_puppy/agents/*.json` (`"model"` field) and `puppy.cfg`
-   (`summarization_model`). Delete the `omega` metadata block in an
+   (`summarization_model`, if desired). Delete the `omega` metadata block in an
    agent JSON if your build rejects unknown keys — `model` is the only
    load-bearing field.
 2. **Set the global model to the Opus alias** (the orchestrator's model),
@@ -100,12 +101,10 @@ webhook. Day to day it looks like this:
    orchestrator verifies it line by line).
 7. When the goal is done, the orchestrator tells you what changed, what
    it ran, and what is still open. You review and approve.
-8. **Session-end ritual** (every session, don't skip it): the
-   orchestrator briefs `omega-researcher` to update `docs/progress.md`
-   with a dated log line, add any new decisions/gotchas, then runs the
-   `reflect` skill — it proposes the smallest edit to a skill or
-   `AGENTS.md` that would have prevented what went wrong this session.
-   Nothing changes without your OK.
+8. **Session-end ritual:** `omega-researcher` drafts a dated progress
+   entry and any decisions/gotchas (it cannot write files); `omega-builder`
+   applies approved updates; the orchestrator verifies them, then invokes
+   `reflect` using `activate_skill`. Reflect changes need your OK.
 
 Two rules that make the whole thing work: briefs are **self-contained**
 (workers never see `AGENTS.md` — Code Puppy doesn't inject it into

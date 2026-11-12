@@ -1,0 +1,63 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  shell-installer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bash syntax and installer smoke test
+        run: |
+          bash -n install.sh
+          bash tests/installer-smoke.sh
+      - name: Validate agent and settings JSON
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for path in Path("templates").rglob("*.json"):
+              json.loads(path.read_text(encoding="utf-8"))
+              print("Valid:", path)
+          PY
+
+  powershell-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PowerShell installer smoke test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $target = Join-Path $env:RUNNER_TEMP ('omega-smoke-' + [guid]::NewGuid())
+          New-Item -ItemType Directory -Path $target -Force | Out-Null
+          @('compaction_threshold=0.75','summarization_model=company-verified') | Set-Content (Join-Path $target 'puppy.cfg')
+          'existing project instructions' | Set-Content (Join-Path $target 'AGENTS.md')
+          ./install.ps1 -Target $target
+          $config = Get-Content (Join-Path $target 'puppy.cfg')
+          if ($config -notcontains 'compaction_threshold=0.75') { throw 'Existing threshold was overwritten' }
+          if ($config -notcontains 'summarization_model=company-verified') { throw 'Existing model was overwritten' }
+          if (-not (Test-Path (Join-Path $target '.code_puppy/agents/omega-builder-agent.json'))) { throw 'Hidden agents not copied' }
+          if (-not (Test-Path (Join-Path $target '.claude/commands/omega-brief.md'))) { throw 'Hidden commands not copied' }
+          if ((Get-Content (Join-Path $target 'AGENTS.md') -Raw) -notmatch 'existing project instructions') { throw 'Existing AGENTS.md overwritten' }
+          ./install.ps1 -Target $target
+          if (@(Get-Content (Join-Path $target 'puppy.cfg') | Where-Object { $_ -match '^compaction_threshold=' }).Count -ne 1) { throw 'Duplicate threshold key' }
+          Write-Output 'PASS: PowerShell installer preserves existing config and copies hidden templates'
+
+  electron:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: electron
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies (lockfile not yet committed)
+        run: npm install --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run build

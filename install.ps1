@@ -30,7 +30,7 @@ if (-not (Test-Path $TemplatesDir)) {
 
 $copied = @()
 $skipped = @()
-Get-ChildItem -Path $TemplatesDir -Recurse -File | ForEach-Object {
+Get-ChildItem -LiteralPath $TemplatesDir -Recurse -File -Force | ForEach-Object {
     $relative = $_.FullName.Substring($TemplatesDir.Length + 1)
     $dest = Join-Path $TargetFull $relative
     $destDir = Split-Path -Parent $dest
@@ -45,7 +45,7 @@ Get-ChildItem -Path $TemplatesDir -Recurse -File | ForEach-Object {
 
 # --- puppy.cfg: compaction_threshold=0.5, summarization_model=Haiku placeholder ---
 $CfgPath = Join-Path $TargetFull "puppy.cfg"
-$HaikuPlaceholder = "claude-haiku-5-5"
+
 function Set-CfgKey {
     param([string]$Path, [string]$Key, [string]$Value)
     $lines = @()
@@ -54,17 +54,19 @@ function Set-CfgKey {
     $out = @()
     foreach ($line in $lines) {
         if ($line -match "^\s*$([regex]::Escape($Key))\s*=") {
-            $out += "$Key=$Value"
+            $out += $line
             $found = $true
         } else {
             $out += $line
         }
     }
-    if (-not $found) { $out += "$Key=$Value" }
-    $out | Set-Content -Path $Path -Encoding utf8
+    if (-not $found) {
+        $out += "$Key=$Value"
+        [System.IO.File]::WriteAllLines($Path, [string[]]$out, (New-Object System.Text.UTF8Encoding($false)))
+    }
 }
 Set-CfgKey -Path $CfgPath -Key "compaction_threshold" -Value "0.5"
-Set-CfgKey -Path $CfgPath -Key "summarization_model" -Value $HaikuPlaceholder
+
 
 Write-Host ""
 Write-Host "Puppy Omega One installed into $TargetFull"
@@ -73,13 +75,13 @@ if ($skipped.Count -gt 0) {
     Write-Host "  skipped (already exist, use -Force to overwrite):"
     $skipped | ForEach-Object { Write-Host "    - $_" }
 }
-Write-Host "  puppy.cfg: compaction_threshold=0.5, summarization_model=$HaikuPlaceholder"
+Write-Host "  puppy.cfg: compaction_threshold added only if missing; existing settings preserved."
 Write-Host ""
 Write-Host "MANUAL STEPS (do these before your first real run):"
 Write-Host "  1. In Code Puppy at work, run /model and note the real Opus / Sonnet /"
 Write-Host "     Haiku alias strings. Swap them into .code_puppy/agents/*.json"
 Write-Host "     (the `"model`" field, one string per file) and puppy.cfg"
-Write-Host "     (summarization_model). The aliases in this repo are PLACEHOLDERS:"
+Write-Host "     (summarization_model — set it manually once verified). The aliases are PLACEHOLDERS:"
 Write-Host "     claude-opus-5-5 / claude-sonnet-5-5 / claude-haiku-5-5."
 Write-Host "  2. Set the global model to your Opus alias, or start the session on"
 Write-Host "     the omega-orchestrator agent."

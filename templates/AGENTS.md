@@ -9,12 +9,13 @@
 ## The system
 
 One orchestrator (Opus) plans, briefs, and verifies. Workers do the work.
-The orchestrator never writes code or files — it has no write tools, on
-purpose. If the orchestrator needs a file changed, it briefs a worker.
+The orchestrator delegates all file edits to the builder. The tool list
+excludes dedicated write tools; `shell` remains powerful, so this is a
+behavioral rule, not a sandbox or a security boundary. If the orchestrator needs a file changed, it briefs a worker.
 
 | Agent | Model (placeholder) | Job |
 |---|---|---|
-| `omega-orchestrator` | Opus 5.5 (`claude-opus-5-5`), effort high | Plans, briefs, verifies. No write tools. |
+| `omega-orchestrator` | Opus 5.5 (`claude-opus-5-5`), effort high | Plans, briefs, verifies. No dedicated file-write tools. |
 | `omega-builder` | Sonnet 5.5 (`claude-sonnet-5-5`), effort medium | Writes code to a brief, runs the check. |
 | `omega-reviewer` | Sonnet 5.5 (`claude-sonnet-5-5`), effort medium | Reads a diff against a brief, lists failures. Fixes nothing. |
 | `omega-tester` | Haiku 5.5 (`claude-haiku-5-5`), effort medium | Runs tests, triages output, PASS/FAIL first. |
@@ -47,11 +48,11 @@ only `templates/` gets copied in).
 6. **Two failures, tier up:** if the same check fails twice, re-brief
    the job one tier up (Haiku worker → Sonnet; Sonnet worker → you
    verify it line by line yourself).
-7. **Session end:** brief `omega-researcher` to update `docs/progress.md`
-   with a dated log line and add new decisions/gotchas, then run the
-   `reflect` skill (`skills/reflect/SKILL.md`). It proposes the smallest
-   edit to a skill or this file that would have prevented what went wrong.
-   Nothing changes without the human's OK.
+7. **Session end:** ask `omega-researcher` to draft a dated progress log
+   and any decisions/gotchas (researcher is read-only). Brief `omega-builder`
+   to apply the approved entries; re-read the files to verify. Then invoke
+   the `reflect` skill with `activate_skill` (`skills/reflect/SKILL.md`).
+   Reflect proposals require human approval before edits.
 
 ## Brief rules — read this twice
 
@@ -90,10 +91,10 @@ only memory that survives compaction.
 
 ## Compaction
 
-`puppy.cfg` sets `compaction_threshold=0.5` (the lowest Code Puppy
-allows — Omega's 40% is unachievable here) and `summarization_model`
-to the Haiku placeholder. Type `/context` during a session to see how
-full the window is.
+`puppy.cfg` gets `compaction_threshold=0.5` only if missing (the
+lowest Code Puppy allows — Omega's 40% is unachievable here).
+Set `summarization_model` manually after verifying a model alias; the
+installer preserves existing settings. Type `/context` to check usage.
 
 ## What Code Puppy does NOT do (don't paste the reel's prompt verbatim)
 

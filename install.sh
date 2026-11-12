@@ -34,32 +34,27 @@ while IFS= read -r -d '' src; do
   fi
 done < <(find "$TEMPLATES_DIR" -type f -print0)
 
-# --- puppy.cfg ---
+# --- puppy.cfg: append only missing defaults; never overwrite verified settings ---
 CFG_PATH="$TARGET/puppy.cfg"
-HAIKU_PLACEHOLDER="claude-haiku-5-5"
+touch "$CFG_PATH"
 set_cfg_key() {
   local key="$1" value="$2" file="$3"
-  if [[ -f "$file" ]] && grep -q "^[[:space:]]*$key[[:space:]]*=" "$file"; then
-    # replace the existing line (macOS + GNU sed compatible)
-    sed -i.bak "s|^[[:space:]]*$key[[:space:]]*=.*|$key=$value|" "$file" && rm -f "$file.bak"
-  else
-    echo "$key=$value" >> "$file"
+  if ! grep -q "^[[:space:]]*$key[[:space:]]*=" "$file"; then
+    printf '%s=%s\n' "$key" "$value" >> "$file"
   fi
 }
-touch "$CFG_PATH"
 set_cfg_key "compaction_threshold" "0.5" "$CFG_PATH"
-set_cfg_key "summarization_model" "$HAIKU_PLACEHOLDER" "$CFG_PATH"
 
 echo ""
 echo "Puppy Omega One installed into $TARGET"
 echo "  copied: $copied files, skipped: $skipped (already exist, use --force to overwrite)"
-echo "  puppy.cfg: compaction_threshold=0.5, summarization_model=$HAIKU_PLACEHOLDER"
+echo "  puppy.cfg: compaction_threshold added only if missing; existing settings preserved."
 echo ""
 echo "MANUAL STEPS (do these before your first real run):"
 echo "  1. In Code Puppy at work, run /model and note the real Opus / Sonnet /"
 echo "     Haiku alias strings. Swap them into .code_puppy/agents/*.json"
 echo "     (the \"model\" field, one string per file) and puppy.cfg"
-echo "     (summarization_model). The aliases in this repo are PLACEHOLDERS:"
+echo "     (summarization_model — set it manually once verified). The aliases are PLACEHOLDERS:"
 echo "     claude-opus-5-5 / claude-sonnet-5-5 / claude-haiku-5-5."
 echo "  2. Set the global model to your Opus alias, or start the session on"
 echo "     the omega-orchestrator agent."
