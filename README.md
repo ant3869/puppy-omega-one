@@ -24,11 +24,11 @@ Code Puppy picks them up, and the orchestrator runs the loop.
 
 | Piece | What it does |
 |---|---|
-| `omega-orchestrator` (Opus) | Plans the job, writes a brief per worker, checks every result. Writes no code — it has no write tools on purpose. |
+| `omega-orchestrator` (Opus) | Plans the job, writes a brief per worker, checks every result. Is instructed not to write code and has no direct editing tools; its `shell` access is not read-only. |
 | `omega-builder` (Sonnet) | Writes code to a brief, runs the check, reports what it ran. |
 | `omega-reviewer` (Sonnet) | Reads a diff against a brief, lists what fails it. Fixes nothing. |
 | `omega-tester` (Haiku) | Runs tests, triages the output, says PASS/FAIL first. |
-| `omega-researcher` (Haiku) | Searches the codebase, summarizes with file + line cites. Read-only. |
+| `omega-researcher` (Haiku) | Searches the codebase, summarizes with file + line cites. No shell or editing tools. |
 | `skills/reflect` | End-of-session review: proposes the smallest skill/`AGENTS.md` edit that would have prevented what went wrong. You approve before anything changes. |
 
 Model tiers are performance-first (work pays the bill, correctness wins):
