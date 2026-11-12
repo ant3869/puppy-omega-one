@@ -108,7 +108,7 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
         Describe the goal and the check that proves it done. The orchestrator
         (Opus, <code>claude-opus-5-5</code> placeholder) fans the brief out to
         the workers below. Model aliases are placeholders — verify with{' '}
-        <code>/model</code> in Code Puppy at work.
+        <code>/model</code> in your Code Puppy environment.
       </p>
 
       <label className="flex flex-col gap-1.5">
