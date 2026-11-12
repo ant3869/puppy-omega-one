@@ -1,1 +1,66 @@
-{"author":"Ant","build":{"appId":"com.ant.puppy-omega-one","directories":{"buildResources":"build"},"extraResources":[{"from":"../assets","to":"assets"}],"icon":"../assets/icon","mac":{"target":["dmg"]},"productName":"Puppy Omega One","win":{"target":["nsis"]}},"dependencies":{"electron-store":"^8.2.0","lucide-react":"^0.469.0","react":"^18.3.1","react-dom":"^18.3.1"},"description":"Puppy Omega One desktop shell — Electron front end over the Code Puppy GUI server. Starter, not a finished app; see docs/FRONTEND.md.","devDependencies":{"@types/node":"^22.10.2","@types/react":"^18.3.12","@types/react-dom":"^18.3.1","@vitejs/plugin-react":"^4.3.3","autoprefixer":"^10.4.20","electron":"^31.3.1","electron-builder":"^24.13.3","electron-vite":"^2.3.0","postcss":"^8.4.49","tailwindcss":"^3.4.17","typescript":"^5.7.2","vite":"^5.4.11"},"main":"out/main/main.js","name":"puppy-omega-one","private":true,"scripts":{"build":"electron-vite build","typecheck":"tsc --noEmit","dev":"electron-vite dev","dist":"electron-builder","dist:mac":"electron-builder --mac","dist:win":"electron-builder --win","preview":"electron-vite preview"},"type":"module","version":"0.1.0"}
+{
+  "author": "Ant",
+  "build": {
+    "appId": "com.ant.puppy-omega-one",
+    "directories": {
+      "buildResources": "build"
+    },
+    "extraResources": [
+      {
+        "from": "../assets",
+        "to": "assets"
+      }
+    ],
+    "icon": "../assets/icon",
+    "mac": {
+      "target": [
+        "dmg"
+      ]
+    },
+    "productName": "Puppy Omega One",
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    }
+  },
+  "dependencies": {
+    "electron-store": "^8.2.0",
+    "lucide-react": "^0.469.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "ws": "^8.18.0"
+  },
+  "description": "Puppy Omega One desktop shell — Electron front end over the Code Puppy GUI server. Starter, not a finished app; see docs/FRONTEND.md.",
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "electron": "^31.3.1",
+    "electron-builder": "^24.13.3",
+    "electron-vite": "^2.3.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2"
+  },
+  "main": "out/main/main.js",
+  "name": "puppy-omega-one",
+  "private": true,
+  "scripts": {
+    "build": "electron-vite build",
+    "typecheck": "tsc --noEmit",
+    "dev": "electron-vite dev",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "preview": "electron-vite preview",
+    "test": "tsx --test src/shared/workflow-events.test.ts src/main/services/workflow-transport.test.ts"
+  },
+  "type": "module",
+  "version": "0.1.0"
+}

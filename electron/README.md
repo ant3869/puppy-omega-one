@@ -67,15 +67,17 @@ electron/
 ├── src/
 │   ├── main/
 │   │   ├── main.ts              # window + puppy server lifecycle + IPC registration
-│   │   └── services/puppy.ts   # spawn/health/poll, /api passthrough, runs.json store
+│   │   ├── services/puppy.ts   # spawn/health/poll, /api passthrough, runs.json store
+│   │   └── services/workflow.ts # read-only WebSocket event observer
 │   ├── preload/index.ts         # contextBridge window.omega API
 │   ├── shared/types.ts          # Run / DelegationRecord / Brief types
+│   ├── shared/workflow-events.ts # pure, tested event-to-UI projection
 │   └── renderer/
 │       ├── index.html
 │       ├── src/main.tsx
-│       ├── src/App.tsx          # icon sidebar shell (Run, Live, Briefs, Progress, Puppy GUI)
+│       ├── src/App.tsx          # overview-first shell, chat, runs, docs, settings
 │       ├── src/lib/tokens.ts    # dark theme tokens (bg, surfaces, orange accent, 8px radius)
-│       └── src/pages/           # RunPage, LivePage, BriefsPage, ProgressPage, PuppyGuiPage
+│       └── src/pages/           # WorkflowOverview, Run, Live, Briefs, Progress, Puppy GUI, Settings
 ```
 
 ## What's wired vs stub
@@ -84,8 +86,13 @@ Wired: server spawn + health check, agents/models/sessions/cost reads
 (verified puppy_gui `/api/*` endpoints), progress-file reads,
 draft-brief persistence to `runs.json` (no automatic dispatch).
 
-Stub: sending a prompt and streaming live run events. The Run page
-composes the brief and copies it for you to paste into the Puppy GUI
-chat until the chat-send path is wired — the exact file to check is
-`routes_chat` + `static/js/chat.js` in puppy_gui. See
-`../docs/FRONTEND.md` for the full table.
+Live monitor: Overview → Live subscribes **read-only** to the local puppy_gui
+ChatBridge WebSocket. It renders actual received worker events and flags
+disconnection; worker responses do not count as passing verification checks.
+The installed server endpoint still needs an end-to-end compatibility test.
+
+Still stubbed: native chat-send and automatic run dispatch. The Run page
+composes and copies a brief for pasting into the embedded Puppy GUI.
+See `../docs/FRONTEND.md` for confirmed boundaries and setup details.
+
+Run `npm test` for workflow event reducer regressions.

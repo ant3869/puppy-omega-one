@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Activity, ArrowRight, CheckCircle2, CircleAlert, GitBranch, Pause, Play, Radio, RotateCcw, ShieldCheck, Zap } from 'lucide-react';
-import type { DelegationRecord, OmegaRun, PuppyStatus, RunStatus } from '@shared/types';
+import type { OmegaRun, PuppyStatus, RunStatus } from '@shared/types';
+import type { WorkerKey, WorkflowTelemetry } from '@shared/workflow-events';
 import { tokens } from '../lib/tokens';
 
-type LaneKey = 'omega-researcher' | 'omega-builder' | 'omega-tester' | 'omega-reviewer';
+type LaneKey = WorkerKey;
 type Phase = 'goal' | 'orchestrate' | 'dispatch' | 'check' | 'verify' | 'complete';
 type Lane = { key: LaneKey; label: string; specialty: string; x: number; cx: number };
 
@@ -54,7 +55,8 @@ export default function WorkflowOverviewPage({
   onChat: () => void;
   onRuns: () => void;
 }) {
-  const [mode, setMode] = useState<'demo' | 'records'>('demo');
+  const [mode, setMode] = useState<'demo' | 'records' | 'live'>('demo');
+  const [telemetry, setTelemetry] = useState<WorkflowTelemetry | null>(null);
   const [playing, setPlaying] = useState(true);
   const [tick, setTick] = useState(0);
   const [runs, setRuns] = useState<OmegaRun[]>([]);
@@ -86,6 +88,22 @@ export default function WorkflowOverviewPage({
   }, []);
 
   useEffect(() => {
+    let alive = true;
+    const unsubscribe = window.omega.workflow.subscribe((snapshot) => {
+      if (alive) setTelemetry(snapshot);
+    });
+    void window.omega.workflow.get().then((snapshot) => {
+      if (alive) {
+        setTelemetry((previous) => previous && (previous.lastEventAt ?? 0) > (snapshot.lastEventAt ?? 0) ? previous : snapshot);
+      }
+    }).catch(() => { if (alive) setTelemetry(null); });
+    return () => {
+      alive = false;
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
     if (mode !== 'demo' || !playing || reduceMotion) return;
     const handle = setInterval(() => setTick((previous) => previous + 1), 1800);
     return () => clearInterval(handle);
@@ -94,30 +112,57 @@ export default function WorkflowOverviewPage({
   const phase = PHASES[tick % PHASES.length];
   const latest = runs[0] ?? null;
   const demo = mode === 'demo';
+  const live = mode === 'live';
+  const connected = telemetry?.connection === 'connected';
+  const liveWorker = telemetry?.workers[selected] ?? null;
+  const liveAttention = telemetry?.attention ?? null;
   const currentLane = LANES.find((lane) => lane.key === selected) ?? LANES[1];
   const record = latest?.briefs.find((brief) => brief.childAgent === selected) ?? null;
-  const hasFailure = !demo && Boolean(latest?.status === 'failed' || latest?.briefs.some((brief) => brief.status === 'failed' || brief.checkResult === 'fail'));
-  const isOrchestrating = demo ? phase === 'orchestrate' : latest?.status === 'running';
-  const isDispatching = demo ? phase === 'dispatch' : latest?.status === 'running';
-  const isChecking = demo ? phase === 'check' : Boolean(latest?.briefs.some((brief) => brief.checkResult !== null));
-  const isVerifying = demo ? phase === 'verify' || phase === 'complete' : latest?.status === 'completed';
-  const goalActive = demo ? phase === 'goal' : latest?.status === 'running';
+  const hasFailure = live
+    ? connected && Boolean(liveAttention?.kind === 'error' || Object.values(telemetry?.workers ?? {}).some((worker) => worker.phase === 'failed'))
+    : !demo && Boolean(latest?.status === 'failed' || latest?.briefs.some((brief) => brief.status === 'failed' || brief.checkResult === 'fail'));
+  const isOrchestrating = demo ? phase === 'orchestrate' : live
+    ? connected && (telemetry?.phase === 'planning' || telemetry?.phase === 'delegating')
+    : latest?.status === 'running';
+  const isDispatching = demo ? phase === 'dispatch' : live
+    ? connected && telemetry?.phase === 'delegating' && Object.values(telemetry.workers).some((worker) => worker.phase === 'running')
+    : latest?.status === 'running';
+  const isChecking = demo ? phase === 'check' : live
+    ? false
+    : Boolean(latest?.briefs.some((brief) => brief.checkResult !== null));
+  const isVerifying = demo ? phase === 'verify' || phase === 'complete' : live
+    ? false
+    : latest?.status === 'completed';
+  const goalActive = demo ? phase === 'goal' : live
+    ? connected && telemetry?.phase === 'planning'
+    : latest?.status === 'running';
 
   const checks = useMemo(
     () => LANES.map((lane) => {
       const item = latest?.briefs.find((brief) => brief.childAgent === lane.key);
-      return { lane, item, color: demo ? (phase === 'check' || phase === 'verify' || phase === 'complete' ? tokens.status.pass : tokens.text.tertiary) : item ? (item.checkResult === 'pass' ? tokens.status.pass : item.checkResult === 'fail' ? tokens.status.fail : tokens.text.tertiary) : tokens.text.tertiary };
+      const liveSignal = telemetry?.workers[lane.key];
+      return { lane, item, color: demo
+        ? (phase === 'check' || phase === 'verify' || phase === 'complete' ? tokens.status.pass : tokens.text.tertiary)
+        : live
+          ? (connected && liveSignal?.phase === 'failed' ? tokens.status.fail : tokens.text.tertiary)
+          : item
+            ? (item.checkResult === 'pass' ? tokens.status.pass : item.checkResult === 'fail' ? tokens.status.fail : tokens.text.tertiary)
+            : tokens.text.tertiary };
     }),
-    [latest, demo, phase]
+    [latest, demo, live, phase, connected, telemetry]
   );
 
   const activity = demo
     ? EXAMPLES[phase]
-    : latest
-      ? latest.status === 'draft'
-        ? 'Draft composed · not submitted to the harness'
-        : trimText(record?.resultSummary ?? record?.error ?? ('Saved run status: ' + latest.status), 115)
-      : 'No saved runs · compose a brief or try the demo';
+    : live
+      ? telemetry?.connection === 'connected'
+        ? telemetry.activity
+        : telemetry?.activity ?? 'Connecting to local ChatBridge event stream'
+      : latest
+        ? latest.status === 'draft'
+          ? 'Draft composed · not submitted to the harness'
+          : trimText(record?.resultSummary ?? record?.error ?? ('Saved run status: ' + latest.status), 115)
+        : 'No saved runs · compose a brief or try the demo';
 
   return (
     <div className="omega-home">
@@ -139,7 +184,8 @@ export default function WorkflowOverviewPage({
           <div className="omega-toolbar-right">
             <div className="omega-mode-picker" aria-label="Workflow data source">
               <button className={demo ? 'is-selected' : ''} aria-pressed={demo} onClick={() => setMode('demo')}>Demo</button>
-              <button className={!demo ? 'is-selected' : ''} aria-pressed={!demo} onClick={() => setMode('records')}>Saved runs</button>
+              <button className={live ? 'is-selected' : ''} aria-pressed={live} onClick={() => setMode('live')}>Live</button>
+              <button className={mode === 'records' ? 'is-selected' : ''} aria-pressed={mode === 'records'} onClick={() => setMode('records')}>Saved runs</button>
             </div>
             {demo && (
               <button className="omega-icon-button" onClick={() => setPlaying(!playing)} title={playing ? 'Pause animation' : 'Play animation'} aria-label={playing ? 'Pause demo' : 'Play demo'}>
@@ -147,7 +193,7 @@ export default function WorkflowOverviewPage({
               </button>
             )}
             {demo && <button className="omega-icon-button" onClick={() => setTick(0)} title="Restart demo" aria-label="Restart demo"><RotateCcw size={15} /></button>}
-            <span className={'omega-source-label ' + (demo ? 'is-demo' : '')}>{demo ? 'SIMULATED · NOT LIVE' : 'LOCAL RECORDS · NOT TELEMETRY'}</span>
+            <span className={'omega-source-label ' + (demo ? 'is-demo' : '')}>{demo ? 'SIMULATED · NOT LIVE' : live ? (connected ? 'LIVE EVENTS · CHECKS UNVERIFIED' : 'EVENT STREAM OFFLINE') : 'LOCAL RECORDS · NOT TELEMETRY'}</span>
           </div>
         </div>
         <div className={'omega-diagram ' + (reduceMotion ? 'reduce-motion' : '')}>
@@ -185,7 +231,7 @@ export default function WorkflowOverviewPage({
                   <path className={'omega-connection-energy ' + (isChecking ? 'is-lit' : '')} d={'M' + lane.cx + ' 467 V502'} />
                   <path className="omega-connection-base" d={'M' + lane.cx + ' 560 V610'} />
                   <path className={'omega-connection-energy ' + (isVerifying ? 'is-lit' : '')} d={'M' + lane.cx + ' 560 V610'} />
-                  <path className={'omega-connection-fail ' + (!demo && checks.find((c) => c.lane.key === lane.key)?.item?.checkResult === 'fail' ? 'is-lit' : '')} d={'M' + (lane.cx - 62) + ' 532 H' + (lane.x - 14) + ' V403 H' + (lane.x - 1)} />
+                  <path className={'omega-connection-fail ' + ((live ? connected && telemetry?.workers[lane.key]?.phase === 'failed' : !demo && checks.find((c) => c.lane.key === lane.key)?.item?.checkResult === 'fail') ? 'is-lit' : '')} d={'M' + (lane.cx - 62) + ' 532 H' + (lane.x - 14) + ' V403 H' + (lane.x - 1)} />
                 </g>
               ))}
               <path className="omega-connection-base" d="M165 610 H1035 M600 610 V638" />
@@ -195,7 +241,7 @@ export default function WorkflowOverviewPage({
             <g className={'omega-node ' + (goalActive ? 'omega-node-lit' : '')}>
               <rect x="403" y="27" width="394" height="75" rx="10" />
               <text className="omega-svg-kicker" x="428" y="54">01 / INTENT</text>
-              <text className="omega-svg-label" x="428" y="80">{demo ? 'Define the goal' : trimText(latest?.goal ?? 'No saved goal', 37)}</text>
+              <text className="omega-svg-label" x="428" y="80">{demo ? 'Define the goal' : live ? 'Current agent turn' : trimText(latest?.goal ?? 'No saved goal', 37)}</text>
               <circle className="omega-port" cx="600" cy="102" r="4" />
             </g>
 
@@ -226,11 +272,12 @@ export default function WorkflowOverviewPage({
 
             {LANES.map((lane, index) => {
               const item = checks[index].item;
-              const active = demo ? phase === 'dispatch' || phase === 'check' : item?.status === 'running';
-              const failed = !demo && (item?.status === 'failed' || item?.checkResult === 'fail');
-              const passed = demo ? phase === 'verify' || phase === 'complete' : item?.checkResult === 'pass';
+              const signal = telemetry?.workers[lane.key];
+              const active = demo ? phase === 'dispatch' || phase === 'check' : live ? connected && signal?.phase === 'running' : item?.status === 'running';
+              const failed = live ? connected && signal?.phase === 'failed' : !demo && (item?.status === 'failed' || item?.checkResult === 'fail');
+              const passed = demo ? phase === 'verify' || phase === 'complete' : live ? connected && signal?.phase === 'responded' : item?.checkResult === 'pass';
               const isSelected = selected === lane.key;
-              const color = failed ? tokens.status.fail : passed ? tokens.status.pass : active ? '#57d3ea' : '#6e8995';
+              const color = failed ? tokens.status.fail : passed ? (live ? '#57d3ea' : tokens.status.pass) : active ? '#57d3ea' : '#6e8995';
               return (
                 <g
                   key={lane.key}
@@ -257,7 +304,7 @@ export default function WorkflowOverviewPage({
               <g key={'check-' + lane.key} className="omega-check-node">
                 <polygon points={(lane.cx) + ',499 ' + (lane.cx + 66) + ',531 ' + lane.cx + ',563 ' + (lane.cx - 66) + ',531'} style={{ stroke: color, filter: color === tokens.status.pass || color === tokens.status.fail ? 'url(#omega-glow)' : undefined }} />
                 <text x={lane.cx} y="536" textAnchor="middle" style={{ fill: color }}>CHECK</text>
-                {!demo && item?.checkResult === 'fail' && <text x={lane.cx + 83} y="530" className="omega-error-label">RETRY</text>}
+                {!demo && (live ? connected && telemetry?.workers[lane.key]?.phase === 'failed' : item?.checkResult === 'fail') && <text x={lane.cx + 83} y="530" className="omega-error-label">RETRY</text>}
               </g>
             ))}
 
@@ -272,10 +319,10 @@ export default function WorkflowOverviewPage({
         <div className="omega-diagram-footer">
           <div className="omega-playback-activity">
             <span className={'omega-activity-light ' + (demo && playing && !reduceMotion ? 'is-animated' : '')} />
-            <span className="omega-activity-prefix">{demo ? 'DEMO EVENT' : 'SAVED STATUS'}</span>
+            <span className="omega-activity-prefix">{demo ? 'DEMO EVENT' : live ? 'RUNTIME EVENT' : 'SAVED STATUS'}</span>
             <span className="omega-activity-message">{activity}</span>
           </div>
-          <span className="omega-graph-disclaimer">{demo ? 'Illustrative sequence only' : 'No event stream connected'}</span>
+          <span className="omega-graph-disclaimer">{demo ? 'Illustrative sequence only' : live ? connected ? 'ChatBridge · observation only' : 'Stream disconnected · no live claims' : 'Local records · not telemetry'}</span>
         </div>
       </section>
 
@@ -284,31 +331,47 @@ export default function WorkflowOverviewPage({
           <div className="omega-card-heading"><span>INSPECTOR / {currentLane.label}</span><Activity size={15} /></div>
           <div className="omega-detail-main">
             <div>
-              <span className="omega-detail-tag">{demo ? 'EXAMPLE AGENT' : record ? 'SAVED DELEGATION' : 'NO RECORD'}</span>
+              <span className="omega-detail-tag">{demo ? 'EXAMPLE AGENT' : live ? connected ? 'LIVE DELEGATION' : 'STREAM DISCONNECTED' : record ? 'SAVED DELEGATION' : 'NO RECORD'}</span>
               <h3>{currentLane.label.toLowerCase()}</h3>
-              <p>{demo ? currentLane.specialty + ' · example activity playback' : trimText(record?.objective ?? 'No delegation saved for this worker.', 94)}</p>
+              <p>{demo ? currentLane.specialty + ' · example activity playback' : live ? trimText(liveWorker?.detail ?? 'Waiting for this worker', 100) : trimText(record?.objective ?? 'No delegation saved for this worker.', 94)}</p>
             </div>
-            <div className="omega-detail-status" style={{ color: record && !demo ? statusColor(record.status) : tokens.text.tertiary }}>
-              {demo ? (phase === 'dispatch' ? 'RUNNING · DEMO' : 'SIMULATED') : record ? statusLabel(record.status) : 'IDLE'}
+            <div className="omega-detail-status" style={{ color: live ? liveWorker?.phase === 'failed' ? tokens.status.fail : liveWorker?.phase === 'running' ? '#57d3ea' : tokens.text.tertiary : record && !demo ? statusColor(record.status) : tokens.text.tertiary }}>
+              {demo ? (phase === 'dispatch' ? 'RUNNING · DEMO' : 'SIMULATED') : live ? (connected ? (liveWorker?.phase ?? 'idle').toUpperCase() : 'DISCONNECTED') : record ? statusLabel(record.status) : 'IDLE'}
             </div>
           </div>
           <div className="omega-inspector-foot">
-            <span>MODEL: {demo ? 'Configured in harness' : trimText(record?.model ?? 'not recorded', 29)}</span>
-            <span>{demo ? 'CHECK: DEMO' : record?.checkResult === 'pass' ? 'CHECK: PASS' : record?.checkResult === 'fail' ? 'CHECK: FAILED' : 'CHECK: NOT RECORDED'}</span>
+            <span>MODEL: {demo ? 'Configured in harness' : live ? trimText(liveWorker?.model ?? 'not observed', 29) : trimText(record?.model ?? 'not recorded', 29)}</span>
+            <span>{demo ? 'CHECK: DEMO' : live ? 'CHECK: NOT OBSERVED' : record?.checkResult === 'pass' ? 'CHECK: PASS' : record?.checkResult === 'fail' ? 'CHECK: FAILED' : 'CHECK: NOT RECORDED'}</span>
           </div>
-          {!demo && record?.error && <div className="omega-error-detail" role="alert"><CircleAlert size={15} /> {record.error}</div>}
+          {!demo && !live && record?.error && <div className="omega-error-detail" role="alert"><CircleAlert size={15} /> {record.error}</div>}
         </section>
 
         <section className="omega-health-panel">
           <div className="omega-card-heading"><span>SYSTEM / STATE</span><Radio size={15} /></div>
           <div className="omega-health-row"><span><span className={'omega-small-light ' + (server?.running ? 'is-ok' : 'is-down')} /> Puppy GUI service</span><strong>{server?.running ? 'CONNECTED' : server ? 'OFFLINE' : 'CHECKING'}</strong></div>
-          <div className="omega-health-row"><span><ShieldCheck size={14} /> Event telemetry</span><strong className="omega-muted">NOT WIRED</strong></div>
+          <div className="omega-health-row"><span><ShieldCheck size={14} /> Event telemetry</span><strong className={connected ? '' : 'omega-muted'}>{connected ? 'STREAM CONNECTED' : telemetry?.connection === 'connecting' ? 'CONNECTING' : 'DISCONNECTED'}</strong></div>
           <div className="omega-health-row"><span><CheckCircle2 size={14} /> Stored run briefs</span><strong>{loadError ? 'UNAVAILABLE' : runs.length + ' RECORDS'}</strong></div>
+          {live && liveAttention && <p className="omega-health-error" role="alert">{liveAttention.message} · <button className="omega-text-button" onClick={onChat}>Open chat</button></p>}
           {loadError && <p className="omega-health-error" role="alert">{trimText(loadError, 94)}</p>}
           {server?.error && !server.running && <p className="omega-health-error" role="alert">{trimText(server.error, 94)}</p>}
           <button className="omega-text-button" onClick={onRuns}>Inspect run records <ArrowRight size={14} /></button>
         </section>
       </div>
+      {live && (
+        <section className="omega-event-trace" aria-label="Recent runtime event summaries">
+          <div className="omega-card-heading"><span>RUNTIME TRACE / RECENT EVENTS</span><span>{telemetry?.events.length ?? 0} IN MEMORY</span></div>
+          {telemetry?.events.length ? (
+            <ol className="omega-trace-list">
+              {telemetry.events.slice(-7).reverse().map((event) => (
+                <li key={event.id} className={'omega-trace-item is-' + event.tone}>
+                  <time dateTime={new Date(event.timestamp).toISOString()}>{new Date(event.timestamp).toLocaleTimeString()}</time>
+                  <span>{event.label}</span>
+                </li>
+              ))}
+            </ol>
+          ) : <p className="omega-trace-empty">No events received. Start a turn in Harness Chat; the live monitor updates when a compatible event stream is available.</p>}
+        </section>
+      )}
     </div>
   );
 }

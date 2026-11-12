@@ -45,5 +45,7 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Typecheck
         run: npm run typecheck
+      - name: Test workflow events
+        run: npm test
       - name: Build
         run: npm run build

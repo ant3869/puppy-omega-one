@@ -228,6 +228,16 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 .omega-setting-row p { margin: 5px 0 0; font-size: 12px; color: #8ea8b6; line-height: 1.5; }
 .omega-setting-row input { width: 18px; height: 18px; flex-shrink: 0; accent-color: #63cedf; }
 .omega-code-tag { font: 11px ui-monospace, SFMono-Regular, Consolas, monospace; background: #1c3440; color: #8de6ef; padding: 7px 10px; border-radius: 5px; }
+.omega-event-trace { border: 1px solid #2b4352; border-radius: 9px; background: linear-gradient(135deg, #111f29, #0a1620); padding: 18px 19px; }
+.omega-trace-list { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 0; }
+.omega-trace-item { display: grid; grid-template-columns: 94px 1fr; align-items: center; gap: 15px; border-top: 1px solid #253c4a; padding: 10px 2px; min-width: 0; }
+.omega-trace-item time { color: #668d9e; font: 10px ui-monospace, SFMono-Regular, Consolas, monospace; }
+.omega-trace-item span { color: #a8c5d2; font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+.omega-trace-item.is-active span { color: #92e5f2; }
+.omega-trace-item.is-success span { color: #8bdcbe; }
+.omega-trace-item.is-warning span { color: #e7bf8a; }
+.omega-trace-item.is-error span { color: #f5a0a4; }
+.omega-trace-empty { font-size: 12px; color: #8fa6b3; margin: 16px 0 0; }
 @keyframes omega-flow { to { stroke-dashoffset: -64; } }
 @keyframes omega-breathe { 50% { opacity: .4; filter: brightness(1.5); } }
 .reduce-motion .omega-connection-energy.is-lit,

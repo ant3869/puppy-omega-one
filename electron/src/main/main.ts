@@ -8,6 +8,7 @@ import { app, BrowserWindow, shell } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { registerPuppyIpc, ensureServer, stopServer } from './services/puppy';
+import { registerWorkflowIpc, startWorkflowEvents, stopWorkflowEvents } from './services/workflow';
 
 const preloadPath = fileURLToPath(new URL('../preload/index.mjs', import.meta.url));
 const rendererIndexHtml = fileURLToPath(new URL('../renderer/index.html', import.meta.url));
@@ -85,6 +86,8 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
   registerPuppyIpc(() => mainWindow);
+  registerWorkflowIpc(() => mainWindow);
+  startWorkflowEvents();
 
   // Start (or attach to) the puppy_gui server in the background.
   // The renderer polls puppy:getStatus and shows "starting server…" until it is up.
@@ -100,6 +103,7 @@ app.whenReady().then(() => {
 });
 
 app.on('before-quit', () => {
+  stopWorkflowEvents();
   stopServer(); // kills the child we spawned; never touches a server we attached to
 });
 
