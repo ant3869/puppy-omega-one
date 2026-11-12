@@ -40,6 +40,8 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
 
   function toggle(agent: string) {
     setSelected((prev) => (prev.includes(agent) ? prev.filter((a) => a !== agent) : [...prev, agent]));
+    setBrief(null);
+    setCopied(false);
   }
 
   async function composeBrief() {
@@ -105,7 +107,11 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
     setError(null);
     try {
       const chosen = await window.omega.app.pickProject();
-      if (chosen) setProjectDir(chosen);
+      if (chosen) {
+        setProjectDir(chosen);
+        setBrief(null);
+        setCopied(false);
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -149,7 +155,7 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
         <span className="text-xs font-medium" style={{ color: tokens.text.secondary }}>Goal</span>
         <textarea
           value={goal}
-          onChange={(e) => setGoal(e.target.value)}
+          onChange={(e) => { setGoal(e.target.value); setBrief(null); setCopied(false); }}
           rows={3}
           placeholder="e.g. Add a CSV export to the report page"
           className="w-full px-3 py-2 text-sm border focus:outline-none"
@@ -163,7 +169,7 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
         </span>
         <input
           value={doneWhen}
-          onChange={(e) => setDoneWhen(e.target.value)}
+          onChange={(e) => { setDoneWhen(e.target.value); setBrief(null); setCopied(false); }}
           placeholder="e.g. npm test passes and the CSV downloads with all rows"
           className="w-full px-3 py-2 text-sm border focus:outline-none"
           style={inputStyle}
