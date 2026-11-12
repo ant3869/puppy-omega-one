@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Activity, ArrowRight, CheckCircle2, CircleAlert, GitBranch, Pause, Play, Radio, RotateCcw, ShieldCheck, Zap } from 'lucide-react';
-import type { DelegationRecord, OmegaRun, PuppyStatus, RunStatus } from '@shared/types';
+import type { OmegaRun, PuppyStatus, RunStatus } from '@shared/types';
+import type { WorkerKey, WorkflowTelemetry } from '@shared/workflow-events';
 import { tokens } from '../lib/tokens';
 
-type LaneKey = 'omega-researcher' | 'omega-builder' | 'omega-tester' | 'omega-reviewer';
+type LaneKey = WorkerKey;
 type Phase = 'goal' | 'orchestrate' | 'dispatch' | 'check' | 'verify' | 'complete';
 type Lane = { key: LaneKey; label: string; specialty: string; x: number; cx: number };
 
@@ -54,7 +55,8 @@ export default function WorkflowOverviewPage({
   onChat: () => void;
   onRuns: () => void;
 }) {
-  const [mode, setMode] = useState<'demo' | 'records'>('demo');
+  const [mode, setMode] = useState<'demo' | 'records' | 'live'>('demo');
+  const [telemetry, setTelemetry] = useState<WorkflowTelemetry | null>(null);
   const [playing, setPlaying] = useState(true);
   const [tick, setTick] = useState(0);
   const [runs, setRuns] = useState<OmegaRun[]>([]);
@@ -86,6 +88,22 @@ export default function WorkflowOverviewPage({
   }, []);
 
   useEffect(() => {
+    let alive = true;
+    const unsubscribe = window.omega.workflow.subscribe((snapshot) => {
+      if (alive) setTelemetry(snapshot);
+    });
+    void window.omega.workflow.get().then((snapshot) => {
+      if (alive) {
+        setTelemetry((previous) => previous && (previous.lastEventAt ?? 0) > (snapshot.lastEventAt ?? 0) ? previous : snapshot);
+      }
+    }).catch(() => { if (alive) setTelemetry(null); });
+    return () => {
+      alive = false;
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
     if (mode !== 'demo' || !playing || reduceMotion) return;
     const handle = setInterval(() => setTick((previous) => previous + 1), 1800);
     return () => clearInterval(handle);
@@ -94,30 +112,57 @@ export default function WorkflowOverviewPage({
   const phase = PHASES[tick % PHASES.length];
   const latest = runs[0] ?? null;
   const demo = mode === 'demo';
+  const live = mode === 'live';
+  const connected = telemetry?.connection === 'connected';
+  const liveWorker = telemetry?.workers[selected] ?? null;
+  const liveAttention = telemetry?.attention ?? null;
   const currentLane = LANES.find((lane) => lane.key === selected) ?? LANES[1];
   const record = latest?.briefs.find((brief) => brief.childAgent === selected) ?? null;
-  const hasFailure = !demo && Boolean(latest?.status === 'failed' || latest?.briefs.some((brief) => brief.status === 'failed' || brief.checkResult === 'fail'));
-  const isOrchestrating = demo ? phase === 'orchestrate' : latest?.status === 'running';
-  const isDispatching = demo ? phase === 'dispatch' : latest?.status === 'running';
-  const isChecking = demo ? phase === 'check' : Boolean(latest?.briefs.some((brief) => brief.checkResult !== null));
-  const isVerifying = demo ? phase === 'verify' || phase === 'complete' : latest?.status === 'completed';
-  const goalActive = demo ? phase === 'goal' : latest?.status === 'running';
+  const hasFailure = live
+    ? connected && Boolean(liveAttention?.kind === 'error' || Object.values(telemetry?.workers ?? {}).some((worker) => worker.phase === 'failed'))
+    : !demo && Boolean(latest?.status === 'failed' || latest?.briefs.some((brief) => brief.status === 'failed' || brief.checkResult === 'fail'));
+  const isOrchestrating = demo ? phase === 'orchestrate' : live
+    ? connected && (telemetry?.phase === 'planning' || telemetry?.phase === 'delegating')
+    : latest?.status === 'running';
+  const isDispatching = demo ? phase === 'dispatch' : live
+    ? connected && telemetry?.phase === 'delegating' && Object.values(telemetry.workers).some((worker) => worker.phase === 'running')
+    : latest?.status === 'running';
+  const isChecking = demo ? phase === 'check' : live
+    ? false
+    : Boolean(latest?.briefs.some((brief) => brief.checkResult !== null));
+  const isVerifying = demo ? phase === 'verify' || phase === 'complete' : live
+    ? false
+    : latest?.status === 'completed';
+  const goalActive = demo ? phase === 'goal' : live
+    ? connected && telemetry?.phase === 'planning'
+    : latest?.status === 'running';
 
   const checks = useMemo(
     () => LANES.map((lane) => {
       const item = latest?.briefs.find((brief) => brief.childAgent === lane.key);
-      return { lane, item, color: demo ? (phase === 'check' || phase === 'verify' || phase === 'complete' ? tokens.status.pass : tokens.text.tertiary) : item ? (item.checkResult === 'pass' ? tokens.status.pass : item.checkResult === 'fail' ? tokens.status.fail : tokens.text.tertiary) : tokens.text.tertiary };
+      const liveSignal = telemetry?.workers[lane.key];
+      return { lane, item, color: demo
+        ? (phase === 'check' || phase === 'verify' || phase === 'complete' ? tokens.status.pass : tokens.text.tertiary)
+        : live
+          ? (connected && liveSignal?.phase === 'failed' ? tokens.status.fail : tokens.text.tertiary)
+          : item
+            ? (item.checkResult === 'pass' ? tokens.status.pass : item.checkResult === 'fail' ? tokens.status.fail : tokens.text.tertiary)
+            : tokens.text.tertiary };
     }),
-    [latest, demo, phase]
+    [latest, demo, live, phase, connected, telemetry]
   );
 
   const activity = demo
     ? EXAMPLES[phase]
-    : latest
-      ? latest.status === 'draft'
-        ? 'Draft composed · not submitted to the harness'
-        : trimText(record?.resultSummary ?? record?.error ?? ('Saved run status: ' + latest.status), 115)
-      : 'No saved runs · compose a brief or try the demo';
+    : live
+      ? telemetry?.connection === 'connected'
+        ? telemetry.activity
+        : telemetry?.activity ?? 'Connecting to local ChatBridge event stream'
+      : latest
+        ? latest.status === 'draft'
+          ? 'Draft composed · not submitted to the harness'
+          : trimText(record?.resultSummary ?? record?.error ?? ('Saved run status: ' + latest.status), 115)
+        : 'No saved runs · compose a brief or try the demo';
 
   return (
     <div className="omega-home">
