@@ -138,7 +138,6 @@ export async function ensureServer(requestedProject: string): Promise<PuppyStatu
       child = null;
       spawnedByUs = false;
       launchedWorkspace = null;
-      launchedWorkspace = null;
     }
   });
   proc.on('exit', (code) => {
@@ -146,6 +145,7 @@ export async function ensureServer(requestedProject: string): Promise<PuppyStatu
     if (child === proc) {
       child = null;
       spawnedByUs = false;
+      launchedWorkspace = null;
     }
   });
 
