@@ -38,7 +38,7 @@ omega-harness/
 ├── README.md                 # what it is, install, run a job, the loop diagram
 ├── install.ps1 / install.sh  # copies templates into target project; sets puppy.cfg
 │                             #   compaction_threshold=0.5, summarization_model=<haiku>;
-│                             #   prints the manual steps (set global model, /pin_model, VPN)
+│                             #   prints setup guidance (set global model, /pin_model)
 ├── templates/
 │   ├── AGENTS.md             # adapted Omega rules: orchestrator role, brief format,
 │   │                         # verify-before-accept, session start/end rituals
@@ -60,7 +60,7 @@ omega-harness/
 
 ## Top 3 risks / gotchas
 
-1. **Model availability on the target Code Puppy environment is unverified and load-bearing.** The GUI docs say Code Puppy in the target environment is an target Code Puppy environment not on public PyPI (GUI verified against 0.1.37) and models need VPN. Everything verified here is from the public repo. If the target environment doesn't expose Opus 5.5 + Haiku 5.5 (via `/claude-code-auth` or the target environment proxy), or exposes them under different alias strings, every pin in the harness breaks. This is the single gating unknown.
+1. **Model availability on the target Code Puppy environment is unverified and load-bearing.** A referenced GUI implementation used a separately configured Code Puppy installation (GUI verified against 0.1.37); available models and authentication may differ. Everything verified here is from the public repo. If the target environment doesn't expose Opus 5.5 + Haiku 5.5 (via `/claude-code-auth` or a configured provider gateway), or exposes them under different alias strings, every pin in the harness breaks. This is the single gating unknown.
 2. **The copy-paste trap: `CLAUDE.md`, `.claude/agents/`, and the env vars are dead in Code Puppy.** Pasting murphmaxxing's prompt verbatim produces files Code Puppy never reads. The harness must translate, not transcribe — and the reel's prompt does not work as-is.
 3. **No fan-out or cost guardrail.** Omega's own page admits multi-agent runs use ~15× the tokens of a chat; Code Puppy has no ultracode equivalent, no parallel cap, and each subagent's result lands back in the orchestrator's context. A 16-worker fan-out on Opus-priced verification is a fast way to burn quota. Mitigation: start with 2–4 workers, keep briefs short (Haiku jumps to $0.50/$2.50 per MTok past 100k-token prompts), and use `summarization_model` = Haiku for compaction. Also unconfirmed: whether Code Puppy supports SessionStart/SessionEnd hooks for the end-of-session ritual — implement it as an instructed ritual + reflect skill until verified, not as a hook.
 
@@ -68,7 +68,7 @@ Two smaller footguns worth baking into the templates: `AGENTS.md` is deliberatel
 
 ## Single biggest open question for Ant
 
-On your target machine, in Code Puppy, what Claude model aliases are actually available — is there an Opus 5.5 and a Haiku 5.5, how do you authenticate to them (`/claude-code-auth` vs. the provider-specific models), and what are their exact alias strings? Everything in the harness (orchestrator pin, worker pins, summarization model, cost math) hangs on those two strings. A 30-second check — `/model` + tab completion in Code Puppy in the target environment — answers it.
+On your target machine, in Code Puppy, what Claude model aliases are actually available — is there an Opus 5.5 and a Haiku 5.5, how do you authenticate to them (`/claude-code-auth` vs. the provider-specific models), and what are their exact alias strings? Everything in the harness (orchestrator pin, worker pins, summarization model, cost math) hangs on those two strings. A 30-second check — `/model` + tab completion in the target Code Puppy installation — answers it.
 
 ---
 
