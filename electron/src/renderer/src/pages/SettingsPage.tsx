@@ -57,14 +57,31 @@ export default function SettingsPage({
         </div>
         <div className="omega-setting-row">
           <span>
-            <strong>Reconnect / launch</strong>
-            <p>Attach to a running local Puppy GUI server, or attempt to launch a configured installation.</p>
+            <strong>Connect or start the existing GUI</strong>
+            <p>Omega does not start Code Puppy when opened. This button explicitly attempts to attach to a local GUI or launch your already-installed GUI. It does not install or update Code Puppy.</p>
           </span>
           <button className="omega-button omega-button-secondary" onClick={() => void reconnect()} disabled={checking}>
-            <RefreshCw size={14} /> {checking ? 'Connecting…' : 'Reconnect'}
+            <RefreshCw size={14} /> {checking ? 'Connecting…' : 'Connect / start'}
           </button>
         </div>
         {result && <p className="omega-health-error" role="status">{result}</p>}
+      </section>
+      <section className="omega-settings-panel">
+        <h3>Core protection</h3>
+        <div className="omega-setting-row">
+          <span>
+            <strong>Project-scoped changes only</strong>
+            <p>The Omega installer writes templates to a chosen project, never to the Code Puppy installation, virtual environment or global configuration. Existing project files are skipped unless an explicit force option is used.</p>
+          </span>
+          <span className="omega-code-tag">DEFAULT</span>
+        </div>
+        <div className="omega-setting-row">
+          <span>
+            <strong>Runtime is not sandboxed</strong>
+            <p>When you use harness chat, agents may run tools with your OS account permissions. Core isolation instructions are added to Omega agent briefs, but unrestricted tools require your review.</p>
+          </span>
+          <span className="omega-code-tag">REVIEW</span>
+        </div>
       </section>
       <section className="omega-settings-panel">
         <h3>Advanced</h3>
