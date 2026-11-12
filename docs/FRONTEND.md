@@ -197,3 +197,13 @@ The Settings page currently supports reduced-motion preference and reconnecting 
 `electron/src/main/services/workflow-transport.ts` owns the loopback WebSocket connection and reconnects after disconnects; `services/workflow.ts` exposes the read-only IPC projection. The sandboxed renderer receives only typed projection snapshots through a fixed preload IPC channel; raw WebSocket access, prompt text and response/approval actions are not exposed by this new bridge.
 
 Run `cd electron && npm test && npm run typecheck && npm run build`. The unit tests cover start/delegation/response, errors, approval requests (including password prompt suppression), bounded activity and cancellations. A separate WebSocket integration suite starts an actual loopback `ws` server, verifies runtime events are projected without sending messages back, and tests disconnect/reconnect and loopback-only endpoint restrictions. CI runs those checks. Manual GUI stream compatibility must still be tested against the installed `puppy_gui` server.
+
+## Core isolation and workspace scope
+
+Omega installs **only project-local templates**. The PowerShell and shell installers reject the user profile, Code Puppy global config, known Python virtual environment paths, and redirecting junctions/symlinks before writing any files. The Electron app starts without launching Code Puppy and validates selected project workspaces in its main-process IPC handlers. Drafts are stored under Omega's own Electron userData, not Code Puppy configuration.
+
+The **Compose run** page requires a selected workspace and embeds a core-isolation instruction in every generated brief. Every Omega worker agent manifest also carries the restriction, since delegated workers do not inherit AGENTS.md. These are behavior instructions, **not** a filesystem security boundary. Agents using unrestricted shell tools can still modify files permitted by the OS account. Omega does not install/upgrade Code Puppy or edit its global settings.
+
+**Important working-directory limit:** selecting a folder in Omega does not change the current working directory of an already-running `puppy_gui` process. When you use the embedded GUI chat, confirm its runtime is operating in your intended project folder before running write-capable tasks. The native prompt-send path remains disabled pending a reliable project/session binding. The explicitly requested GUI launch calls the existing installation and could allow that runtime to perform its normal own startup/state updates; Omega does not claim otherwise.
+
+Tests include negative installation into home/core, symlink and Windows junction redirection checks, workspace selection guard tests, and normal-project install smoke checks.
