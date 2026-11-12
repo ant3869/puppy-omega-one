@@ -120,18 +120,14 @@ Read from `puppy_gui` v0.16.2 `static/js/api.js` and the service layer:
 | Puppy GUI embedded (`<webview>` to 127.0.0.1:8765) | **Wired** |
 | Run-page brief compose + copy | **Wired** (interim trigger — see below) |
 | Sending a prompt into a session | **Stub** — `puppy:sendPrompt` throws a "not wired yet" error on purpose |
-| Live event stream (worker started/finished, tool calls) | **Stub** — Live page polls `/api/sessions/active` every 5s and shows it raw |
+| Read-only live worker event monitor | **Integrated (runtime compatibility pending):** `src/main/services/workflow.ts` connects to loopback `ws://127.0.0.1:<port>/ws/chat` and publishes bounded, typed event summaries over IPC; Overview → Live. The installed GUI server must support that path. |
 
 **Interim trigger:** until send is wired, the Run page composes and
 persists a **draft** brief — you paste it into the Puppy GUI chat with
 the `omega-orchestrator` agent. Drafts are not evidence of launched work,
 and the live page does not infer worker completion from draft records.
 
-**To wire send + streaming:** check `routes_chat` and
-`static/js/chat.js` in puppy_gui for the chat-send endpoint and the
-ChatBridge event stream, then implement `puppy:sendPrompt` and push
-events to the renderer window (`mainWindow.webContents.send`). Do not
-guess the endpoint shape — it was not verified in this scaffold.
+**Send still pending:** `puppy_gui/static/js/chat.js` uses `ws://<host>/ws/chat` and sends `{action: "prompt", text}`; `service/chat_runtime.py` publishes structured sub-agent lifecycle messages. However, the current public `puppy_gui` repository tree does not include the `api/routes_chat.py` file imported by `app.py`, so the server-side route implementation cannot be independently verified from that revision. This desktop shell therefore **subscribes read-only** to the documented client stream while leaving `puppy:sendPrompt` intentionally disabled until the installed server implementation can be tested. A subscription that fails to connect remains visibly **disconnected**; it is never presented as running agents.
 
 ## Branding
 
@@ -186,8 +182,18 @@ The Electron shell now opens on **Overview**, with a workflow diagram based on \
 Two explicitly different data modes exist:
 
 - **Demo:** timed highlights and connector pulses illustrate how orchestration *could* proceed. The UI labels this \`SIMULATED · NOT LIVE\`. Animation can be paused/restarted and stopped under Settings → Reduce animations.
-- **Saved runs:** worker and check statuses come only from local \`runs.json\` records. A draft does **not** imply that a worker was dispatched. No active session event stream or chat dispatch is claimed. The graph labels this \`LOCAL RECORDS · NOT TELEMETRY\`.
+- **Saved runs:** worker and check statuses come only from local `runs.json` records. A draft does **not** imply that a worker was dispatched. The graph labels this `LOCAL RECORDS · NOT TELEMETRY`.
+- **Live:** a read-only WebSocket observer connected from the Electron main process consumes `turn_start`, `turn_end`, `error`, `request`, and `SubAgent*Message` events. Only recognized worker IDs are projected onto the map; a worker response is labeled **responded**, never **check passed**. An offline stream shows no live progress. Critical requests/errors are surfaced with a link to the embedded harness chat. The last 30 event summaries are retained in memory, with no full transcript stored by Omega.
 
 System health reflects the existing \`/api/health\` probe, not individual agent liveness. Once a verified streaming event contract is implemented, an event adapter can replace the illustrative demo engine and map actual run/delegation events to graph node states. **Do not** infer agent progress from a raw session JSON blob.
 
 The Settings page currently supports reduced-motion preference and reconnecting the local GUI server; model, agent, and session configuration is available in the embedded Puppy GUI, not silently duplicated in the shell. The native chat-send IPC endpoint is still deliberately unavailable until its endpoint has been verified.
+
+
+## Live event projection and testing
+
+`electron/src/shared/workflow-events.ts` is a pure typed reducer. It deliberately ignores unrecognized event kinds, limits displayed excerpts, tracks explicit connection state and keeps only a bounded in-memory recent activity list. No automatic completion or check-success assumptions are made based on end-of-turn or subagent responses.
+
+`electron/src/main/services/workflow.ts` owns the loopback WebSocket connection and reconnects after disconnects. The sandboxed renderer receives only typed projection snapshots through a fixed preload IPC channel; raw WebSocket access, prompt text and response/approval actions are not exposed by this new bridge.
+
+Run `cd electron && npm test && npm run typecheck && npm run build`. The unit tests include start/delegation/response, errors, approval requests (including password prompt suppression), bounded activity, invalid payloads, reconnects and cancellations. CI runs those checks. Manual GUI stream compatibility must still be tested against the installed `puppy_gui` server.
