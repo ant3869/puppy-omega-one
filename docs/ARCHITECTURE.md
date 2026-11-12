@@ -43,9 +43,10 @@ Verified mechanics behind this table:
   then `.code_puppy/AGENTS.md`, then `./AGENTS.md`), with a
   per-file char cap. **Zero references to `CLAUDE.md` in the
   codebase — Code Puppy never reads it.**
-- **Compaction is configurable**: `compaction_threshold` (fraction
+- **Compaction is configurable globally**: `compaction_threshold` (fraction
   of context, default 0.85) and `summarization_model` (pin a cheap
-  summarizer) both exist as `puppy.cfg` keys.
+  summarizer) are in user-level `~/.code_puppy/puppy.cfg` (or XDG),
+  not a project-local file. The installer does not modify them.
 - **Model families are known**: `model_utils.py` tags `opus-5`,
   `haiku-5`, `sonnet-5`, `fable-5`; Claude Code auth registers
   `claude-code-*` models. Recursion depth default is 4
@@ -114,9 +115,9 @@ run the check with its own hands.
 - **Session start:** the orchestrator reads `AGENTS.md`,
   `docs/progress.md`, `docs/decisions.md`, `docs/known-issues.md`
   before doing anything else.
-- **Session end:** the orchestrator briefs `omega-researcher` to
-  update `docs/progress.md` with a dated log line and add new
-  decisions/gotchas, then runs the `reflect` skill. The skill proposes
+- **Session end:** the orchestrator asks `omega-researcher` to
+  summarize progress read-only, briefs `omega-builder` to record routine
+  progress/decision/issue updates, then runs the `reflect` skill. The skill proposes
   the smallest edit to a skill or `AGENTS.md` that would have
   prevented what went wrong this session. **Nothing changes without
   the human's OK.**
@@ -161,8 +162,8 @@ you ── goal + "Done when:" ──▶ omega-orchestrator (Opus, high effort)
 | researcher | `read_file`, `grep`, `shell` (read-only commands only) |
 
 The orchestrator's lack of write tools is the point: session-end doc
-updates go through a brief to `omega-researcher`, not through the
-orchestrator writing files itself.
+updates go through a brief to `omega-builder`, not through the
+read-only researcher or the orchestrator.
 
 ## Integration notes (from ant3869/ai-integration-reference)
 
