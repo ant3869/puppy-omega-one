@@ -41,9 +41,33 @@ function createWindow() {
     }
   });
 
+  // Only browser-safe links can leave the app; never pass file:, javascript:, etc.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    void shell.openExternal(url);
+    try {
+      const protocol = new URL(url).protocol;
+      if (protocol === 'https:' || protocol === 'http:') void shell.openExternal(url);
+    } catch {
+      // Malformed links are denied.
+    }
     return { action: 'deny' };
+  });
+
+  // An embedded view may load only our localhost puppy_gui service.
+  mainWindow.webContents.on('will-attach-webview', (event, preferences, params) => {
+    const port = Number(process.env.PUPPY_GUI_PORT ?? 8765);
+    try {
+      if (new URL(params.src).origin !== `http://127.0.0.1:${port}`) {
+        event.preventDefault();
+        return;
+      }
+    } catch {
+      event.preventDefault();
+      return;
+    }
+    delete preferences.preload;
+    preferences.nodeIntegration = false;
+    preferences.contextIsolation = true;
+    preferences.sandbox = true;
   });
 
   const url = process.env.ELECTRON_RENDERER_URL;

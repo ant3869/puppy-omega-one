@@ -9,8 +9,9 @@
 ## The system
 
 One orchestrator (Opus) plans, briefs, and verifies. Workers do the work.
-The orchestrator never writes code or files — it has no write tools, on
-purpose. If the orchestrator needs a file changed, it briefs a worker.
+The orchestrator must not write code or files. Its direct editing tools
+are omitted, but `shell` can still write; this is a behavioral rule,
+not a hard sandbox. The researcher has no shell or editor tools. If the orchestrator needs a file changed, it briefs a worker.
 
 | Agent | Model (placeholder) | Job |
 |---|---|---|
@@ -47,11 +48,12 @@ only `templates/` gets copied in).
 6. **Two failures, tier up:** if the same check fails twice, re-brief
    the job one tier up (Haiku worker → Sonnet; Sonnet worker → you
    verify it line by line yourself).
-7. **Session end:** brief `omega-researcher` to update `docs/progress.md`
-   with a dated log line and add new decisions/gotchas, then run the
-   `reflect` skill (`skills/reflect/SKILL.md`). It proposes the smallest
-   edit to a skill or this file that would have prevented what went wrong.
-   Nothing changes without the human's OK.
+7. **Session end:** ask `omega-researcher` to summarize progress and
+   decisions **without editing files**. Brief `omega-builder` to record
+   the dated updates in `docs/progress.md`, `docs/decisions.md`, and
+   `docs/known-issues.md`. Run `reflect` (`skills/reflect/SKILL.md`)
+   to propose improvements. Do not apply changes to skills or this file
+   without the human's explicit approval.
 
 ## Brief rules — read this twice
 
@@ -90,10 +92,11 @@ only memory that survives compaction.
 
 ## Compaction
 
-`puppy.cfg` sets `compaction_threshold=0.5` (the lowest Code Puppy
-allows — Omega's 40% is unachievable here) and `summarization_model`
-to the Haiku placeholder. Type `/context` during a session to see how
-full the window is.
+Code Puppy reads its **user-level** `~/.code_puppy/puppy.cfg` (or the
+XDG config equivalent), not a project-local file. The installer does
+not change global settings. Optionally use `/set compaction_threshold 0.5`
+and `/set summarization_model <verified Haiku alias>` after inspecting
+your current settings. Type `/context` to see context usage.
 
 ## What Code Puppy does NOT do (don't paste the reel's prompt verbatim)
 

@@ -1,0 +1,49 @@
+name: Validate
+on:
+  push:
+  pull_request:
+
+jobs:
+  harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate shell syntax
+        run: bash -n install.sh tests/smoke_install.sh
+      - name: Smoke-test installation and agent manifests
+        run: bash tests/smoke_install.sh
+
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check PowerShell installation
+        shell: pwsh
+        run: |
+          $project = Join-Path $env:RUNNER_TEMP 'puppy-omega-smoke'
+          New-Item -ItemType Directory -Force -Path $project | Out-Null
+          Set-Content -Path (Join-Path $project 'AGENTS.md') -Value 'existing rules'
+          Set-Content -Path (Join-Path $project 'puppy.cfg') -Value 'keep-project-cfg'
+          ./install.ps1 -Target $project
+          if ((Get-Content (Join-Path $project 'AGENTS.md') -Raw).Trim() -ne 'existing rules') { throw 'Overwrote existing rules' }
+          if ((Get-Content (Join-Path $project 'puppy.cfg') -Raw).Trim() -ne 'keep-project-cfg') { throw 'Altered project config' }
+          ./install.ps1 -Target $project -Force
+          if ((Get-Content (Join-Path $project 'AGENTS.md') -Raw) -ne (Get-Content templates/AGENTS.md -Raw)) { throw 'Force did not replace rules' }
+          if (!(Test-Path (Join-Path $project '.code_puppy/agents/omega-orchestrator-agent.json'))) { throw 'Missing installed agent' }
+
+  electron:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: electron
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build

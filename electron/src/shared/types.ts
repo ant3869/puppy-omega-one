@@ -8,6 +8,7 @@
 // admission (a worker was briefed) as completion.
 
 export type RunStatus =
+  | 'draft'
   | 'queued'
   | 'running'
   | 'requires_approval'

@@ -82,7 +82,7 @@ electron/
 
 Wired: server spawn + health check, agents/models/sessions/cost reads
 (verified puppy_gui `/api/*` endpoints), progress-file reads,
-run-record persistence to `runs.json`.
+draft-brief persistence to `runs.json` (no automatic dispatch).
 
 Stub: sending a prompt and streaming live run events. The Run page
 composes the brief and copies it for you to paste into the Puppy GUI
