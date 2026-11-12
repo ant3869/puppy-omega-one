@@ -22,10 +22,10 @@ puppy_gui (FastAPI server, launch_gui.py, Code Puppy venv python)
 code_puppy runtime → Omega agents (.code_puppy/agents/*.json)
 ```
 
-The main process (`electron/src/main/main.ts`) spawns the puppy_gui
-server if it isn't already running (or attaches to it if it is), polls
-`/api/health` until it's up, and kills only the child it spawned on
-quit. The renderer never talks to the server directly — it goes
+The main process (`electron/src/main/main.ts`) starts in **attach-only mode**:
+it observes an existing local Puppy GUI service but never implicitly launches
+Code Puppy. An explicit **Connect / start** button attempts attach/launch and
+stops only the child it spawned on quit. The renderer never talks to the server directly — it goes
 through the preload bridge (`window.omega`), same pattern as the
 starter (below).
 
@@ -113,9 +113,9 @@ Read from `puppy_gui` v0.16.2 `static/js/api.js` and the service layer:
 
 | Piece | State |
 |---|---|
-| Server spawn / attach, health poll, kill-on-quit | **Wired** (`src/main/services/puppy.ts`) |
+| Explicit server attach/launch, passive startup health poll, owned-child shutdown | **Wired** (`src/main/services/puppy.ts`); no automatic spawn on app open |
 | Agents / models / sessions / cost reads | **Wired** (verified `/api/*` above) |
-| Draft records (`runs.json` in userData, written atomically) | **Wired** — composing does not launch agents |
+| Draft records (`runs.json` in Omega userData, written atomically) | **Wired** — user selects a guarded project workspace; composing does not launch agents |
 | Progress docs read from a project folder | **Wired** |
 | Puppy GUI embedded (`<webview>` to 127.0.0.1:8765) | **Wired** |
 | Run-page brief compose + copy | **Wired** (interim trigger — see below) |
