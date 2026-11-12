@@ -5,6 +5,7 @@
 
 import { contextBridge, ipcRenderer } from 'electron';
 import type { OmegaRun, PuppyStatus } from '@shared/types';
+import type { WorkflowTelemetry } from '@shared/workflow-events';
 
 type Unsub = () => void;
 
@@ -20,6 +21,14 @@ const api = {
     getCost: (): Promise<unknown> => ipcRenderer.invoke('puppy:getCost'),
     // TODO: not wired — throws until the chat-send endpoint is verified.
     sendPrompt: (prompt: string): Promise<unknown> => ipcRenderer.invoke('puppy:sendPrompt', prompt)
+  },
+  workflow: {
+    get: (): Promise<WorkflowTelemetry> => ipcRenderer.invoke('workflow:get'),
+    subscribe: (listener: (snapshot: WorkflowTelemetry) => void): Unsub => {
+      const handler = (_event: Electron.IpcRendererEvent, snapshot: WorkflowTelemetry) => listener(snapshot);
+      ipcRenderer.on('workflow:changed', handler);
+      return () => ipcRenderer.removeListener('workflow:changed', handler);
+    }
   },
   runs: {
     list: (): Promise<OmegaRun[]> => ipcRenderer.invoke('runs:list'),
