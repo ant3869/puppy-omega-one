@@ -57,7 +57,7 @@ One naming discrepancy to verify: the reference guide says a
 project-specific `AGENT.md` may define local instructions, while the
 source-verified loading in Code Puppy is `AGENTS.md` (see
 `ARCHITECTURE.md`). The harness ships `AGENTS.md`; if the internal
-Walmart build honors `AGENT.md` instead, rename it there.
+target environment honors `AGENT.md` instead, rename it there.
 
 ## What it is built on
 
