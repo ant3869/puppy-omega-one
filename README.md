@@ -62,13 +62,15 @@ Manual steps after install (the script prints these too):
    `.code_puppy/agents/*.json` (`"model"` field). Delete the `omega` metadata block in an
    agent JSON if your build rejects unknown keys — `model` is the only
    load-bearing field.
-2. **Optionally change global compaction settings** in Code Puppy, after
-   checking your existing settings: `/set compaction_threshold 0.5` and
-   `/set summarization_model <your verified Haiku alias>`. These apply
-   to your user account, not just the installed project.
-3. **Select `omega-orchestrator`** as the agent and confirm its model
-   is the expected Opus alias.
-4. **Network access:** connect to any network required by your model provider.
+2. **Select `omega-orchestrator`** and confirm its model is the expected alias.
+3. **Network access:** connect to any network required by your model provider.
+
+**Core isolation:** the installer refuses user-home/global Code Puppy paths, virtual
+environment paths, and symlink/junction redirects. It only copies templates into
+an explicitly selected project folder. The desktop app does not automatically
+launch Code Puppy on startup. Your existing global models and settings remain
+untouched by Omega's setup scripts. Agent instructions also forbid touching Code
+Puppy core, but **they are not an OS sandbox**; review shell/tool permissions.
 
 ## Work-computer handoff
 
@@ -188,7 +190,7 @@ harness optimizes for correctness; the guardrails are still there
 ```
 puppy-omega-one/
 ├── README.md                  # this file
-├── install.ps1 / install.sh   # copy templates into a project, set puppy.cfg
+├── install.ps1 / install.sh   # copy project templates (never modify global puppy.cfg)
 ├── assets/
 │   ├── logo.png               # logo art (powered-up puppy, branding)
 │   └── icon.png               # minimal Omega mark (Electron app icon)
