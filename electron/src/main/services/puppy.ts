@@ -19,12 +19,22 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import type { OmegaRun, PuppyStatus } from '../../shared/types';
 import { assertProjectWorkspace } from './project-safety';
+import { guiLaunchSpec } from './gui-launch';
 
 const PORT = Number(process.env.PUPPY_GUI_PORT ?? 8765);
 const BASE = `http://127.0.0.1:${PORT}`;
 
 let child: ChildProcessWithoutNullStreams | null = null;
 let spawnedByUs = false;
+let launchedWorkspace: string | null = null;
+
+function currentStatus(running: boolean, error?: string): PuppyStatus {
+  return {
+    running, spawnedByUs, port: PORT, url: BASE,
+    launchWorkspace: spawnedByUs ? launchedWorkspace : null,
+    ...(error ? { error } : {})
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Server lifecycle
@@ -79,11 +89,19 @@ async function healthOk(timeoutMs = 2000): Promise<boolean> {
   }
 }
 
-export async function ensureServer(): Promise<PuppyStatus> {
+export async function ensureServer(requestedProject: string): Promise<PuppyStatus> {
+  const workspace = assertProjectWorkspace(requestedProject, {
+    configHome: process.env.XDG_CONFIG_HOME,
+    python: resolvePython(),
+    guiDir: process.env.PUPPY_GUI_DIR,
+    guiLaunch: process.env.PUPPY_GUI_LAUNCH
+  });
   if (await healthOk()) {
-    return { running: true, spawnedByUs: false, port: PORT, url: BASE };
+    return launchedWorkspace === workspace && spawnedByUs
+      ? currentStatus(true)
+      : currentStatus(true, 'A GUI server is already running; its working directory cannot be verified or changed from Omega. Confirm the project in the existing GUI before making edits.');
   }
-  if (child) return { running: false, spawnedByUs, port: PORT, url: BASE, error: 'server starting' };
+  if (child) return currentStatus(false, 'A GUI server is already starting; wait or use its existing workspace.');
 
   const launch = await resolveLaunchGui();
   if (!launch) {
@@ -101,13 +119,15 @@ export async function ensureServer(): Promise<PuppyStatus> {
   }
 
   const python = resolvePython();
-  const proc = spawn(python, [launch], {
-    cwd: dirname(launch),
-    env: { ...process.env, PUPPY_GUI_PORT: String(PORT), CODE_PUPPY_GUI_NO_BROWSER: '1' },
+  const spec = guiLaunchSpec(launch, workspace, PORT);
+  const proc = spawn(python, spec.args, {
+    cwd: spec.cwd,
+    env: spec.env,
     windowsHide: true
   });
   child = proc;
   spawnedByUs = true;
+  launchedWorkspace = workspace;
   let spawnError: string | null = null;
   proc.stdout.on('data', (d) => console.log('[puppy-gui]', String(d).trim()));
   proc.stderr.on('data', (d) => console.warn('[puppy-gui]', String(d).trim()));
@@ -117,6 +137,8 @@ export async function ensureServer(): Promise<PuppyStatus> {
     if (child === proc) {
       child = null;
       spawnedByUs = false;
+      launchedWorkspace = null;
+      launchedWorkspace = null;
     }
   });
   proc.on('exit', (code) => {
@@ -129,7 +151,7 @@ export async function ensureServer(): Promise<PuppyStatus> {
 
   // Fail immediately if the executable is missing or the child exits.
   for (let i = 0; i < 60; i++) {
-    if (await healthOk()) return { running: true, spawnedByUs, port: PORT, url: BASE };
+    if (await healthOk()) return currentStatus(true);
     if (spawnError || child !== proc) {
       return {
         running: false, spawnedByUs: false, port: PORT, url: BASE,
@@ -138,7 +160,7 @@ export async function ensureServer(): Promise<PuppyStatus> {
     }
     await new Promise((r) => setTimeout(r, 500));
   }
-  return { running: false, spawnedByUs, port: PORT, url: BASE, error: 'server did not answer /api/health in 30s' };
+  return currentStatus(false, 'server did not answer /api/health in 30s');
 }
 
 export function stopServer() {
@@ -146,6 +168,7 @@ export function stopServer() {
     child.kill();
     child = null;
     spawnedByUs = false;
+    launchedWorkspace = null;
   }
 }
 
@@ -205,11 +228,10 @@ export function registerPuppyIpc(getWindow: () => BrowserWindow | null) {
   void getWindow; // reserved: live event forwarding will push to this window
 
   ipcMain.handle('puppy:getStatus', async () => {
-    if (await healthOk()) return { running: true, spawnedByUs, port: PORT, url: BASE } satisfies PuppyStatus;
-    return { running: false, spawnedByUs, port: PORT, url: BASE } satisfies PuppyStatus;
+    return currentStatus(await healthOk());
   });
 
-  ipcMain.handle('puppy:ensureServer', () => ensureServer());
+  ipcMain.handle('puppy:ensureServer', (_e, workspace: string) => ensureServer(workspace));
 
   ipcMain.handle('puppy:listAgents', () => apiGet('/api/agents'));
   ipcMain.handle('puppy:listModels', () => apiGet('/api/models'));
