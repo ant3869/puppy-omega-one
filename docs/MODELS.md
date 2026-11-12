@@ -122,9 +122,9 @@ Every agent JSON in this repo pins a placeholder alias:
 | Haiku 5.5 | `claude-haiku-5-5` |
 
 These match the public Anthropic API model IDs, and Ant believes the
-work build uses the same shape — but the internal Walmart build may
+target environment uses the same shape — but the target Code Puppy environment may
 expose different alias strings, and that is unverified. **Check
-`/model` in Code Puppy at work** (tab completion lists what's
+`/model` in Code Puppy in the target environment** (tab completion lists what's
 available), note the real strings, and swap them into the `"model"`
 field of each `.code_puppy/agents/omega-*.json` and into `puppy.cfg`
 (`summarization_model`). One string per file; or use `/pin_model
