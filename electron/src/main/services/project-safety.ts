@@ -33,7 +33,7 @@ export function assertProjectWorkspace(directory: string, limits: WorkspaceBound
   if (typeof directory !== 'string' || !directory.trim()) throw new Error('Choose a project folder.');
   const target = canonical(directory);
   const home = canonical(limits.home ?? homedir());
-  if (within(target, home)) {
+  if (within(home, target)) {
     throw new Error('The home folder or one of its parents cannot be used as an Omega project.');
   }
 
