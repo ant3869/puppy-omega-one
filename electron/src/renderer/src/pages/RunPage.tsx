@@ -27,6 +27,7 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
   const [selected, setSelected] = useState<string[]>(['omega-builder', 'omega-reviewer', 'omega-tester']);
   const [brief, setBrief] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const inputStyle: React.CSSProperties = {
     background: tokens.bg.surface2,
@@ -39,8 +40,9 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
     setSelected((prev) => (prev.includes(agent) ? prev.filter((a) => a !== agent) : [...prev, agent]));
   }
 
-  function composeBrief() {
-    if (!goal.trim() || !doneWhen.trim()) return;
+  async function composeBrief() {
+    if (!goal.trim() || !doneWhen.trim() || selected.length === 0) return;
+    setError(null);
     const runId = uid();
     const now = new Date().toISOString();
     const records: DelegationRecord[] = WORKERS.filter((w) => selected.includes(w.agent)).map((w) => ({
@@ -50,7 +52,7 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
       model: w.model,
       objective: goal.trim(),
       brief: '',
-      status: 'queued',
+      status: 'draft',
       checkCommand: null,
       checkResult: null,
       resultSummary: null,
@@ -74,21 +76,30 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
       id: runId,
       goal: goal.trim(),
       doneWhen: doneWhen.trim(),
-      status: 'queued',
+      status: 'draft',
       briefs: records,
       projectDir: null,
       startedAt: now,
       updatedAt: now
     };
-    void window.omega.runs.save(run);
-    setBrief(text);
-    setCopied(false);
+    try {
+      await window.omega.runs.save(run);
+      setBrief(text);
+      setCopied(false);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
   }
 
   async function copyBrief() {
     if (!brief) return;
-    await navigator.clipboard.writeText(brief);
-    setCopied(true);
+    try {
+      await navigator.clipboard.writeText(brief);
+      setCopied(true);
+      setError(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
   }
 
   return (
@@ -145,8 +156,8 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
 
       <div className="flex gap-2">
         <button
-          onClick={composeBrief}
-          disabled={!goal.trim() || !doneWhen.trim()}
+          onClick={() => void composeBrief()}
+          disabled={!goal.trim() || !doneWhen.trim() || selected.length === 0}
           className="px-4 py-2 text-sm font-medium disabled:opacity-40"
           style={{ background: tokens.accent.primary, color: '#000', borderRadius: tokens.radius }}
         >
@@ -171,6 +182,8 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
           </>
         )}
       </div>
+
+      {error && <p role="alert" className="text-sm" style={{ color: tokens.status.fail }}>{error}</p>}
 
       {brief && (
         <div>
