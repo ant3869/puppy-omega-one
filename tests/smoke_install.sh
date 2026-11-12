@@ -55,6 +55,8 @@ for path in files:
     assert all(k in agent for k in ('name', 'description', 'system_prompt', 'tools'))
     assert isinstance(agent['tools'], list)
     assert agent['model']
+    assert 'ISOLATION:' in agent['system_prompt'], path.name
+    assert 'Never modify or install into Code Puppy core' in agent['system_prompt']
 researcher = json.loads((root / 'omega-researcher-agent.json').read_text())
 assert not {'create_file', 'replace_in_file', 'delete_file'} & set(researcher['tools'])
 builder = json.loads((root / 'omega-builder-agent.json').read_text())
