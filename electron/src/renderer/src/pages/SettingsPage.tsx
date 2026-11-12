@@ -51,7 +51,7 @@ export default function SettingsPage({
         <div className="omega-setting-row">
           <span>
             <strong>Local Puppy GUI server</strong>
-            <p>{status?.running ? 'Server connection is available.' : 'The local service is not currently responding.'} The workflow overview uses locally saved run records; automatic chat-send and event telemetry still need a verified backend contract.</p>
+            <p>{status?.running ? 'Server connection is available.' : 'The local service is not currently responding.'} The Overview separates simulated playback, saved run records, and a read-only live event subscription. Native chat-send is not yet wired.</p>
           </span>
           <span className="omega-code-tag">{status?.port ? '127.0.0.1:' + status.port : 'not detected'}</span>
         </div>
@@ -78,7 +78,7 @@ export default function SettingsPage({
         <div className="omega-setting-row">
           <span>
             <strong><Activity size={14} style={{ display: 'inline', marginRight: 7 }} />Workflow visualization</strong>
-            <p>Demo mode is illustrative; Saved runs mode only displays local records. An actual event-stream adapter is required before real-time worker pulses are enabled.</p>
+            <p>Demo mode is illustrative; Saved runs mode only displays local records. A local ChatBridge WebSocket listener provides worker activity when connected. Only explicitly reported worker events illuminate the Live graph; a response is not considered a passed check.</p>
           </span>
           <span className="omega-code-tag">PREVIEW</span>
         </div>
