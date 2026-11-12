@@ -12,7 +12,7 @@ murphmaxxing.com/vault/omega-agent-orchestration.
 | Opus 5.5 orchestrator, xhigh effort | JSON agent `omega-orchestrator`, `"model": "<opus alias>"`, `model_settings.reasoning_effort: "high"` (no `xhigh` — closest is `high`) | Adapt |
 | Haiku 5.5 workers in `.claude/agents/` | JSON agents in `.code_puppy/agents/` (`omega-builder/reviewer/tester/researcher`), each `"model": "<alias>"` | 1:1, new path |
 | Brief ends with runnable "Done when:", boss re-runs check | Orchestrator system prompt + worker contract; boss has `shell` tool, workers report exact command + output | 1:1 (prompt-level) |
-| Boss writes no code | Enforced by tool allowlist: orchestrator JSON gets `invoke_agent`, `invoke_agent_with_model`, `list_agents`, `read_file`, `grep`, `shell` — no `create_file`/`replace_in_file` | Better than Omega (enforced, not just instructed) |
+| Boss writes no code | Enforced by tool allowlist: orchestrator JSON gets `invoke_agent`, `invoke_agent_with_model`, `list_agents`, `read_file`, `grep`, `shell` — no `create_file`/`replace_in_file`; `shell` can still mutate files | Partial — tool choices alone do not sandbox shell |
 | `CLAUDE.md` + `docs/*.md` memory | `.code_puppy/AGENTS.md` (or `./AGENTS.md`) holds the rules; `docs/progress.md`, `docs/decisions.md`, `docs/known-issues.md` are plain files the agent is instructed to read/write each session | Adapt (file rename) |
 | Reflect skill | `skills/reflect/SKILL.md`, agentskills.io format, project-local | 1:1 |
 | `CLAUDE_CODE_SUBAGENT_MODEL=haiku` env vars | Dead in Code Puppy — models are pinned in agent JSON / `/pin_model`, not env vars | Drop |
@@ -151,7 +151,7 @@ you ── goal + "Done when:" ──▶ omega-orchestrator (Opus, high effort)
                         session end: docs update + reflect skill
 ```
 
-## Tool allowlists (enforced, not just instructed)
+## Tool allowlists (direct editors omitted; shell is not a security boundary)
 
 | Agent | Tools |
 |---|---|
@@ -159,11 +159,13 @@ you ── goal + "Done when:" ──▶ omega-orchestrator (Opus, high effort)
 | builder | `create_file`, `replace_in_file`, `read_file`, `grep`, `shell` |
 | reviewer | `read_file`, `grep`, `shell` |
 | tester | `shell`, `read_file`, `grep` |
-| researcher | `read_file`, `grep`, `shell` (read-only commands only) |
+| researcher | `list_files`, `read_file`, `grep` (no shell or editors) |
 
-The orchestrator's lack of write tools is the point: session-end doc
-updates go through a brief to `omega-builder`, not through the
-read-only researcher or the orchestrator.
+The orchestrator lacks direct file-editing tools, but its `shell` tool
+can execute write commands. This is a **behavioral restriction**, not a
+security guarantee. For strict read-only access, use the researcher,
+which has no shell or editing tools. Session-end doc updates go through
+`omega-builder`.
 
 ## Integration notes (from ant3869/ai-integration-reference)
 
