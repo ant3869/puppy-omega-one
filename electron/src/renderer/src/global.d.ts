@@ -10,7 +10,7 @@ declare global {
     omega: {
       puppy: {
         getStatus: () => Promise<PuppyStatus>;
-        ensureServer: () => Promise<PuppyStatus>;
+        ensureServer: (workspace: string) => Promise<PuppyStatus>;
         listAgents: () => Promise<unknown>;
         listModels: () => Promise<unknown>;
         getActiveModel: () => Promise<unknown>;
