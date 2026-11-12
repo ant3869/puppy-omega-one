@@ -155,7 +155,7 @@ you ── goal + "Done when:" ──▶ omega-orchestrator (Opus, high effort)
 
 | Agent | Tools |
 |---|---|
-| orchestrator | `invoke_agent`, `invoke_agent_with_model`, `list_agents`, `read_file`, `grep`, `shell` |
+| orchestrator | `invoke_agent`, `invoke_agent_with_model`, `list_agents`, `read_file`, `grep`, `shell`, `activate_skill` |
 | builder | `create_file`, `replace_in_file`, `read_file`, `grep`, `shell` |
 | reviewer | `read_file`, `grep`, `shell` |
 | tester | `shell`, `read_file`, `grep` |
