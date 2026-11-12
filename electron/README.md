@@ -28,9 +28,10 @@ mode). This is a **starter, not a finished app** — see
 
 A thin Electron shell that:
 
-1. Spawns the existing `puppy_gui` FastAPI server (`launch_gui.py`,
-   Code Puppy venv python) on `127.0.0.1:8765` — or attaches to it if
-   it's already running. It does **not** start a second backend.
+1. **Starts without spawning Code Puppy.** It detects an existing local
+   `puppy_gui` server on `127.0.0.1:8765`. Clicking **Connect / start**
+   explicitly attempts to attach or launch your existing GUI installation.
+   Omega never installs or patches Code Puppy itself.
 2. Shows Omega views (Run, Live, Briefs, Progress) as native React
    pages talking to that same server over HTTP.
 3. Embeds the real puppy_gui web UI in a "Puppy GUI" view, so chat,
@@ -45,9 +46,12 @@ npm install
 npm run dev
 ```
 
-Needs Code Puppy installed (the venv python). Override it with
+For local GUI launch, Code Puppy must already be installed. Override its Python with
 `CODE_PUPPY_PYTHON=/path/to/python`. The server port defaults to
-8765 (`PUPPY_GUI_PORT` overrides).
+8765 (`PUPPY_GUI_PORT` overrides). The project-folder picker rejects
+paths that overlap known Code Puppy core/config/venv or GUI locations.
+The run composer saves **drafts only** and repeats isolation instructions
+in its output. Normal agent shell access is not an OS sandbox.
 
 ## Build it
 
