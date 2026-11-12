@@ -74,8 +74,7 @@ function connect(): void {
   });
 
   current.on('error', () => {
-    // 'close' performs the disconnected transition and schedules reconnect.
-    current.terminate();
+    // Connection failures are followed by 'close'; never loop on an error event.
   });
 
   current.on('close', () => {
