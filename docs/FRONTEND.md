@@ -177,3 +177,17 @@ Env: `CODE_PUPPY_PYTHON` (venv python path),
 - `ant3869/puppy_gui` v0.16.2 — the FastAPI server this shell wraps
   (verified `/api/*` endpoints, ChatBridge streaming).
 - `mpfaffenberger/code_puppy` (HEAD) — the runtime underneath.
+
+
+## Command center dashboard (UI preview)
+
+The Electron shell now opens on **Overview**, with a workflow diagram based on \`reference/omega-setup-recreation.html\`. The graph follows goal → orchestrator → researcher/builder/tester/reviewer → individual checks → orchestrator verification. Worker cards are selectable by pointer or keyboard. A left navigation rail retains the run composer, embedded Puppy GUI chat, saved activity, briefs, and project docs; a Settings button stays at its bottom.
+
+Two explicitly different data modes exist:
+
+- **Demo:** timed highlights and connector pulses illustrate how orchestration *could* proceed. The UI labels this \`SIMULATED · NOT LIVE\`. Animation can be paused/restarted and stopped under Settings → Reduce animations.
+- **Saved runs:** worker and check statuses come only from local \`runs.json\` records. A draft does **not** imply that a worker was dispatched. No active session event stream or chat dispatch is claimed. The graph labels this \`LOCAL RECORDS · NOT TELEMETRY\`.
+
+System health reflects the existing \`/api/health\` probe, not individual agent liveness. Once a verified streaming event contract is implemented, an event adapter can replace the illustrative demo engine and map actual run/delegation events to graph node states. **Do not** infer agent progress from a raw session JSON blob.
+
+The Settings page currently supports reduced-motion preference and reconnecting the local GUI server; model, agent, and session configuration is available in the embedded Puppy GUI, not silently duplicated in the shell. The native chat-send IPC endpoint is still deliberately unavailable until its endpoint has been verified.
