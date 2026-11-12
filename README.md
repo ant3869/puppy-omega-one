@@ -49,23 +49,26 @@ cost math in `docs/COSTS.md`.
 ```
 
 What it does: copies `templates/` into the target project (skips files
-that already exist unless you pass `-Force` / `--force`), then sets
-`puppy.cfg` `compaction_threshold=0.5` (the lowest Code Puppy allows;
-Omega's 40% is unachievable — see `docs/ARCHITECTURE.md`) and
-`summarization_model` to the Haiku placeholder. It prints the manual
+that already exist unless you pass `-Force` / `--force`). **It does not
+modify Code Puppy's global configuration.** The runtime reads
+`~/.code_puppy/puppy.cfg` (or `$XDG_CONFIG_HOME/code_puppy/puppy.cfg`),
+not a file in your project. See `docs/ARCHITECTURE.md`. It prints the manual
 steps at the end — read them, two of them need you.
 
 Manual steps after install (the script prints these too):
 
 1. **Verify the model aliases.** In Code Puppy at work, run `/model`.
    Swap the real Opus / Sonnet / Haiku alias strings into
-   `.code_puppy/agents/*.json` (`"model"` field) and `puppy.cfg`
-   (`summarization_model`). Delete the `omega` metadata block in an
+   `.code_puppy/agents/*.json` (`"model"` field). Delete the `omega` metadata block in an
    agent JSON if your build rejects unknown keys — `model` is the only
    load-bearing field.
-2. **Set the global model to the Opus alias** (the orchestrator's model),
-   or start the session explicitly on the `omega-orchestrator` agent.
-3. **VPN on** if your Code Puppy models need it (Walmart build).
+2. **Optionally change global compaction settings** in Code Puppy, after
+   checking your existing settings: `/set compaction_threshold 0.5` and
+   `/set summarization_model <your verified Haiku alias>`. These apply
+   to your user account, not just the installed project.
+3. **Select `omega-orchestrator`** as the agent and confirm its model
+   is the expected Opus alias.
+4. **VPN on** if your Code Puppy models need it (Walmart build).
 
 ## Run a job — the concrete walkthrough
 
@@ -101,11 +104,10 @@ webhook. Day to day it looks like this:
 7. When the goal is done, the orchestrator tells you what changed, what
    it ran, and what is still open. You review and approve.
 8. **Session-end ritual** (every session, don't skip it): the
-   orchestrator briefs `omega-researcher` to update `docs/progress.md`
-   with a dated log line, add any new decisions/gotchas, then runs the
-   `reflect` skill — it proposes the smallest edit to a skill or
-   `AGENTS.md` that would have prevented what went wrong this session.
-   Nothing changes without your OK.
+   orchestrator asks `omega-researcher` for a read-only session summary,
+   briefs `omega-builder` to record dated updates in the project docs,
+   and runs the `reflect` skill. Changes to skills or `AGENTS.md` are
+   proposed for your approval, not applied automatically.
 
 Two rules that make the whole thing work: briefs are **self-contained**
 (workers never see `AGENTS.md` — Code Puppy doesn't inject it into
