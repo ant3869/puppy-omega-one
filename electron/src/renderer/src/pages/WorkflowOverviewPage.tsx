@@ -331,31 +331,47 @@ export default function WorkflowOverviewPage({
           <div className="omega-card-heading"><span>INSPECTOR / {currentLane.label}</span><Activity size={15} /></div>
           <div className="omega-detail-main">
             <div>
-              <span className="omega-detail-tag">{demo ? 'EXAMPLE AGENT' : record ? 'SAVED DELEGATION' : 'NO RECORD'}</span>
+              <span className="omega-detail-tag">{demo ? 'EXAMPLE AGENT' : live ? connected ? 'LIVE DELEGATION' : 'STREAM DISCONNECTED' : record ? 'SAVED DELEGATION' : 'NO RECORD'}</span>
               <h3>{currentLane.label.toLowerCase()}</h3>
-              <p>{demo ? currentLane.specialty + ' · example activity playback' : trimText(record?.objective ?? 'No delegation saved for this worker.', 94)}</p>
+              <p>{demo ? currentLane.specialty + ' · example activity playback' : live ? trimText(liveWorker?.detail ?? 'Waiting for this worker', 100) : trimText(record?.objective ?? 'No delegation saved for this worker.', 94)}</p>
             </div>
-            <div className="omega-detail-status" style={{ color: record && !demo ? statusColor(record.status) : tokens.text.tertiary }}>
-              {demo ? (phase === 'dispatch' ? 'RUNNING · DEMO' : 'SIMULATED') : record ? statusLabel(record.status) : 'IDLE'}
+            <div className="omega-detail-status" style={{ color: live ? liveWorker?.phase === 'failed' ? tokens.status.fail : liveWorker?.phase === 'running' ? '#57d3ea' : tokens.text.tertiary : record && !demo ? statusColor(record.status) : tokens.text.tertiary }}>
+              {demo ? (phase === 'dispatch' ? 'RUNNING · DEMO' : 'SIMULATED') : live ? (connected ? (liveWorker?.phase ?? 'idle').toUpperCase() : 'DISCONNECTED') : record ? statusLabel(record.status) : 'IDLE'}
             </div>
           </div>
           <div className="omega-inspector-foot">
-            <span>MODEL: {demo ? 'Configured in harness' : trimText(record?.model ?? 'not recorded', 29)}</span>
-            <span>{demo ? 'CHECK: DEMO' : record?.checkResult === 'pass' ? 'CHECK: PASS' : record?.checkResult === 'fail' ? 'CHECK: FAILED' : 'CHECK: NOT RECORDED'}</span>
+            <span>MODEL: {demo ? 'Configured in harness' : live ? trimText(liveWorker?.model ?? 'not observed', 29) : trimText(record?.model ?? 'not recorded', 29)}</span>
+            <span>{demo ? 'CHECK: DEMO' : live ? 'CHECK: NOT OBSERVED' : record?.checkResult === 'pass' ? 'CHECK: PASS' : record?.checkResult === 'fail' ? 'CHECK: FAILED' : 'CHECK: NOT RECORDED'}</span>
           </div>
-          {!demo && record?.error && <div className="omega-error-detail" role="alert"><CircleAlert size={15} /> {record.error}</div>}
+          {!demo && !live && record?.error && <div className="omega-error-detail" role="alert"><CircleAlert size={15} /> {record.error}</div>}
         </section>
 
         <section className="omega-health-panel">
           <div className="omega-card-heading"><span>SYSTEM / STATE</span><Radio size={15} /></div>
           <div className="omega-health-row"><span><span className={'omega-small-light ' + (server?.running ? 'is-ok' : 'is-down')} /> Puppy GUI service</span><strong>{server?.running ? 'CONNECTED' : server ? 'OFFLINE' : 'CHECKING'}</strong></div>
-          <div className="omega-health-row"><span><ShieldCheck size={14} /> Event telemetry</span><strong className="omega-muted">NOT WIRED</strong></div>
+          <div className="omega-health-row"><span><ShieldCheck size={14} /> Event telemetry</span><strong className={connected ? '' : 'omega-muted'}>{connected ? 'STREAM CONNECTED' : telemetry?.connection === 'connecting' ? 'CONNECTING' : 'DISCONNECTED'}</strong></div>
           <div className="omega-health-row"><span><CheckCircle2 size={14} /> Stored run briefs</span><strong>{loadError ? 'UNAVAILABLE' : runs.length + ' RECORDS'}</strong></div>
+          {live && liveAttention && <p className="omega-health-error" role="alert">{liveAttention.message} · <button className="omega-text-button" onClick={onChat}>Open chat</button></p>}
           {loadError && <p className="omega-health-error" role="alert">{trimText(loadError, 94)}</p>}
           {server?.error && !server.running && <p className="omega-health-error" role="alert">{trimText(server.error, 94)}</p>}
           <button className="omega-text-button" onClick={onRuns}>Inspect run records <ArrowRight size={14} /></button>
         </section>
       </div>
+      {live && (
+        <section className="omega-event-trace" aria-label="Recent runtime event summaries">
+          <div className="omega-card-heading"><span>RUNTIME TRACE / RECENT EVENTS</span><span>{telemetry?.events.length ?? 0} IN MEMORY</span></div>
+          {telemetry?.events.length ? (
+            <ol className="omega-trace-list">
+              {telemetry.events.slice(-7).reverse().map((event) => (
+                <li key={event.id} className={'omega-trace-item is-' + event.tone}>
+                  <time dateTime={new Date(event.timestamp).toISOString()}>{new Date(event.timestamp).toLocaleTimeString()}</time>
+                  <span>{event.label}</span>
+                </li>
+              ))}
+            </ol>
+          ) : <p className="omega-trace-empty">No events received. Start a turn in Harness Chat; the live monitor updates when a compatible event stream is available.</p>}
+        </section>
+      )}
     </div>
   );
 }
