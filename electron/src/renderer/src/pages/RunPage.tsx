@@ -70,7 +70,7 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
       'Isolation: Work only inside the project workspace. Never edit, install, or configure Code Puppy core, its Python environment, user-global agent/config files, or the Puppy GUI source.',
       'If a task requires those protected locations, stop and report it instead.',
       '',
-      'Workers:'
+      'Workers:',
       ...records.map((r) => `- ${r.childAgent} (${r.model})`),
       '',
       `Done when: ${doneWhen.trim()}`,
