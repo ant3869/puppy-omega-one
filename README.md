@@ -70,6 +70,27 @@ Manual steps after install (the script prints these too):
    is the expected Opus alias.
 4. **VPN on** if your Code Puppy models need it (Walmart build).
 
+## Work-computer handoff
+
+Clone the **public harness only** to your work computer, then install
+its templates into the actual project you want Code Puppy to work on:
+
+```powershell
+git clone https://github.com/ant3869/puppy-omega-one.git
+cd puppy-omega-one
+.\install.ps1 -Target C:\path\to\your-work-project
+```
+
+Open Code Puppy **from your target project's directory** so it finds
+the project-local agents. Confirm the model aliases on that computer,
+since they may differ from the public Code Puppy build. Keep internal
+source code, tokens, and corporate configuration out of this public
+harness repository.
+
+To validate the public scaffold itself, see
+`tests/smoke_install.sh` and the GitHub Actions checks. The Electron
+shell is optional and requires a separate `puppy_gui` installation.
+
 ## Run a job — the concrete walkthrough
 
 The trigger for a run is always **you, giving the orchestrator a goal
