@@ -30,6 +30,24 @@ jobs:
           ./install.ps1 -Target $project -Force
           if ((Get-Content (Join-Path $project 'AGENTS.md') -Raw) -ne (Get-Content templates/AGENTS.md -Raw)) { throw 'Force did not replace rules' }
           if (!(Test-Path (Join-Path $project '.code_puppy/agents/omega-orchestrator-agent.json'))) { throw 'Missing installed agent' }
+          # A project install must never target the global Code Puppy config.
+          $core = Join-Path $env:USERPROFILE '.code_puppy'
+          New-Item -ItemType Directory -Force -Path $core | Out-Null
+          $sentinel = Join-Path $core 'omega-install-test-sentinel.txt'
+          Set-Content -Path $sentinel -Value 'untouched'
+          $rejected = $false
+          try { ./install.ps1 -Target $env:USERPROFILE -Force } catch { $rejected = $true }
+          if (!$rejected) { throw 'Installer allowed user profile target' }
+          if ((Get-Content $sentinel -Raw).Trim() -ne 'untouched') { throw 'Installer changed core sentinel' }
+          # Junction redirection must be rejected before writing ANY project files.
+          $unsafe = Join-Path $env:RUNNER_TEMP 'puppy-omega-redirect-test'
+          New-Item -ItemType Directory -Force -Path $unsafe | Out-Null
+          New-Item -ItemType Junction -Path (Join-Path $unsafe '.code_puppy') -Target $core | Out-Null
+          $rejected = $false
+          try { ./install.ps1 -Target $unsafe -Force } catch { $rejected = $true }
+          if (!$rejected) { throw 'Installer allowed junction redirected to global core' }
+          if (Test-Path (Join-Path $unsafe 'AGENTS.md')) { throw 'Installer wrote files before rejecting junction' }
+          if ((Get-Content $sentinel -Raw).Trim() -ne 'untouched') { throw 'Junction test changed core sentinel' }
 
   electron:
     runs-on: ubuntu-latest

@@ -11,12 +11,19 @@ const DOCS = ['progress.md', 'decisions.md', 'known-issues.md'] as const;
 export default function ProgressPage() {
   const [projectDir, setProjectDir] = useState<string | null>(null);
   const [docs, setDocs] = useState<Record<string, string | null> | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function pick() {
-    const dir = await window.omega.app.pickProject();
-    if (!dir) return;
-    setProjectDir(dir);
-    setDocs(await window.omega.app.readDocs(dir));
+    setError(null);
+    try {
+      const dir = await window.omega.app.pickProject();
+      if (!dir) return;
+      const result = await window.omega.app.readDocs(dir);
+      setProjectDir(dir);
+      setDocs(result);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
   }
 
   return (
@@ -33,6 +40,8 @@ export default function ProgressPage() {
           <span className="text-xs" style={{ color: tokens.text.secondary }}>{projectDir}</span>
         )}
       </div>
+
+      {error && <p role="alert" className="text-sm" style={{ color: tokens.status.fail }}>{error}</p>}
 
       {!docs && (
         <p className="text-sm" style={{ color: tokens.text.secondary }}>

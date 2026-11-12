@@ -23,6 +23,8 @@ function uid(): string {
 
 export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
   const [goal, setGoal] = useState('');
+  const [projectDir, setProjectDir] = useState<string | null>(null);
+  const [pickingProject, setPickingProject] = useState(false);
   const [doneWhen, setDoneWhen] = useState('');
   const [selected, setSelected] = useState<string[]>(['omega-builder', 'omega-reviewer', 'omega-tester']);
   const [brief, setBrief] = useState<string | null>(null);
@@ -38,9 +40,15 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
 
   function toggle(agent: string) {
     setSelected((prev) => (prev.includes(agent) ? prev.filter((a) => a !== agent) : [...prev, agent]));
+    setBrief(null);
+    setCopied(false);
   }
 
   async function composeBrief() {
+    if (!projectDir) {
+      setError('Select a project workspace before composing a brief. Core and global Code Puppy folders cannot be selected.');
+      return;
+    }
     if (!goal.trim() || !doneWhen.trim() || selected.length === 0) return;
     setError(null);
     const runId = uid();
@@ -60,6 +68,9 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
     }));
     const text = [
       `Goal: ${goal.trim()}`,
+      `Project workspace: ${projectDir}`,
+      'Isolation: Work only inside the project workspace. Never edit, install, or configure Code Puppy core, its Python environment, user-global agent/config files, or the Puppy GUI source.',
+      'If a task requires those protected locations, stop and report it instead.',
       '',
       'Workers:',
       ...records.map((r) => `- ${r.childAgent} (${r.model})`),
@@ -78,7 +89,7 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
       doneWhen: doneWhen.trim(),
       status: 'draft',
       briefs: records,
-      projectDir: null,
+      projectDir,
       startedAt: now,
       updatedAt: now
     };
@@ -88,6 +99,23 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
       setCopied(false);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
+  async function pickProject() {
+    setPickingProject(true);
+    setError(null);
+    try {
+      const chosen = await window.omega.app.pickProject();
+      if (chosen) {
+        setProjectDir(chosen);
+        setBrief(null);
+        setCopied(false);
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setPickingProject(false);
     }
   }
 
@@ -111,11 +139,23 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
         <code>/model</code> in your Code Puppy environment.
       </p>
 
+      <div className="flex flex-col gap-2">
+        <span className="text-xs font-medium" style={{ color: tokens.text.secondary }}>Project workspace (required)</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={() => void pickProject()} disabled={pickingProject} className="omega-button omega-button-secondary disabled:opacity-40">
+            {pickingProject ? 'Choosing…' : projectDir ? 'Change project' : 'Choose project folder'}
+          </button>
+          <span className="text-xs break-all" style={{ color: projectDir ? tokens.text.primary : tokens.text.tertiary }}>
+            {projectDir ?? 'No project selected. Global Code Puppy directories are blocked.'}
+          </span>
+        </div>
+      </div>
+
       <label className="flex flex-col gap-1.5">
         <span className="text-xs font-medium" style={{ color: tokens.text.secondary }}>Goal</span>
         <textarea
           value={goal}
-          onChange={(e) => setGoal(e.target.value)}
+          onChange={(e) => { setGoal(e.target.value); setBrief(null); setCopied(false); }}
           rows={3}
           placeholder="e.g. Add a CSV export to the report page"
           className="w-full px-3 py-2 text-sm border focus:outline-none"
@@ -129,7 +169,7 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
         </span>
         <input
           value={doneWhen}
-          onChange={(e) => setDoneWhen(e.target.value)}
+          onChange={(e) => { setDoneWhen(e.target.value); setBrief(null); setCopied(false); }}
           placeholder="e.g. npm test passes and the CSV downloads with all rows"
           className="w-full px-3 py-2 text-sm border focus:outline-none"
           style={inputStyle}
@@ -157,7 +197,7 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
       <div className="flex gap-2">
         <button
           onClick={() => void composeBrief()}
-          disabled={!goal.trim() || !doneWhen.trim() || selected.length === 0}
+          disabled={!projectDir || !goal.trim() || !doneWhen.trim() || selected.length === 0}
           className="px-4 py-2 text-sm font-medium disabled:opacity-40"
           style={{ background: tokens.accent.primary, color: '#000', borderRadius: tokens.radius }}
         >

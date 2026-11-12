@@ -23,6 +23,27 @@ mkdir -p "$tmp/clean"
 "$repo/install.sh" "$tmp/clean"
 test ! -e "$tmp/clean/puppy.cfg"
 
+# Core-isolation negative tests use a fake home and untouched sentinel files.
+mkdir -p "$tmp/home/.code_puppy/agents" "$tmp/home/.code-puppy-venv" "$tmp/symlink-project"
+printf 'global-agent-untouched\n' > "$tmp/home/.code_puppy/agents/omega-builder-agent.json"
+printf 'global-venv-untouched\n' > "$tmp/home/.code-puppy-venv/sentinel"
+if HOME="$tmp/home" "$repo/install.sh" "$tmp/home" --force > "$tmp/blocked.log" 2>&1; then
+  echo "Installer incorrectly allowed HOME as a project" >&2
+  exit 1
+fi
+if HOME="$tmp/home" "$repo/install.sh" "$tmp/home/.code_puppy" --force > "$tmp/blocked.log" 2>&1; then
+  echo "Installer incorrectly allowed global Code Puppy directory" >&2
+  exit 1
+fi
+ln -s "$tmp/home/.code_puppy" "$tmp/symlink-project/.code_puppy"
+if HOME="$tmp/home" "$repo/install.sh" "$tmp/symlink-project" --force > "$tmp/blocked.log" 2>&1; then
+  echo "Installer incorrectly followed a symlink into global agents" >&2
+  exit 1
+fi
+test ! -f "$tmp/symlink-project/AGENTS.md"
+grep -Fxq 'global-agent-untouched' "$tmp/home/.code_puppy/agents/omega-builder-agent.json"
+grep -Fxq 'global-venv-untouched' "$tmp/home/.code-puppy-venv/sentinel"
+
 python3 - <<'PY'
 import json
 from pathlib import Path
@@ -34,6 +55,8 @@ for path in files:
     assert all(k in agent for k in ('name', 'description', 'system_prompt', 'tools'))
     assert isinstance(agent['tools'], list)
     assert agent['model']
+    assert 'ISOLATION:' in agent['system_prompt'], path.name
+    assert 'Never modify or install into Code Puppy core' in agent['system_prompt']
 researcher = json.loads((root / 'omega-researcher-agent.json').read_text())
 assert not {'create_file', 'replace_in_file', 'delete_file'} & set(researcher['tools'])
 builder = json.loads((root / 'omega-builder-agent.json').read_text())

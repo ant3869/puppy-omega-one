@@ -16,8 +16,9 @@ import { app, dialog, ipcMain, type BrowserWindow } from 'electron';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import type { OmegaRun, PuppyStatus } from '../../shared/types';
+import { assertProjectWorkspace } from './project-safety';
 
 const PORT = Number(process.env.PUPPY_GUI_PORT ?? 8765);
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -102,7 +103,7 @@ export async function ensureServer(): Promise<PuppyStatus> {
   const python = resolvePython();
   const proc = spawn(python, [launch], {
     cwd: dirname(launch),
-    env: { ...process.env, PUPPY_GUI_PORT: String(PORT) },
+    env: { ...process.env, PUPPY_GUI_PORT: String(PORT), CODE_PUPPY_GUI_NO_BROWSER: '1' },
     windowsHide: true
   });
   child = proc;
@@ -234,6 +235,14 @@ export function registerPuppyIpc(getWindow: () => BrowserWindow | null) {
     if (!run || typeof run.id !== 'string' || !run.id || !Array.isArray(run.briefs)) {
       throw new Error('Invalid run record');
     }
+    if (run.projectDir !== null) {
+      assertProjectWorkspace(run.projectDir, {
+        configHome: process.env.XDG_CONFIG_HOME,
+        python: resolvePython(),
+        guiDir: process.env.PUPPY_GUI_DIR,
+        guiLaunch: process.env.PUPPY_GUI_LAUNCH
+      });
+    }
     const write = runWrites.then(async () => {
       const runs = await loadRuns();
       const idx = runs.findIndex((r) => r.id === run.id);
@@ -249,14 +258,27 @@ export function registerPuppyIpc(getWindow: () => BrowserWindow | null) {
   ipcMain.handle('app:pickProject', async () => {
     const res = await dialog.showOpenDialog({ properties: ['openDirectory'] });
     if (res.canceled) return null;
-    return res.filePaths[0] ?? null;
+    const selected = res.filePaths[0];
+    if (!selected) return null;
+    return assertProjectWorkspace(selected, {
+      configHome: process.env.XDG_CONFIG_HOME,
+      python: resolvePython(),
+      guiDir: process.env.PUPPY_GUI_DIR,
+      guiLaunch: process.env.PUPPY_GUI_LAUNCH
+    });
   });
 
   ipcMain.handle('docs:read', async (_e, projectDir: string) => {
+    const workspace = assertProjectWorkspace(projectDir, {
+      configHome: process.env.XDG_CONFIG_HOME,
+      python: resolvePython(),
+      guiDir: process.env.PUPPY_GUI_DIR,
+      guiLaunch: process.env.PUPPY_GUI_LAUNCH
+    });
     const out: Record<string, string | null> = {};
     for (const name of ['progress.md', 'decisions.md', 'known-issues.md']) {
       try {
-        out[name] = await fs.readFile(join(resolve(projectDir), 'docs', name), 'utf-8');
+        out[name] = await fs.readFile(join(workspace, 'docs', name), 'utf-8');
       } catch {
         out[name] = null;
       }

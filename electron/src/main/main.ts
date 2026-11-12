@@ -7,7 +7,7 @@
 import { app, BrowserWindow, shell } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
-import { registerPuppyIpc, ensureServer, stopServer } from './services/puppy';
+import { registerPuppyIpc, stopServer } from './services/puppy';
 import { registerWorkflowIpc, startWorkflowEvents, stopWorkflowEvents } from './services/workflow';
 
 const preloadPath = fileURLToPath(new URL('../preload/index.mjs', import.meta.url));
@@ -89,13 +89,8 @@ app.whenReady().then(() => {
   registerWorkflowIpc(() => mainWindow);
   startWorkflowEvents();
 
-  // Start (or attach to) the puppy_gui server in the background.
-  // The renderer polls puppy:getStatus and shows "starting server…" until it is up.
-  void ensureServer().then((status) => {
-    if (!status.running) {
-      console.warn('[puppy] server not running:', status.error ?? 'unknown error');
-    }
-  });
+  // Startup is observational: never implicitly launch Code Puppy or Puppy GUI.
+  // Users may explicitly start the GUI from the app's connection controls.
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

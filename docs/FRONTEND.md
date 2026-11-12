@@ -22,10 +22,10 @@ puppy_gui (FastAPI server, launch_gui.py, Code Puppy venv python)
 code_puppy runtime → Omega agents (.code_puppy/agents/*.json)
 ```
 
-The main process (`electron/src/main/main.ts`) spawns the puppy_gui
-server if it isn't already running (or attaches to it if it is), polls
-`/api/health` until it's up, and kills only the child it spawned on
-quit. The renderer never talks to the server directly — it goes
+The main process (`electron/src/main/main.ts`) starts in **attach-only mode**:
+it observes an existing local Puppy GUI service but never implicitly launches
+Code Puppy. An explicit **Connect / start** button attempts attach/launch and
+stops only the child it spawned on quit. The renderer never talks to the server directly — it goes
 through the preload bridge (`window.omega`), same pattern as the
 starter (below).
 
@@ -113,9 +113,9 @@ Read from `puppy_gui` v0.16.2 `static/js/api.js` and the service layer:
 
 | Piece | State |
 |---|---|
-| Server spawn / attach, health poll, kill-on-quit | **Wired** (`src/main/services/puppy.ts`) |
+| Explicit server attach/launch, passive startup health poll, owned-child shutdown | **Wired** (`src/main/services/puppy.ts`); no automatic spawn on app open |
 | Agents / models / sessions / cost reads | **Wired** (verified `/api/*` above) |
-| Draft records (`runs.json` in userData, written atomically) | **Wired** — composing does not launch agents |
+| Draft records (`runs.json` in Omega userData, written atomically) | **Wired** — user selects a guarded project workspace; composing does not launch agents |
 | Progress docs read from a project folder | **Wired** |
 | Puppy GUI embedded (`<webview>` to 127.0.0.1:8765) | **Wired** |
 | Run-page brief compose + copy | **Wired** (interim trigger — see below) |
@@ -197,3 +197,13 @@ The Settings page currently supports reduced-motion preference and reconnecting 
 `electron/src/main/services/workflow-transport.ts` owns the loopback WebSocket connection and reconnects after disconnects; `services/workflow.ts` exposes the read-only IPC projection. The sandboxed renderer receives only typed projection snapshots through a fixed preload IPC channel; raw WebSocket access, prompt text and response/approval actions are not exposed by this new bridge.
 
 Run `cd electron && npm test && npm run typecheck && npm run build`. The unit tests cover start/delegation/response, errors, approval requests (including password prompt suppression), bounded activity and cancellations. A separate WebSocket integration suite starts an actual loopback `ws` server, verifies runtime events are projected without sending messages back, and tests disconnect/reconnect and loopback-only endpoint restrictions. CI runs those checks. Manual GUI stream compatibility must still be tested against the installed `puppy_gui` server.
+
+## Core isolation and workspace scope
+
+Omega installs **only project-local templates**. The PowerShell and shell installers reject the user profile, Code Puppy global config, known Python virtual environment paths, and redirecting junctions/symlinks before writing any files. The Electron app starts without launching Code Puppy and validates selected project workspaces in its main-process IPC handlers. Drafts are stored under Omega's own Electron userData, not Code Puppy configuration.
+
+The **Compose run** page requires a selected workspace and embeds a core-isolation instruction in every generated brief. Every Omega worker agent manifest also carries the restriction, since delegated workers do not inherit AGENTS.md. These are behavior instructions, **not** a filesystem security boundary. Agents using unrestricted shell tools can still modify files permitted by the OS account. Omega does not install/upgrade Code Puppy or edit its global settings.
+
+**Important working-directory limit:** selecting a folder in Omega does not change the current working directory of an already-running `puppy_gui` process. When you use the embedded GUI chat, confirm its runtime is operating in your intended project folder before running write-capable tasks. The native prompt-send path remains disabled pending a reliable project/session binding. The explicitly requested GUI launch calls the existing installation and could allow that runtime to perform its normal own startup/state updates; Omega does not claim otherwise.
+
+Tests include negative installation into home/core, symlink and Windows junction redirection checks, workspace selection guard tests, and normal-project install smoke checks.

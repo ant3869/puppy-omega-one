@@ -1,17 +1,14 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Install Puppy Omega One (Code Puppy edition) into a target project.
+  Install Puppy Omega One templates in a user project.
 .DESCRIPTION
-  Copies templates/ into the target project (AGENTS.md, .code_puppy/agents,
-  skills/reflect, docs memory files, .claude settings + commands).
-  Existing files are skipped unless -Force is passed. The user's global Code
-  Puppy configuration is never changed by a project installer.
-  Prints the manual steps at the end — two of them need you.
+  Never updates the Code Puppy installation, Python environment, or user-global
+  configuration. Refuses protected targets and any reparse-point redirects.
 .PARAMETER Target
-  Project directory to install into. Defaults to the current directory.
+  Existing project directory (default: current directory).
 .PARAMETER Force
-  Overwrite existing files instead of skipping them.
+  Explicitly overwrite existing project template files only.
 #>
 param(
     [string]$Target = ".",
@@ -21,49 +18,93 @@ param(
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $TemplatesDir = Join-Path $ScriptDir "templates"
-$TargetFull = (Resolve-Path $Target).Path
+if (-not (Test-Path -LiteralPath $TemplatesDir -PathType Container)) {
+    throw "templates/ not found next to this script."
+}
 
-if (-not (Test-Path $TemplatesDir)) {
-    Write-Error "templates/ not found next to this script ($TemplatesDir)."
-    exit 1
+$TargetItem = Get-Item -LiteralPath $Target -Force
+if (-not $TargetItem.PSIsContainer) { throw "Target must be an existing project directory." }
+$TargetFull = [IO.Path]::GetFullPath($TargetItem.FullName).TrimEnd('\', '/')
+$HomeFull = [IO.Path]::GetFullPath([Environment]::GetFolderPath('UserProfile')).TrimEnd('\', '/')
+$Comparison = [StringComparison]::OrdinalIgnoreCase
+
+function Test-InOrAbove([string]$Candidate, [string]$Guarded) {
+    $a = [IO.Path]::GetFullPath($Candidate).TrimEnd('\', '/')
+    $b = [IO.Path]::GetFullPath($Guarded).TrimEnd('\', '/')
+    return $a.Equals($b, $Comparison) -or
+        $a.StartsWith($b + '\', $Comparison) -or
+        $b.StartsWith($a + '\', $Comparison)
+}
+
+function Assert-NoReparsePoint([string]$PathToCheck) {
+    $current = [IO.Path]::GetFullPath($PathToCheck)
+    while ($current) {
+        if (Test-Path -LiteralPath $current) {
+            $item = Get-Item -LiteralPath $current -Force
+            if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+                throw "Refusing junction or symlink path: $current"
+            }
+        }
+        $parent = [IO.Path]::GetDirectoryName($current)
+        if (-not $parent -or $parent -eq $current) { break }
+        $current = $parent
+    }
+}
+
+# Home itself is not a project: installing there would collide with global
+# ~/.code_puppy/agents. A project *under* home is allowed.
+if ($TargetFull.Equals($HomeFull, $Comparison) -or $HomeFull.StartsWith($TargetFull + '\', $Comparison)) {
+    throw "Refusing install into or above the user profile: $TargetFull"
+}
+$protected = @(
+    (Join-Path $HomeFull '.code_puppy'),
+    (Join-Path $HomeFull '.code-puppy-venv'),
+    (Join-Path $HomeFull '.config\code_puppy'),
+    (Join-Path $HomeFull '.config\code-puppy'),
+    (Join-Path $HomeFull 'AppData\Roaming\code_puppy')
+)
+if ($env:XDG_CONFIG_HOME) {
+    $protected += (Join-Path $env:XDG_CONFIG_HOME 'code_puppy')
+}
+if ($env:CODE_PUPPY_PYTHON -and [IO.Path]::IsPathRooted($env:CODE_PUPPY_PYTHON)) {
+    $protected += (Split-Path -Parent $env:CODE_PUPPY_PYTHON)
+}
+foreach ($guarded in $protected) {
+    if (Test-InOrAbove $TargetFull $guarded) {
+        throw "Refusing protected Code Puppy install/config path: $TargetFull"
+    }
+}
+Assert-NoReparsePoint $TargetFull
+
+$files = @(Get-ChildItem -LiteralPath $TemplatesDir -Recurse -File -Force)
+foreach ($file in $files) {
+    if (($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "Refusing template symlink: $($file.FullName)"
+    }
+    $relative = $file.FullName.Substring($TemplatesDir.Length + 1)
+    $dest = Join-Path $TargetFull $relative
+    Assert-NoReparsePoint $dest
 }
 
 $copied = @()
 $skipped = @()
-Get-ChildItem -Path $TemplatesDir -Recurse -File | ForEach-Object {
-    $relative = $_.FullName.Substring($TemplatesDir.Length + 1)
+foreach ($file in $files) {
+    $relative = $file.FullName.Substring($TemplatesDir.Length + 1)
     $dest = Join-Path $TargetFull $relative
-    $destDir = Split-Path -Parent $dest
-    if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Path $destDir -Force | Out-Null }
-    if ((Test-Path $dest) -and -not $Force) {
+    if ((Test-Path -LiteralPath $dest) -and -not $Force) {
         $skipped += $relative
-    } else {
-        Copy-Item -Path $_.FullName -Destination $dest -Force
-        $copied += $relative
+        continue
     }
+    $destDir = Split-Path -Parent $dest
+    if (-not (Test-Path -LiteralPath $destDir)) {
+        New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+    }
+    Copy-Item -LiteralPath $file.FullName -Destination $dest -Force
+    $copied += $relative
 }
 
-# Code Puppy stores puppy.cfg in the user's config directory, not the project.
-# Never silently modify global model or compaction settings during installation.
-
-Write-Host ""
 Write-Host "Puppy Omega One installed into $TargetFull"
-Write-Host "  copied:  $($copied.Count) files"
-if ($skipped.Count -gt 0) {
-    Write-Host "  skipped (already exist, use -Force to overwrite):"
-    $skipped | ForEach-Object { Write-Host "    - $_" }
-}
-Write-Host ""
-Write-Host "MANUAL STEPS (do these before your first real run):"
-Write-Host "  1. In your Code Puppy installation, run /model and note the real Opus / Sonnet /"
-Write-Host "     Haiku alias strings. Swap them into .code_puppy/agents/*.json"
-Write-Host "     (the `"model`" field, one string per file). Aliases are PLACEHOLDERS:"
-Write-Host "     claude-opus-5-5 / claude-sonnet-5-5 / claude-haiku-5-5."
-Write-Host "  2. Optional: in Code Puppy, use /set compaction_threshold 0.5 and"
-Write-Host "     /set summarization_model <your real Haiku alias>. These are GLOBAL"
-Write-Host "     settings, not project settings. Check your existing values first."
-Write-Host "  3. Select the omega-orchestrator agent and confirm its Opus model."
-Write-Host "  4. Connect to any network required by your model provider."
-Write-Host ""
-Write-Host "Then open Code Puppy GUI in this project and run a job — see README.md"
-Write-Host "'Run a job' for the walkthrough."
+Write-Host "  copied: $($copied.Count) files, skipped: $($skipped.Count)"
+Write-Host "Only project templates were copied. No global Code Puppy files were edited."
+Write-Host "Verify available models via /model and update this project's agent JSON as needed."
+Write-Host "Starting Puppy GUI is a separate, explicit action in the desktop app."
