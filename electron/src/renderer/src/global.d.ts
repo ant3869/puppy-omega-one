@@ -3,6 +3,7 @@
 // this file mirrors it so pages get types without importing main-process code.
 
 import type { OmegaRun, PuppyStatus } from '@shared/types';
+import type { WorkflowTelemetry } from '@shared/workflow-events';
 
 declare global {
   interface Window {
@@ -17,6 +18,10 @@ declare global {
         getActiveSession: () => Promise<unknown>;
         getCost: () => Promise<unknown>;
         sendPrompt: (prompt: string) => Promise<unknown>;
+      };
+      workflow: {
+        get: () => Promise<WorkflowTelemetry>;
+        subscribe: (listener: (snapshot: WorkflowTelemetry) => void) => () => void;
       };
       runs: {
         list: () => Promise<OmegaRun[]>;
