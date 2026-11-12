@@ -1,8 +1,8 @@
 // pages/LivePage.tsx
 // Puppy Omega One — live run view: one card per worker delegation record.
 // Status comes from the saved run records (runs.json) plus a raw poll of the
-// active puppy_gui session. The live event stream is a stub until the
-// ChatBridge stream endpoint is wired — see docs/FRONTEND.md.
+// active puppy_gui session. Runtime event telemetry appears on Overview → Live;
+// these local saved-run cards are not equivalent to runtime events.
 
 import React, { useEffect, useState } from 'react';
 import { tokens } from '../lib/tokens';
@@ -105,7 +105,7 @@ export default function LivePage() {
 
       <details>
         <summary className="text-xs cursor-pointer" style={{ color: tokens.text.tertiary }}>
-          Active puppy_gui session (raw — event stream not wired yet)
+          Active puppy_gui session (raw · saved record view)
         </summary>
         <pre
           className="mt-2 px-3 py-2 text-xs whitespace-pre-wrap border overflow-auto"
