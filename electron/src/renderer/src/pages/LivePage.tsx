@@ -9,6 +9,7 @@ import { tokens } from '../lib/tokens';
 import type { OmegaRun, RunStatus } from '@shared/types';
 
 const STATUS_COLOR: Record<RunStatus, string> = {
+  draft: tokens.status.idle,
   queued: tokens.status.idle,
   running: tokens.status.running,
   requires_approval: tokens.accent.primary,
@@ -27,12 +28,16 @@ export default function LivePage() {
     let alive = true;
     const load = async () => {
       try {
-        const [r, s] = await Promise.all([window.omega.runs.list(), window.omega.puppy.getActiveSession()]);
-        if (!alive) return;
-        setRuns(r);
-        setSession(s);
+        const r = await window.omega.runs.list();
+        if (alive) setRuns(r);
       } catch {
-        /* server down — cards still render from runs.json */
+        // Local run history may be unavailable or corrupt.
+      }
+      try {
+        const s = await window.omega.puppy.getActiveSession();
+        if (alive) setSession(s);
+      } catch {
+        if (alive) setSession(null);
       }
     };
     void load();
@@ -58,11 +63,16 @@ export default function LivePage() {
       <div>
         <h2 className="text-base font-medium" style={{ color: tokens.text.primary }}>{run.goal}</h2>
         <p className="text-xs mt-1" style={{ color: tokens.text.secondary }}>
-          Done when: {run.doneWhen} · status: {run.status} · started{' '}
+          Done when: {run.doneWhen} · status: {run.status} · composed{' '}
           {new Date(run.startedAt).toLocaleString()}
         </p>
       </div>
 
+      {run.status === 'draft' && (
+        <p className="text-xs" style={{ color: tokens.text.secondary }}>
+          Draft only — this brief has not been sent to Code Puppy. Copy it from Run and paste into the GUI.
+        </p>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {run.briefs.map((b) => (
           <div
