@@ -9,8 +9,9 @@
 ## The system
 
 One orchestrator (Opus) plans, briefs, and verifies. Workers do the work.
-The orchestrator never writes code or files — it has no write tools, on
-purpose. If the orchestrator needs a file changed, it briefs a worker.
+The orchestrator must not write code or files. Its direct editing tools
+are omitted, but `shell` can still write; this is a behavioral rule,
+not a hard sandbox. The researcher has no shell or editor tools. If the orchestrator needs a file changed, it briefs a worker.
 
 | Agent | Model (placeholder) | Job |
 |---|---|---|
