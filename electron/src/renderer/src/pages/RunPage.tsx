@@ -21,9 +21,8 @@ function uid(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
+export default function RunPage({ onOpenPuppy, projectDir, onProjectChange }: { onOpenPuppy: () => void; projectDir: string | null; onProjectChange: (value: string | null) => void }) {
   const [goal, setGoal] = useState('');
-  const [projectDir, setProjectDir] = useState<string | null>(null);
   const [pickingProject, setPickingProject] = useState(false);
   const [doneWhen, setDoneWhen] = useState('');
   const [selected, setSelected] = useState<string[]>(['omega-builder', 'omega-reviewer', 'omega-tester']);
@@ -108,7 +107,7 @@ export default function RunPage({ onOpenPuppy }: { onOpenPuppy: () => void }) {
     try {
       const chosen = await window.omega.app.pickProject();
       if (chosen) {
-        setProjectDir(chosen);
+        onProjectChange(chosen);
         setBrief(null);
         setCopied(false);
       }

@@ -12,7 +12,7 @@ type Unsub = () => void;
 const api = {
   puppy: {
     getStatus: (): Promise<PuppyStatus> => ipcRenderer.invoke('puppy:getStatus'),
-    ensureServer: (): Promise<PuppyStatus> => ipcRenderer.invoke('puppy:ensureServer'),
+    ensureServer: (workspace: string): Promise<PuppyStatus> => ipcRenderer.invoke('puppy:ensureServer', workspace),
     listAgents: (): Promise<unknown> => ipcRenderer.invoke('puppy:listAgents'),
     listModels: (): Promise<unknown> => ipcRenderer.invoke('puppy:listModels'),
     getActiveModel: (): Promise<unknown> => ipcRenderer.invoke('puppy:getActiveModel'),
