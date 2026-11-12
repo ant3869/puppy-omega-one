@@ -51,7 +51,7 @@ only `templates/` gets copied in).
 7. **Session end:** ask `omega-researcher` to summarize progress and
    decisions **without editing files**. Brief `omega-builder` to record
    the dated updates in `docs/progress.md`, `docs/decisions.md`, and
-   `docs/known-issues.md`. Run `reflect` (`skills/reflect/SKILL.md`)
+   `docs/known-issues.md`. Activate `reflect` with `activate_skill` (`skills/reflect/SKILL.md`)
    to propose improvements. Do not apply changes to skills or this file
    without the human's explicit approval.
 
