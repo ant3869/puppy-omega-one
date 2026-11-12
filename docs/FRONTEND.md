@@ -49,7 +49,7 @@ IDs, each worker is a **delegation record** (parent run, child agent,
 objective, status, check result), statuses are terminal
 (`completed | incomplete | failed | canceled | unknown`), and
 **admission is never treated as completion** — a worker only counts as
-done when its check result is `pass`. Run records persist to
+done when its check result is `pass`. Draft records persist to
 `runs.json` in the app's userData dir, not renderer state (same doc:
 keep a canonical store; never trust UI state).
 
@@ -103,7 +103,7 @@ Read from `puppy_gui` v0.16.2 `static/js/api.js` and the service layer:
 
 | View | Before a run | During a run | After a run |
 |---|---|---|---|
-| **Run a job** | Goal + "Done when:" inputs, worker picker with default tiers, Compose brief | Brief text + Copy | Same brief, saved as a run record |
+| **Run a job** | Goal + "Done when:" inputs, worker picker with default tiers, Compose brief | Brief text + Copy | Draft saved locally; no automatic dispatch |
 | **Live run** | "No runs yet" | Worker cards: agent, model, status chip, check pass/fail | Final statuses + result summaries |
 | **Briefs** | Empty | Each delegation record, expandable brief text | Check results per worker |
 | **Progress** | Pick a project folder | `docs/progress.md`, `decisions.md`, `known-issues.md` as written | Same — the session-end ritual's output |
@@ -115,16 +115,17 @@ Read from `puppy_gui` v0.16.2 `static/js/api.js` and the service layer:
 |---|---|
 | Server spawn / attach, health poll, kill-on-quit | **Wired** (`src/main/services/puppy.ts`) |
 | Agents / models / sessions / cost reads | **Wired** (verified `/api/*` above) |
-| Run records (`runs.json` in userData) | **Wired** |
+| Draft records (`runs.json` in userData, written atomically) | **Wired** — composing does not launch agents |
 | Progress docs read from a project folder | **Wired** |
 | Puppy GUI embedded (`<webview>` to 127.0.0.1:8765) | **Wired** |
 | Run-page brief compose + copy | **Wired** (interim trigger — see below) |
 | Sending a prompt into a session | **Stub** — `puppy:sendPrompt` throws a "not wired yet" error on purpose |
 | Live event stream (worker started/finished, tool calls) | **Stub** — Live page polls `/api/sessions/active` every 5s and shows it raw |
 
-**Interim trigger:** until send is wired, the Run page composes the
-brief and copies it — you paste it into the Puppy GUI chat with the
-`omega-orchestrator` agent. Nothing pretends to start a run it didn't.
+**Interim trigger:** until send is wired, the Run page composes and
+persists a **draft** brief — you paste it into the Puppy GUI chat with
+the `omega-orchestrator` agent. Drafts are not evidence of launched work,
+and the live page does not infer worker completion from draft records.
 
 **To wire send + streaming:** check `routes_chat` and
 `static/js/chat.js` in puppy_gui for the chat-send endpoint and the
