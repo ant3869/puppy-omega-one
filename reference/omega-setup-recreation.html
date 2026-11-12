@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Omega Setup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet" />
+    <style>
+      button, [role="button"], select, summary { min-height: 2.25rem; }
+
+      :root {
+        --bg: #f4f3ef;
+        --surface: #ffffff;
+        --surface-2: #eceae4;
+        --ink: #17181a;
+        --ink-2: #4c4f55;
+        --ink-3: #7a7d84;
+        --line: #d9d6cd;
+        --orange: #d97e06;
+        --orange-soft: #fdf1de;
+        --green: #1d9e57;
+        --green-soft: #e2f4e9;
+        --code-bg: #0b0f0d;
+        --code-ink: #d7dbd5;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0a0c0e;
+          --surface: #121518;
+          --surface-2: #171b1f;
+          --ink: #eceff1;
+          --ink-2: #aab2b8;
+          --ink-3: #767e85;
+          --line: #262b30;
+          --orange: #f0a63c;
+          --orange-soft: #2a1e09;
+          --green: #4ecb7f;
+          --green-soft: #0f2a1a;
+          --code-bg: #070a08;
+          --code-ink: #d7dbd5;
+        }
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      .mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+      main { max-width: 1180px; margin: 0 auto; padding: 0 20px 72px; }
+
+      /* ---------- Poster (the recreated layout) ---------- */
+      .poster-wrap { padding-top: 74px; }
+      .poster {
+        position: relative;
+        background: #06090a;
+        background-image: radial-gradient(rgba(160, 200, 180, 0.13) 1.1px, transparent 1.2px);
+        background-size: 22px 22px;
+        border: 1px solid #232a27;
+        border-radius: 10px;
+        padding: 96px 30px 30px;
+        color: #e8ebe8;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      }
+      .title-card {
+        position: absolute;
+        top: -58px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(680px, 94%);
+        background: #ffffff;
+        color: #0c0d0e;
+        border-radius: 14px;
+        text-align: center;
+        padding: 20px 26px 24px;
+        box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
+      }
+      .title-card h1 {
+        margin: 0;
+        font-size: clamp(1.55rem, 4.6vw, 2.6rem);
+        font-weight: 900;
+        letter-spacing: -0.01em;
+        line-height: 1.12;
+      }
+      .title-card .sub {
+        margin-top: 2px;
+        font-size: clamp(1.05rem, 3vw, 1.6rem);
+        font-weight: 700;
+      }
+      .prompt-pill {
+        position: absolute;
+        left: 50%;
+        bottom: -17px;
+        transform: translateX(-50%);
+        background: #f2a63d;
+        color: #14100a;
+        font-weight: 800;
+        font-size: 0.98rem;
+        padding: 6px 22px;
+        border-radius: 999px;
+        white-space: nowrap;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      }
+      .poster svg.flow { display: block; width: 100%; height: auto; }
+
+      /* tree panel inside poster */
+      .tree-panel {
+        position: relative;
+        margin-top: 14px;
+        border: 1px solid #2b332f;
+        border-radius: 8px;
+        background: rgba(10, 14, 12, 0.88);
+        padding: 14px 20px 16px;
+        overflow: hidden;
+      }
+      .tree-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #232a27;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.86rem;
+      }
+      .tree-head .cmd { color: #d7dbd5; }
+      .tree-head .cmd .dollar { color: #43d17c; font-weight: 700; }
+      .tree-head .cap { color: #79837c; }
+      .tree {
+        margin: 12px 0 2px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: clamp(0.72rem, 1.65vw, 0.92rem);
+        line-height: 1.62;
+        color: #cfd4cf;
+      }
+      .trow { display: flex; align-items: baseline; }
+      .tname { white-space: pre; flex: 0 0 auto; }
+      .trow:has(.tnote) .tname { min-width: 21ch; }
+      .tnote { color: #79837c; margin-left: 3ch; }
+      .tree .org { color: #f0a63c; font-weight: 700; }
+      .tree .grn { color: #43d17c; }
+      .tree .wht { color: #f2f4f2; font-weight: 700; }
+      @media (max-width: 640px) {
+        .trow { flex-wrap: wrap; }
+        .tnote { flex-basis: 100%; margin-left: 0; padding-left: 5ch; }
+      }
+      .side-note {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%) rotate(180deg);
+        writing-mode: vertical-rl;
+        color: #f0a63c;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.72rem;
+        letter-spacing: 0.28em;
+      }
+      @media (max-width: 760px) { .side-note { display: none; } .poster { padding: 88px 14px 18px; } }
+
+      .poster-caption {
+        margin: 14px 4px 0;
+        color: var(--ink-2);
+        font-size: 0.92rem;
+      }
+      .poster-caption strong { color: var(--ink); }
+
+      /* ---------- Sections ---------- */
+      section { margin-top: 64px; }
+      h2 {
+        font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+        font-weight: 800;
+        letter-spacing: -0.015em;
+        margin: 0 0 8px;
+        line-height: 1.15;
+      }
+      .lede { color: var(--ink-2); max-width: 68ch; margin: 0 0 22px; font-size: 1.02rem; }
+      .lede strong { color: var(--ink); }
+      .src { font-family: "JetBrains Mono", monospace; font-size: 0.78rem; color: var(--ink-3); }
+      .src a { color: var(--ink-2); }
+
+      table { border-collapse: collapse; width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+      th, td { text-align: left; padding: 13px 16px; vertical-align: top; }
+      thead th {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.74rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+      }
+      tbody tr + tr td { border-top: 1px solid var(--line); }
+      td.num, th.num { text-align: right; font-family: "JetBrains Mono", monospace; white-space: nowrap; }
+      .model-name { font-weight: 800; font-size: 1.02rem; }
+      .model-sub { color: var(--ink-2); font-size: 0.9rem; display: block; margin-top: 2px; }
+      .role-tag {
+        display: inline-block; font-family: "JetBrains Mono", monospace; font-size: 0.72rem; font-weight: 700;
+        padding: 2px 9px; border-radius: 999px; letter-spacing: 0.04em; white-space: nowrap;
+      }
+      .role-plan { background: var(--orange-soft); color: var(--orange); }
+      .role-mid { background: var(--surface-2); color: var(--ink-2); }
+      .role-work { background: var(--green-soft); color: var(--green); }
+      .table-scroll { overflow-x: auto; border-radius: 8px; }
+      .table-scroll table { min-width: 560px; }
+      .table-scroll table.contrast { min-width: 0; }
+      @media (max-width: 640px) {
+        .pricing-wrap { overflow: visible; }
+        table.pricing { min-width: 0; }
+        table.pricing thead { display: none; }
+        table.pricing tbody tr { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; padding: 13px 16px; }
+        table.pricing tbody tr + tr { border-top: 1px solid var(--line); }
+        table.pricing td { padding: 0; border-top: none; }
+        table.pricing td:first-child { flex-basis: 100%; }
+        table.pricing td.num { text-align: left; }
+        table.pricing td.num::before {
+          content: attr(data-label) " ";
+          font-family: "Archivo", sans-serif; font-size: 0.7rem; font-weight: 700;
+          letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3);
+        }
+        .codeblock pre { font-size: 0.79rem; }
+      }
+      .fineprint { color: var(--ink-3); font-size: 0.85rem; margin-top: 10px; }
+
+      blockquote.pull {
+        margin: 0 0 22px;
+        padding: 20px 24px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font-size: 1.06rem;
+      }
+      blockquote.pull p { margin: 0; max-width: 72ch; }
+      blockquote.pull mark { background: #ffe58a; color: #191408; padding: 0 3px; border-radius: 2px; }
+      @media (prefers-color-scheme: dark) {
+        blockquote.pull mark { background: #8a6d1c; color: #fff6dd; }
+      }
+      blockquote.pull footer { margin-top: 10px; }
+
+      .contrast td:first-child { color: var(--ink-2); width: 50%; }
+
+      /* code blocks with copy */
+      .codeblock {
+        background: var(--code-bg);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        margin-bottom: 22px;
+        overflow: hidden;
+      }
+      .codeblock-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 8px 10px 8px 16px;
+        border-bottom: 1px solid #232a27;
+        font-family: "JetBrains Mono", monospace; font-size: 0.82rem; color: #aeb6ae;
+      }
+      .codeblock-head .path .org { color: #f0a63c; font-weight: 700; }
+      .codeblock-head .path .grn { color: #43d17c; }
+      .copy-btn {
+        font-family: "JetBrains Mono", monospace; font-size: 0.78rem; font-weight: 700;
+        background: #171d19; color: #d7dbd5; border: 1px solid #333b36;
+        border-radius: 6px; padding: 6px 14px; cursor: pointer; min-height: 36px;
+      }
+      .copy-btn:hover { background: #1f2621; }
+      .copy-btn.copied { color: #43d17c; border-color: #43d17c; }
+      .codeblock pre {
+        margin: 0; padding: 16px 20px; overflow-x: auto;
+        font-family: "JetBrains Mono", monospace; font-size: 0.86rem; line-height: 1.6; color: var(--code-ink);
+        white-space: pre;
+      }
+
+      /* loop steps */
+      ol.loop { list-style: none; counter-reset: step; margin: 0; padding: 0; max-width: 760px; }
+      ol.loop li {
+        counter-increment: step;
+        position: relative;
+        padding: 14px 0 14px 58px;
+        border-top: 1px solid var(--line);
+      }
+      ol.loop li:first-child { border-top: none; padding-top: 4px; }
+      ol.loop li::before {
+        content: counter(step, decimal-leading-zero);
+        position: absolute; left: 0; top: 14px;
+        font-family: "JetBrains Mono", monospace; font-weight: 800; font-size: 0.95rem;
+        color: var(--orange);
+      }
+      ol.loop li:first-child::before { top: 4px; }
+      ol.loop .step-title { font-weight: 800; display: block; }
+      ol.loop .step-body { color: var(--ink-2); }
+      ol.loop code, .lede code, blockquote.pull code {
+        font-family: "JetBrains Mono", monospace; font-size: 0.88em;
+        background: var(--surface-2); padding: 1px 5px; border-radius: 4px;
+      }
+
+      footer.page-foot {
+        margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--line);
+        color: var(--ink-3); font-size: 0.86rem; max-width: 76ch;
+      }
+      footer.page-foot a { color: var(--ink-2); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <!-- ============ THE RECREATED LAYOUT ============ -->
+      <div class="poster-wrap">
+        <div class="poster" role="img" aria-label="Recreation of the Omega orchestration diagram from the reel: a goal feeds Opus 5.5, which plans and briefs sixteen parallel Haiku 5.5 agents; each result passes a check, failures loop back, and Opus re-runs every check. Below sits the project folder tree.">
+          <div class="title-card">
+            <h1>Claude Code GOD MODE</h1>
+            <div class="sub">(the Omega setup)</div>
+            <div class="prompt-pill">Comment PROMPT</div>
+          </div>
+
+          <svg class="flow" viewBox="0 0 1200 742" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <marker id="arw-w" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="#e8ebe8"></path>
+              </marker>
+              <marker id="arw-o" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="#f0a63c"></path>
+              </marker>
+              <marker id="arw-g" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="#43d17c"></path>
+              </marker>
+              <marker id="arw-r" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="#e05252"></path>
+              </marker>
+            </defs>
+
+            <!-- header row -->
+            <text x="30" y="36" font-family="JetBrains Mono, monospace" font-size="21">
+              <tspan fill="#f0a63c" font-weight="800">Ω&#8194;OMEGA</tspan><tspan fill="#79837c">&#8194;&#8194;// orchestration</tspan>
+            </text>
+            <circle cx="982" cy="29" r="6" fill="#43d17c"></circle>
+            <text x="1170" y="36" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="17" fill="#43d17c">16 agents · live</text>
+
+            <!-- GOAL -->
+            <rect x="380" y="56" width="440" height="78" rx="10" fill="rgba(255,255,255,0.02)" stroke="#8a938e" stroke-width="1.6" stroke-dasharray="7 5"></rect>
+            <text x="404" y="90" font-family="JetBrains Mono, monospace" font-size="13" letter-spacing="2" fill="#79837c">GOAL</text>
+            <text x="468" y="91" font-family="JetBrains Mono, monospace" font-size="21" font-weight="700" fill="#f4f6f4">ship the checkout flow</text>
+            <text x="404" y="119" font-family="JetBrains Mono, monospace" font-size="15.5" fill="#9aa39c">done when: all tests pass</text>
+            <line x1="600" y1="134" x2="600" y2="156" stroke="#e8ebe8" stroke-width="2" marker-end="url(#arw-w)"></line>
+
+            <!-- MEMORY -->
+            <rect x="30" y="162" width="255" height="96" rx="10" fill="rgba(240,166,60,0.04)" stroke="#8a6a2a" stroke-width="1.6"></rect>
+            <text x="52" y="190" font-family="JetBrains Mono, monospace" font-size="12" letter-spacing="2.5" fill="#79837c">MEMORY</text>
+            <text x="52" y="218" font-family="JetBrains Mono, monospace" font-size="19" font-weight="700" fill="#f0a63c">CLAUDE.md</text>
+            <text x="52" y="244" font-family="JetBrains Mono, monospace" font-size="17" fill="#d7dbd5">docs/</text>
+            <line x1="285" y1="210" x2="310" y2="210" stroke="#f0a63c" stroke-width="2" marker-end="url(#arw-o)"></line>
+
+            <!-- OPUS -->
+            <rect x="318" y="162" width="564" height="96" rx="14" fill="#171106" stroke="#f0a63c" stroke-width="3" style="filter: drop-shadow(0 0 14px rgba(240,166,60,0.35))"></rect>
+            <text x="600" y="209" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="45" font-weight="800" letter-spacing="3" fill="#f0a63c">OPUS 5.5</text>
+            <rect x="508" y="222" width="184" height="27" rx="13.5" fill="#241a08" stroke="#6b4d15" stroke-width="1.2"></rect>
+            <text x="600" y="240.5" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" fill="#f0c169">effort: extra</text>
+
+            <!-- CONTEXT -->
+            <rect x="915" y="162" width="255" height="96" rx="10" fill="rgba(255,255,255,0.02)" stroke="#3a423d" stroke-width="1.6"></rect>
+            <text x="937" y="190" font-family="JetBrains Mono, monospace" font-size="12" letter-spacing="2.5" fill="#79837c">CONTEXT</text>
+            <line x1="937" y1="214" x2="1148" y2="214" stroke="#333b36" stroke-width="5" stroke-linecap="round"></line>
+            <line x1="937" y1="214" x2="1021" y2="214" stroke="#f0a63c" stroke-width="5" stroke-linecap="round"></line>
+            <circle cx="1021" cy="214" r="7.5" fill="#f0a63c"></circle>
+            <text x="937" y="243" font-family="JetBrains Mono, monospace" font-size="16" fill="#cfc9bd">compact @ 40%</text>
+
+            <text x="600" y="284" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="16" fill="#9aa39c">plans · briefs · verifies</text>
+
+            <!-- fan-out bus -->
+            <path d="M600,258 V306 M158,306 H1033" fill="none" stroke="#43d17c" stroke-width="2.2"></path>
+            <text x="1170" y="296" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="15" fill="#43d17c">× 16 in parallel</text>
+            <line x1="158" y1="306" x2="158" y2="328" stroke="#43d17c" stroke-width="2.2" marker-end="url(#arw-g)"></line>
+            <line x1="453" y1="306" x2="453" y2="328" stroke="#43d17c" stroke-width="2.2" marker-end="url(#arw-g)"></line>
+            <line x1="748" y1="306" x2="748" y2="328" stroke="#43d17c" stroke-width="2.2" marker-end="url(#arw-g)"></line>
+            <line x1="1033" y1="306" x2="1033" y2="328" stroke="#43d17c" stroke-width="2.2" marker-end="url(#arw-g)"></line>
+
+            <!-- agent boxes -->
+            <g font-family="JetBrains Mono, monospace">
+              <rect x="30" y="334" width="255" height="124" rx="12" fill="#0a120d" stroke="#43d17c" stroke-width="2"></rect>
+              <rect x="325" y="334" width="255" height="124" rx="12" fill="#0a120d" stroke="#43d17c" stroke-width="2"></rect>
+              <rect x="620" y="334" width="255" height="124" rx="12" fill="#0a120d" stroke="#43d17c" stroke-width="2"></rect>
+              <rect x="915" y="334" width="255" height="124" rx="12" fill="#0a120d" stroke="#43d17c" stroke-width="2"></rect>
+            </g>
+
+            <!-- agent 1 -->
+            <text x="52" y="363" font-family="JetBrains Mono, monospace" font-size="15" font-weight="700" letter-spacing="2" fill="#43d17c">HAIKU 5.5</text>
+            <text x="52" y="402" font-family="JetBrains Mono, monospace" font-size="13" fill="#79837c">job</text>
+            <text x="94" y="403" font-family="JetBrains Mono, monospace" font-size="25" font-weight="700" fill="#f4f6f4">research</text>
+            <text x="52" y="436" font-family="JetBrains Mono, monospace" font-size="13" fill="#79837c">skill</text>
+            <text x="106" y="437" font-family="JetBrains Mono, monospace" font-size="18" fill="#43d17c">explore/</text>
+
+            <!-- agent 2 -->
+            <text x="347" y="363" font-family="JetBrains Mono, monospace" font-size="15" font-weight="700" letter-spacing="2" fill="#43d17c">HAIKU 5.5</text>
+            <text x="347" y="402" font-family="JetBrains Mono, monospace" font-size="13" fill="#79837c">job</text>
+            <text x="389" y="403" font-family="JetBrains Mono, monospace" font-size="25" font-weight="700" fill="#f4f6f4">build</text>
+            <text x="347" y="436" font-family="JetBrains Mono, monospace" font-size="13" fill="#79837c">skill</text>
+            <text x="401" y="437" font-family="JetBrains Mono, monospace" font-size="18" fill="#43d17c">frontend/</text>
+
+            <!-- agent 3 -->
+            <text x="642" y="363" font-family="JetBrains Mono, monospace" font-size="15" font-weight="700" letter-spacing="2" fill="#43d17c">HAIKU 5.5</text>
+            <text x="642" y="402" font-family="JetBrains Mono, monospace" font-size="13" fill="#79837c">job</text>
+            <text x="684" y="403" font-family="JetBrains Mono, monospace" font-size="25" font-weight="700" fill="#f4f6f4">test</text>
+            <text x="642" y="436" font-family="JetBrains Mono, monospace" font-size="13" fill="#79837c">skill</text>
+            <text x="696" y="437" font-family="JetBrains Mono, monospace" font-size="18" fill="#43d17c">test-runner/</text>
+
+            <!-- agent 4 -->
+            <text x="937" y="363" font-family="JetBrains Mono, monospace" font-size="15" font-weight="700" letter-spacing="2" fill="#43d17c">HAIKU 5.5</text>
+            <text x="937" y="402" font-family="JetBrains Mono, monospace" font-size="13" fill="#79837c">job</text>
+            <text x="979" y="403" font-family="JetBrains Mono, monospace" font-size="25" font-weight="700" fill="#f4f6f4">review</text>
+            <text x="937" y="436" font-family="JetBrains Mono, monospace" font-size="13" fill="#79837c">skill</text>
+            <text x="991" y="437" font-family="JetBrains Mono, monospace" font-size="18" fill="#43d17c">code-review/</text>
+
+            <!-- arrows to checks -->
+            <line x1="158" y1="458" x2="158" y2="474" stroke="#e8ebe8" stroke-width="2" marker-end="url(#arw-w)"></line>
+            <line x1="453" y1="458" x2="453" y2="474" stroke="#e8ebe8" stroke-width="2" marker-end="url(#arw-w)"></line>
+            <line x1="748" y1="458" x2="748" y2="474" stroke="#e8ebe8" stroke-width="2" marker-end="url(#arw-w)"></line>
+            <line x1="1033" y1="458" x2="1033" y2="474" stroke="#e8ebe8" stroke-width="2" marker-end="url(#arw-w)"></line>
+
+            <!-- fail loops (red dashed, back up to the agent) -->
+            <path d="M80,518 H14 V402 H24" fill="none" stroke="#e05252" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arw-r)"></path>
+            <path d="M375,518 H309 V402 H319" fill="none" stroke="#e05252" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arw-r)"></path>
+            <path d="M670,518 H604 V402 H614" fill="none" stroke="#e05252" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arw-r)"></path>
+            <path d="M955,518 H899 V402 H909" fill="none" stroke="#e05252" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arw-r)"></path>
+
+            <!-- CHECK diamonds -->
+            <g font-family="JetBrains Mono, monospace" font-size="15" font-weight="700" letter-spacing="1">
+              <polygon points="158,480 236,518 158,556 80,518" fill="#0b0f0d" stroke="#f2f2f2" stroke-width="2" style="filter: drop-shadow(0 0 7px rgba(255,255,255,0.35))"></polygon>
+              <polygon points="453,480 531,518 453,556 375,518" fill="#0b0f0d" stroke="#f2f2f2" stroke-width="2" style="filter: drop-shadow(0 0 7px rgba(255,255,255,0.35))"></polygon>
+              <polygon points="748,480 826,518 748,556 670,518" fill="#0b0f0d" stroke="#f2f2f2" stroke-width="2" style="filter: drop-shadow(0 0 7px rgba(255,255,255,0.35))"></polygon>
+              <polygon points="1033,480 1111,518 1033,556 955,518" fill="#0b0f0d" stroke="#f2f2f2" stroke-width="2" style="filter: drop-shadow(0 0 7px rgba(255,255,255,0.35))"></polygon>
+              <text x="158" y="524" text-anchor="middle" fill="#f4f6f4">CHECK</text>
+              <text x="453" y="524" text-anchor="middle" fill="#f4f6f4">CHECK</text>
+              <text x="748" y="524" text-anchor="middle" fill="#f4f6f4">CHECK</text>
+              <text x="1033" y="524" text-anchor="middle" fill="#f4f6f4">CHECK</text>
+            </g>
+
+            <!-- pass lines merge -->
+            <path d="M158,556 V606 M453,556 V606 M748,556 V606 M1033,556 V606 M158,606 H1033 M600,606 V624" fill="none" stroke="#43d17c" stroke-width="2.2"></path>
+
+            <!-- final pill -->
+            <rect x="330" y="630" width="540" height="48" rx="24" fill="#0a120d" stroke="#43d17c" stroke-width="2"></rect>
+            <text x="600" y="661" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="19" fill="#43d17c">Opus re-runs every check</text>
+
+            <!-- legend -->
+            <line x1="30" y1="716" x2="72" y2="716" stroke="#43d17c" stroke-width="3"></line>
+            <text x="84" y="722" font-family="JetBrains Mono, monospace" font-size="15" fill="#9aa39c">pass</text>
+            <line x1="152" y1="716" x2="194" y2="716" stroke="#e05252" stroke-width="3" stroke-dasharray="6 5"></line>
+            <text x="206" y="722" font-family="JetBrains Mono, monospace" font-size="15" fill="#9aa39c">fail → sent back</text>
+          </svg>
+
+          <!-- folder system panel -->
+          <div class="tree-panel">
+            <div class="tree-head">
+              <span class="cmd"><span class="dollar">$</span> tree my-project</span>
+              <span class="cap">the folder system</span>
+            </div>
+            <div class="tree">
+              <div class="trow"><span class="tname"><span class="wht">my-project/</span></span></div>
+              <div class="trow"><span class="tname">├─ <span class="org">CLAUDE.md</span></span><span class="tnote">Opus reads it first</span></div>
+              <div class="trow"><span class="tname">├─ <span class="org">docs/</span></span><span class="tnote">progress · decisions · issues</span></div>
+              <div class="trow"><span class="tname">├─ .claude/</span></div>
+              <div class="trow"><span class="tname">│  ├─ <span class="grn">agents/</span></span><span class="tnote">workers · model: haiku</span></div>
+              <div class="trow"><span class="tname">│  │  ├─ <span class="grn">builder.md</span></span></div>
+              <div class="trow"><span class="tname">│  │  └─ <span class="grn">reviewer.md</span></span></div>
+              <div class="trow"><span class="tname">│  └─ skills/</span><span class="tnote">each agent loads one</span></div>
+              <div class="trow"><span class="tname">│     ├─ <span class="grn">frontend/</span></span></div>
+              <div class="trow"><span class="tname">│     ├─ <span class="grn">test-runner/</span></span></div>
+              <div class="trow"><span class="tname">│     ├─ <span class="grn">code-review/</span></span></div>
+              <div class="trow"><span class="tname">│     └─ <span class="grn">reflect/</span></span><span class="tnote">rewrites the other skills</span></div>
+              <div class="trow"><span class="tname">├─ <span class="wht">src/</span></span></div>
+              <div class="trow"><span class="tname">└─ tests/</span></div>
+            </div>
+            <div class="side-note">AFTER EVERY SESSION</div>
+          </div>
+        </div>
+        <p class="poster-caption">The layout from the reel, rebuilt clean — <strong>Opus plans, Haiku does the work.</strong> Everything below is the supporting material from the other frames, plus starter files so you can set it up yourself.</p>
+      </div>
+
+      <!-- ============ THE SPLIT / PRICING ============ -->
+      <section id="split">
+        <h2>The split: one planner, a fleet of workers</h2>
+        <p class="lede">The reel's caption sums it up: <strong>“Opus plans, Haiku does the work at a fortieth of the price.”</strong> The expensive model never touches bulk work — it writes the plan, briefs each worker, and verifies results. The cheap model runs in parallel, up to dozens or hundreds of agents per run. The pricing frame from the reel is why the math works:</p>
+        <div class="table-scroll pricing-wrap">
+          <table class="pricing">
+            <thead>
+              <tr><th>Model</th><th>Role in the setup</th><th class="num">Input</th><th class="num">Output</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="model-name">Claude Opus 5.5</span><span class="model-sub">For long-running agentic coding and knowledge work</span></td>
+                <td><span class="role-tag role-plan">Plans · briefs · verifies</span></td>
+                <td class="num" data-label="Input">$4 / MTok</td>
+                <td class="num" data-label="Output">$20 / MTok</td>
+              </tr>
+              <tr>
+                <td><span class="model-name">Claude Sonnet 5.5</span><span class="model-sub">The best combination of speed and intelligence</span></td>
+                <td><span class="role-tag role-mid">Middle tier</span></td>
+                <td class="num" data-label="Input">$2 / MTok</td>
+                <td class="num" data-label="Output">$10 / MTok</td>
+              </tr>
+              <tr>
+                <td><span class="model-name">Claude Haiku 5.5</span><span class="model-sub">For high-volume, well-defined work</span></td>
+                <td><span class="role-tag role-work">The worker fleet</span></td>
+                <td class="num" data-label="Input">$0.10 / MTok *</td>
+                <td class="num" data-label="Output">$0.50 / MTok</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="fineprint">* Haiku input price shown is for prompts up to 100,000 tokens, as listed in the frame. Prices as shown in the reel — <span class="src">source frame: platform.claude.com/pricing</span>. Haiku output at $0.50 vs Opus at $20 is the “fortieth of the price” from the caption.</p>
+      </section>
+
+      <!-- ============ WHY SUBAGENTS ============ -->
+      <section id="why">
+        <h2>Why subagents carry it</h2>
+        <blockquote class="pull">
+          <p>“Haiku 5.5 is a fast, cost-efficient subagent for coding and well-defined tasks. A more intelligent model like Fable or Opus can <mark>plan the work and hand off subtasks to Haiku</mark>, making it practical to run many agents in parallel.”</p>
+          <footer class="src">— shown in the reel from <a href="https://www.anthropic.com/claude/haiku">anthropic.com/claude/haiku</a></footer>
+        </blockquote>
+        <p class="lede">The same page pitches Haiku as a computer-use agent for repetitive work — testing, data entry, moving information between apps. And the docs frame in the reel contrasts a classic agent team with this kind of orchestration:</p>
+        <div class="table-scroll">
+          <table class="contrast">
+            <tbody>
+              <tr><td>The team definition</td><td>The orchestration itself</td></tr>
+              <tr><td>A handful of long-running peers</td><td><strong>Dozens to hundreds of agents per run</strong></td></tr>
+              <tr><td>Teammates keep running</td><td>Resumable in the same session</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="fineprint">Pairs as they appear in the reel — <span class="src">source frame: code.claude.com/docs</span></p>
+      </section>
+
+      <!-- ============ THE LOOP ============ -->
+      <section id="loop">
+        <h2>The loop, start to finish</h2>
+        <ol class="loop">
+          <li>
+            <span class="step-title">State the goal — and what “done” means</span>
+            <span class="step-body">One goal at the top of the run (<em>ship the checkout flow</em>), with an explicit done-when (<em>all tests pass</em>). Everything downstream checks against it.</span>
+          </li>
+          <li>
+            <span class="step-title">Opus reads memory first</span>
+            <span class="step-body"><code>CLAUDE.md</code> and <code>docs/</code> (progress · decisions · issues) load before planning, so the plan starts from where the project actually is. Context is managed deliberately — compact at 40%.</span>
+          </li>
+          <li>
+            <span class="step-title">Opus plans, briefs, and fans out</span>
+            <span class="step-body">The fleet launches in parallel — 16 agents in the diagram. Each Haiku worker gets exactly one job (research, build, test, review) and loads exactly one skill folder for it.</span>
+          </li>
+          <li>
+            <span class="step-title">Every result hits a CHECK</span>
+            <span class="step-body">Pass, and the work flows down. Fail, and it's sent back to the same agent on the dashed loop — the worker fixes its own work instead of the planner redoing it.</span>
+          </li>
+          <li>
+            <span class="step-title">Opus re-runs every check</span>
+            <span class="step-body">Nothing is “done” because a worker said so. The planner re-verifies the whole run against the goal before it counts.</span>
+          </li>
+          <li>
+            <span class="step-title">Reflect rewrites the skills</span>
+            <span class="step-body">After every session, the <code>reflect/</code> skill rewrites the other skills with what was learned — the setup is continuously self-improving instead of frozen at however you first wrote it.</span>
+          </li>
+        </ol>
+      </section>
+
+      <!-- ============ SET IT UP ============ -->
+      <section id="setup">
+        <h2>Set it up: starter files</h2>
+        <p class="lede">The folder system from the diagram, as files you can drop into a project. Worker definitions live in <code>.claude/agents/</code> pinned to <code>model: haiku</code>; the planner session runs Opus and reads <code>CLAUDE.md</code> first.</p>
+
+        <div class="codeblock">
+          <div class="codeblock-head">
+            <span class="path">my-project / <span class="org">CLAUDE.md</span></span>
+            <button class="copy-btn" type="button" data-copy="claude-md">Copy</button>
+          </div>
+          <pre id="claude-md"># Project memory — the planner reads this first
+
+## Goal
+Ship the checkout flow.
+Done when: all tests pass.
+
+## How work runs here
+- The main session (Opus) plans, briefs, and verifies.
+  It does not write bulk code itself.
+- Workers are Haiku subagents defined in .claude/agents/
+  (model: haiku). Each gets one job and loads one skill.
+- Every worker result goes through a check before it counts.
+  Failures are sent back to the same worker with the failure notes.
+- Opus re-runs every check before anything is called done.
+
+## State
+Progress, decisions, and open issues live in docs/ —
+update them as the run goes, not at the end.</pre>
+        </div>
+
+        <div class="codeblock">
+          <div class="codeblock-head">
+            <span class="path">my-project / .claude / agents / <span class="grn">builder.md</span></span>
+            <button class="copy-btn" type="button" data-copy="builder-md">Copy</button>
+          </div>
+          <pre id="builder-md">---
+name: builder
+description: Builds one briefed feature slice at a time
+model: haiku
+---
+
+You are a worker agent. Before starting, load the skill
+that matches your job (e.g. skills/frontend/).
+
+- The brief from the orchestrator fixes your scope.
+  Build only what it asks for — nothing extra.
+- If a check sends your work back, fix exactly what
+  the failure notes point at.
+- Hand back: what changed, which files you touched,
+  and how you verified it.</pre>
+        </div>
+
+        <div class="codeblock">
+          <div class="codeblock-head">
+            <span class="path">my-project / .claude / skills / <span class="grn">reflect/</span></span>
+            <button class="copy-btn" type="button" data-copy="reflect-md">Copy</button>
+          </div>
+          <pre id="reflect-md"># reflect — runs after every session
+
+Review what the fleet got wrong this session:
+- checks that failed and why
+- briefs that were ambiguous
+- skills that sent workers down the wrong path
+
+Then rewrite the other skill files (frontend/,
+test-runner/, code-review/) so the same mistakes
+don't repeat. Small, specific edits — one lesson
+per change, noted in docs/.</pre>
+        </div>
+
+        <p class="lede">Duplicate <code>builder.md</code> for the other jobs in the diagram — <strong>research</strong> (skill <code>explore/</code>), <strong>test</strong> (skill <code>test-runner/</code>), <strong>review</strong> (skill <code>code-review/</code>) — each pinned to <code>model: haiku</code>, each loading one skill. The four jobs and their skills are the four boxes in the diagram.</p>
+      </section>
+
+      <footer class="page-foot">
+        <p>Recreated from the screenshots of the @murphmaxxing reel you sent — no reel link was included, so this is built from the frames, including the clearest one showing the full diagram. Two labels were partly hidden behind the presenter and are best reads of the visible text: the closing pill (“Opus re-runs every check”) and <code>reviewer.md</code> in the tree. Sources shown in the frames: <a href="https://code.claude.com/docs">code.claude.com/docs</a> · <a href="https://www.anthropic.com/claude/haiku">anthropic.com/claude/haiku</a> · <a href="https://platform.claude.com/pricing">platform.claude.com/pricing</a>.</p>
+      </footer>
+    </main>
+
+    <script>
+      document.querySelectorAll(".copy-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var target = document.getElementById(btn.getAttribute("data-copy"));
+          if (!target) return;
+          var text = target.textContent;
+          function done() {
+            btn.textContent = "Copied";
+            btn.classList.add("copied");
+            setTimeout(function () {
+              btn.textContent = "Copy";
+              btn.classList.remove("copied");
+            }, 1600);
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done, function () { fallback(); });
+          } else {
+            fallback();
+          }
+          function fallback() {
+            var ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand("copy"); done(); } catch (e) { /* leave label unchanged */ }
+            document.body.removeChild(ta);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
