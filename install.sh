@@ -14,7 +14,12 @@ if [[ ! -d "$TEMPLATES_DIR" || ! -d "$TARGET" ]]; then
   echo "Expected templates/ and an existing project directory." >&2
   exit 1
 fi
+if [[ -L "$TARGET" ]]; then
+  echo "Refusing a symlink as the project target." >&2
+  exit 2
+fi
 TARGET="$(cd "$TARGET" && pwd -P)"
+HOME="$(cd "$HOME" && pwd -P)"
 
 under_or_above() {
   local test_path="${1%/}" guarded="${2%/}"
@@ -39,7 +44,13 @@ if [[ "$TARGET" == "$HOME" || "$HOME" == "$TARGET/"* ]]; then
   exit 2
 fi
 for guarded in "${protected_paths[@]}"; do
-  if under_or_above "$TARGET" "$guarded"; then
+  # Compare both the written path and its real location (global config may be a symlink).
+  if [[ -d "$guarded" ]]; then
+    canonical_guard="$(cd "$guarded" && pwd -P)"
+  else
+    canonical_guard="$guarded"
+  fi
+  if under_or_above "$TARGET" "$guarded" || under_or_above "$TARGET" "$canonical_guard"; then
     echo "Refusing protected Code Puppy path: $TARGET" >&2
     exit 2
   fi
