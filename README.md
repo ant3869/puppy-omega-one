@@ -14,7 +14,7 @@ Code Puppy picks them up, and the orchestrator runs the loop.
 > Every model alias in this repo is a **placeholder**: `claude-opus-5-5`,
 > `claude-sonnet-5-5`, `claude-haiku-5-5`. They match the public API IDs,
 > but the target Code Puppy environment may expose different alias strings.
-> Before your first real run: open Code Puppy in the target environment, type `/model`,
+> Before your first real run: open your Code Puppy installation, type `/model`,
 > note the real Opus / Sonnet / Haiku alias strings, and swap them into
 > `.code_puppy/agents/*.json` (one `"model"` string per file) and
 > `puppy.cfg`. Nothing here is load-bearing until those match your build.
@@ -57,7 +57,7 @@ steps at the end — read them, two of them need you.
 
 Manual steps after install (the script prints these too):
 
-1. **Verify the model aliases.** In Code Puppy in the target environment, run `/model`.
+1. **Verify the model aliases.** In your Code Puppy installation, run `/model`.
    Swap the real Opus / Sonnet / Haiku alias strings into
    `.code_puppy/agents/*.json` (`"model"` field). Delete the `omega` metadata block in an
    agent JSON if your build rejects unknown keys — `model` is the only
@@ -68,7 +68,7 @@ Manual steps after install (the script prints these too):
    to your user account, not just the installed project.
 3. **Select `omega-orchestrator`** as the agent and confirm its model
    is the expected Opus alias.
-4. **VPN on** if your Code Puppy models need it (target environment).
+4. **Network access:** connect to any network required by your model provider.
 
 ## Work-computer handoff
 
