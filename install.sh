@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Install Puppy Omega One (Code Puppy edition) into a target project.
 # Copies templates/ into the target, skips existing files unless --force,
-# sets puppy.cfg compaction_threshold=0.5 and summarization_model to the
-# Haiku placeholder, then prints the manual steps.
+# leaves the user's global Code Puppy configuration untouched, then prints setup instructions.
 # Usage: ./install.sh [/path/to/project] [--force]
 set -euo pipefail
 
@@ -34,36 +33,23 @@ while IFS= read -r -d '' src; do
   fi
 done < <(find "$TEMPLATES_DIR" -type f -print0)
 
-# --- puppy.cfg ---
-CFG_PATH="$TARGET/puppy.cfg"
-HAIKU_PLACEHOLDER="claude-haiku-5-5"
-set_cfg_key() {
-  local key="$1" value="$2" file="$3"
-  if [[ -f "$file" ]] && grep -q "^[[:space:]]*$key[[:space:]]*=" "$file"; then
-    # replace the existing line (macOS + GNU sed compatible)
-    sed -i.bak "s|^[[:space:]]*$key[[:space:]]*=.*|$key=$value|" "$file" && rm -f "$file.bak"
-  else
-    echo "$key=$value" >> "$file"
-  fi
-}
-touch "$CFG_PATH"
-set_cfg_key "compaction_threshold" "0.5" "$CFG_PATH"
-set_cfg_key "summarization_model" "$HAIKU_PLACEHOLDER" "$CFG_PATH"
+# Code Puppy reads ~/.code_puppy/puppy.cfg (or XDG_CONFIG_HOME/code_puppy/puppy.cfg),
+# not a project-local puppy.cfg. Never silently change a user's global settings.
 
 echo ""
 echo "Puppy Omega One installed into $TARGET"
 echo "  copied: $copied files, skipped: $skipped (already exist, use --force to overwrite)"
-echo "  puppy.cfg: compaction_threshold=0.5, summarization_model=$HAIKU_PLACEHOLDER"
 echo ""
 echo "MANUAL STEPS (do these before your first real run):"
 echo "  1. In Code Puppy at work, run /model and note the real Opus / Sonnet /"
 echo "     Haiku alias strings. Swap them into .code_puppy/agents/*.json"
-echo "     (the \"model\" field, one string per file) and puppy.cfg"
-echo "     (summarization_model). The aliases in this repo are PLACEHOLDERS:"
+echo "     (the \"model\" field, one string per file). Aliases are PLACEHOLDERS:"
 echo "     claude-opus-5-5 / claude-sonnet-5-5 / claude-haiku-5-5."
-echo "  2. Set the global model to your Opus alias, or start the session on"
-echo "     the omega-orchestrator agent."
-echo "  3. VPN on if your Code Puppy models need it (Walmart build)."
+echo "  2. Optional: in Code Puppy, use /set compaction_threshold 0.5 and"
+echo "     /set summarization_model <your real Haiku alias>. These are GLOBAL"
+echo "     settings, not project settings. Check your existing values first."
+echo "  3. Select the omega-orchestrator agent and confirm its Opus model."
+echo "  4. VPN on if your Code Puppy models need it (Walmart build)."
 echo ""
 echo "Then open Code Puppy GUI in this project and run a job — see README.md"
 echo "'Run a job' for the walkthrough."
