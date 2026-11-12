@@ -29,9 +29,11 @@ mode). This is a **starter, not a finished app** — see
 A thin Electron shell that:
 
 1. **Starts without spawning Code Puppy.** It detects an existing local
-   `puppy_gui` server on `127.0.0.1:8765`. Clicking **Connect / start**
-   explicitly attempts to attach or launch your existing GUI installation.
-   Omega never installs or patches Code Puppy itself.
+   `puppy_gui` server on `127.0.0.1:8765`. In **Harness Chat**, choosing a safe project and clicking **Start GUI in this project**
+   explicitly launches the existing GUI from the selected project directory.
+   If a GUI is already running, its working directory is treated as unknown
+   unless it is a process launched by Omega. Omega never installs or patches
+   Code Puppy itself.
 2. Shows Omega views (Run, Live, Briefs, Progress) as native React
    pages talking to that same server over HTTP.
 3. Embeds the real puppy_gui web UI in a "Puppy GUI" view, so chat,
