@@ -28,6 +28,7 @@ const modules: NavItem[] = [
 export default function App() {
   const [activeModule, setActiveModule] = useState<ModuleId>('overview');
   const [status, setStatus] = useState<PuppyStatus | null>(null);
+  const [projectDir, setProjectDir] = useState<string | null>(null);
   const [reduceMotion, setReduceMotion] = useState(() => {
     try {
       const previous = localStorage.getItem('omega:reduce-motion');
@@ -85,9 +86,9 @@ export default function App() {
           />
         );
       case 'run':
-        return <RunPage onOpenPuppy={() => navigate('puppy')} />;
+        return <RunPage onOpenPuppy={() => navigate('puppy')} projectDir={projectDir} onProjectChange={setProjectDir} />;
       case 'puppy':
-        return <PuppyGuiPage status={status} />;
+        return <PuppyGuiPage status={status} projectDir={projectDir} onProjectChange={setProjectDir} />;
       case 'live':
         return <LivePage />;
       case 'briefs':
