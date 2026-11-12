@@ -54,9 +54,10 @@ a small share. A rough sense of scale:
 2. **Keep briefs short.** Short briefs keep Haiku under the 100k
    cliff and keep worker outputs small enough for the orchestrator
    to actually verify.
-3. **Summarization on Haiku.** `puppy.cfg` pins
-   `summarization_model` to the Haiku placeholder, and
-   `compaction_threshold=0.5` compacts early. Compaction is the
+3. **Optional summarization on Haiku.** After verifying your alias,
+   use Code Puppy `/set summarization_model <your Haiku alias>` and
+   `/set compaction_threshold 0.5` if desired. These are **global user**
+   settings; the project installer deliberately leaves them untouched. Compaction is the
    cheapest token you'll ever buy.
 4. **Tier flips are the safety valve, not a cost control.** A worker
    that fails twice gets re-briefed one tier up even though it costs
