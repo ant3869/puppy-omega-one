@@ -3,7 +3,7 @@
 > **PLACEHOLDER MODELS:** the agent JSON files under
 > `.code_puppy/agents/` pin placeholder aliases (`claude-opus-5-5`,
 > `claude-sonnet-5-5`, `claude-haiku-5-5`). Run `/model` in Code Puppy
-> at work, note the real alias strings, and swap them in. Nothing here
+> in the target environment, note the real alias strings, and swap them in. Nothing here
 > is load-bearing until those match your build.
 
 ## The system

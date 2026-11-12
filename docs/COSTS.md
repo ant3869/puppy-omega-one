@@ -71,7 +71,7 @@ a small share. A rough sense of scale:
 Code Puppy GUI has a Cost view (editable per-model rate table + live
 estimate for the active session). The runtime supplies no pricing
 itself — the rates there are user-provided estimates, so set them
-from the table above after you confirm the work build's actual
-rates. If the internal build bills differently (flat rate, quota,
+from the table above after you confirm the target environment's actual
+rates. If the target environment bills differently (flat rate, quota,
 or internal chargeback), the per-token math above doesn't apply and
 the tiering still stands on performance alone.

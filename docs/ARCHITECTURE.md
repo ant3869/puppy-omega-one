@@ -196,7 +196,7 @@ harness talks to Code Puppy:
 - **AGENT.md vs AGENTS.md.** The reference says a project-specific
   `AGENT.md` may define local instructions; the source-verified
   loading in Code Puppy is `AGENTS.md` (above). The harness ships
-  `AGENTS.md`; if the internal Walmart build honors `AGENT.md`
+  `AGENTS.md`; if the target Code Puppy environment honors `AGENT.md`
   instead, rename it there.
 
 ## Gotchas baked into the templates

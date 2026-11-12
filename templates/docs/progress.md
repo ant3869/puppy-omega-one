@@ -10,10 +10,10 @@ at session end (using a researcher summary and a builder file update).
 
 ## Next
 
-- Verify model aliases with `/model` in Code Puppy at work and swap the
+- Verify model aliases with `/model` in Code Puppy in the target environment and swap the
   placeholders in `.code_puppy/agents/*.json` and, optionally, your user-level Code Puppy settings.
 - Run a first small job end to end (2 workers) and confirm the
-  verify-before-accept loop works on the internal build.
+  verify-before-accept loop works on the target environment.
 
 ## Session log
 

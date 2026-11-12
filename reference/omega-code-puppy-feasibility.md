@@ -4,7 +4,7 @@ Researched Nov 12, 2026. Sources: public `mpfaffenberger/code_puppy` (HEAD) and 
 
 ## Verdict: feasible with adaptations
 
-The core pattern maps almost 1:1 onto Code Puppy's native machinery. Mostly a file-layout translation, not a stretch. One gating unknown: model availability on the internal Walmart build (can't verify from outside).
+The core pattern maps almost 1:1 onto Code Puppy's native machinery. Mostly a file-layout translation, not a stretch. One gating unknown: model availability on the target Code Puppy environment (can't verify from outside).
 
 ## What was verified in the source
 
@@ -38,7 +38,7 @@ omega-harness/
 ├── README.md                 # what it is, install, run a job, the loop diagram
 ├── install.ps1 / install.sh  # copies templates into target project; sets puppy.cfg
 │                             #   compaction_threshold=0.5, summarization_model=<haiku>;
-│                             #   prints the manual steps (set global model, /pin_model, VPN)
+│                             #   prints setup guidance (set global model, /pin_model)
 ├── templates/
 │   ├── AGENTS.md             # adapted Omega rules: orchestrator role, brief format,
 │   │                         # verify-before-accept, session start/end rituals
@@ -54,13 +54,13 @@ omega-harness/
 │   └── .claude/commands/omega-brief.md, omega-review.md
 └── docs/
     ├── ARCHITECTURE.md       # Omega→Code Puppy mapping table, delegation flow
-    ├── MODELS.md             # how to find/pin the Opus + Haiku aliases at work
+    ├── MODELS.md             # how to find/pin the Opus + Haiku aliases in the target environment
     └── COSTS.md              # token math, usage readout, guardrails
 ```
 
 ## Top 3 risks / gotchas
 
-1. **Model availability on the internal Walmart build is unverified and load-bearing.** The GUI docs say Code Puppy at work is an internal Walmart build not on public PyPI (GUI verified against 0.1.37) and models need VPN. Everything verified here is from the public repo. If the internal build doesn't expose Opus 5.5 + Haiku 5.5 (via `/claude-code-auth` or the Walmart proxy), or exposes them under different alias strings, every pin in the harness breaks. This is the single gating unknown.
+1. **Model availability on the target Code Puppy environment is unverified and load-bearing.** A referenced GUI implementation used a separately configured Code Puppy installation (GUI verified against 0.1.37); available models and authentication may differ. Everything verified here is from the public repo. If the target environment doesn't expose Opus 5.5 + Haiku 5.5 (via `/claude-code-auth` or a configured provider gateway), or exposes them under different alias strings, every pin in the harness breaks. This is the single gating unknown.
 2. **The copy-paste trap: `CLAUDE.md`, `.claude/agents/`, and the env vars are dead in Code Puppy.** Pasting murphmaxxing's prompt verbatim produces files Code Puppy never reads. The harness must translate, not transcribe — and the reel's prompt does not work as-is.
 3. **No fan-out or cost guardrail.** Omega's own page admits multi-agent runs use ~15× the tokens of a chat; Code Puppy has no ultracode equivalent, no parallel cap, and each subagent's result lands back in the orchestrator's context. A 16-worker fan-out on Opus-priced verification is a fast way to burn quota. Mitigation: start with 2–4 workers, keep briefs short (Haiku jumps to $0.50/$2.50 per MTok past 100k-token prompts), and use `summarization_model` = Haiku for compaction. Also unconfirmed: whether Code Puppy supports SessionStart/SessionEnd hooks for the end-of-session ritual — implement it as an instructed ritual + reflect skill until verified, not as a hook.
 
@@ -68,7 +68,7 @@ Two smaller footguns worth baking into the templates: `AGENTS.md` is deliberatel
 
 ## Single biggest open question for Ant
 
-On your work laptop, in Code Puppy, what Claude model aliases are actually available — is there an Opus 5.5 and a Haiku 5.5, how do you authenticate to them (`/claude-code-auth` vs. the Walmart VPN models), and what are their exact alias strings? Everything in the harness (orchestrator pin, worker pins, summarization model, cost math) hangs on those two strings. A 30-second check — `/model` + tab completion in Code Puppy at work — answers it.
+On your target machine, in Code Puppy, what Claude model aliases are actually available — is there an Opus 5.5 and a Haiku 5.5, how do you authenticate to them (`/claude-code-auth` vs. the provider-specific models), and what are their exact alias strings? Everything in the harness (orchestrator pin, worker pins, summarization model, cost math) hangs on those two strings. A 30-second check — `/model` + tab completion in the target Code Puppy installation — answers it.
 
 ---
 
@@ -87,6 +87,6 @@ On your work laptop, in Code Puppy, what Claude model aliases are actually avail
 
 This supersedes the repo outline above, which pinned all four workers to Haiku. Switching a worker's tier is one string: the `"model"` field in its `.code_puppy/agents/omega-*.json`, or `/pin_model <agent> <model>`. Also flip any Haiku worker to Sonnet when its brief would pass ~100k prompt tokens — past that line Haiku costs 5× more ($0.50/$2.50 vs $0.10/$0.50 per MTok) and its quality drops fastest. Pricing: Opus $4/$20, Sonnet $2/$10, Haiku $0.10/$0.50 per MTok. Full reasoning in the scaffold's `docs/MODELS.md`, cost math in `docs/COSTS.md`.
 
-**Placeholder aliases used everywhere in the scaffold:** `claude-opus-5-5`, `claude-sonnet-5-5`, `claude-haiku-5-5`. They match the public API IDs but are unverified against the internal Walmart build — verify with `/model` in Code Puppy at work and swap in the real strings. The open question above now covers three aliases, not two: Opus, Sonnet, and Haiku.
+**Placeholder aliases used everywhere in the scaffold:** `claude-opus-5-5`, `claude-sonnet-5-5`, `claude-haiku-5-5`. They match the public API IDs but are unverified against the target Code Puppy environment — verify with `/model` in Code Puppy in the target environment and swap in the real strings. The open question above now covers three aliases, not two: Opus, Sonnet, and Haiku.
 
 **Electron track (Nov 12):** the scaffold also ships an `electron/` starter (Mac + Windows, dark mode) built on Ant's `electron-react-dark-starter`, driving Code Puppy through the `puppy_gui` FastAPI server — not a second backend. Backend wiring follows Ant's `ai-integration-reference` (Code Puppy has no stable programmatic API on the raw CLI; `puppy_gui`'s HTTP API is the stable surface). Details in the scaffold's `docs/FRONTEND.md`. Name: **Puppy Omega One** (ONE spelled out, never the numeral 1), repo slug `puppy-omega-one`, logo `assets/logo.png` (powered-up puppy), app icon `assets/icon.png`.
