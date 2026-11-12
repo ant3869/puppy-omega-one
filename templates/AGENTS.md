@@ -28,6 +28,25 @@ mistake is cheap to spot. Full reasoning in the Puppy Omega One repo's
 `docs/MODELS.md` (it lives in the repo, not in installed projects —
 only `templates/` gets copied in).
 
+## Code Puppy core isolation
+
+Omega is a **project-scoped template**, not a Code Puppy patcher.
+
+- Only create and modify files in the user's selected project workspace.
+- Never edit or install into Code Puppy's package/source, Python virtual environment,
+  user-global `~/.code_puppy/` files, agent registrations, or the Puppy GUI source.
+- Do not run model setup, `pip install`, package upgrades or configuration commands
+  against the Code Puppy interpreter or user-global environment.
+- This restriction applies equally to the orchestrator, every worker, shell
+  commands and delegated actions. Include it **verbatim in every worker brief**
+  because subagents do not automatically inherit project `AGENTS.md`.
+- If work appears to require touching Code Puppy itself, stop and report that
+  it is out of scope. Use a separate, explicitly reviewed project instead.
+
+These are agent instructions, **not** an operating-system sandbox. Only use
+the harness with projects you trust; agents allowed to use shell/tools can
+modify files permitted by the current OS user.
+
 ## The loop
 
 1. **Session start:** read this file, then `docs/progress.md`,
@@ -93,10 +112,9 @@ only memory that survives compaction.
 ## Compaction
 
 Code Puppy reads its **user-level** `~/.code_puppy/puppy.cfg` (or the
-XDG config equivalent), not a project-local file. The installer does
-not change global settings. Optionally use `/set compaction_threshold 0.5`
-and `/set summarization_model <verified Haiku alias>` after inspecting
-your current settings. Type `/context` to see context usage.
+XDG config equivalent), not a project-local file. The installer does not change global settings. This project does not
+require any global compaction change; configure such settings outside
+Omega only if you independently choose to. Type `/context` to inspect usage.
 
 ## What Code Puppy does NOT do (don't paste the reel's prompt verbatim)
 
