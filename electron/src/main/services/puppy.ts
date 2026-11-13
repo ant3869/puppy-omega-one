@@ -21,6 +21,7 @@ import type { OmegaRun, PuppyStatus } from '../../shared/types';
 import { assertProjectWorkspace } from './project-safety';
 import { guiLaunchSpec } from './gui-launch';
 import { probeGui } from './diagnostics';
+import { assertDraftRun } from './draft-validation';
 
 const PORT = Number(process.env.PUPPY_GUI_PORT ?? 8765);
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -260,10 +261,8 @@ export function registerPuppyIpc(getWindow: () => BrowserWindow | null) {
 
   ipcMain.handle('runs:list', () => loadRuns());
   ipcMain.handle('runs:save', async (_e, run: OmegaRun) => {
-    if (!run || typeof run.id !== 'string' || !run.id || !Array.isArray(run.briefs)) {
-      throw new Error('Invalid run record');
-    }
-    if (run.projectDir !== null) await validateProject(run.projectDir);
+    assertDraftRun(run);
+    await validateProject(run.projectDir);
     const write = runWrites.then(async () => {
       const runs = await loadRuns();
       const idx = runs.findIndex((r) => r.id === run.id);
