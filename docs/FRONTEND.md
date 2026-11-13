@@ -50,6 +50,7 @@ can perform actions inside that installed GUI if the user submits them.**
 | Project docs | Reads selected `docs/progress.md`, `decisions.md`, `known-issues.md` | Does not write project docs |
 | Chat transport | Existing Puppy GUI under one mounted workspace component | Requires separate installation; behavior belongs to that GUI |
 | Settings | Reduced-motion preference; read-only diagnostics; safety context | Not a global model/config editor |
+| Shared chat runtime context bar | Explicit read-only refresh of agent, model and saved-session labels | Not live selection controls, not verified to be the same WebSocket session |
 
 ### Session and telemetry caveat
 
