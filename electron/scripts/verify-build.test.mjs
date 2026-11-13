@@ -48,7 +48,7 @@ test('rejects an application still pointing at index.mjs', () => {
     writeFileSync(join(root, 'src', 'main', 'main.ts'),
       "const preloadPath = new URL('../preload/index.mjs', import.meta.url);\n" +
       'const preferences = { sandbox: true, contextIsolation: true, nodeIntegration: false };\n');
-    assert.throws(() => verifyBuild(root), /index\.js/);
+    assert.throws(() => verifyBuild(root), /index\.mjs/);
   });
 });
 
