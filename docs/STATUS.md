@@ -19,6 +19,7 @@
 | Read-only local diagnostics | Implemented | Four allowlisted GET responses + observer status; bodies discarded |
 | ChatBridge monitor | **Off by default** | User explicitly chooses Connect/Stop; socket receives event summaries only |
 | Worker status visualization | Implemented projection | Event/session association remains **unverified** |
+| Event log navigation | Implemented read-only event search/filter and monitor controls | Up to 30 in-memory summaries only; not session-attested or persisted |
 | Native send, automatic dispatch/approval | **Disabled** | No verified server route/session binding |
 | Platform installers / packaged binaries | Configured targets | Manual installation/package smoke test outstanding |
 
