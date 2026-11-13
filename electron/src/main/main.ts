@@ -8,7 +8,7 @@ import { app, BrowserWindow, shell } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { registerPuppyIpc, stopServer } from './services/puppy';
-import { registerWorkflowIpc, startWorkflowEvents, stopWorkflowEvents } from './services/workflow';
+import { registerWorkflowIpc, stopWorkflowEvents } from './services/workflow';
 import { allowedExternalUrl, isTrustedGuiUrl } from './services/webview-policy';
 
 const preloadPath = fileURLToPath(new URL('../preload/index.mjs', import.meta.url));
@@ -103,7 +103,7 @@ app.whenReady().then(() => {
   createWindow();
   registerPuppyIpc(() => mainWindow);
   registerWorkflowIpc(() => mainWindow);
-  startWorkflowEvents();
+  // Live monitoring is opt-in; app startup never opens a chat WebSocket.
 
   // Startup is observational: never implicitly launch Code Puppy or Puppy GUI.
   // Users may explicitly start the GUI from the app's connection controls.

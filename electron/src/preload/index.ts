@@ -26,6 +26,8 @@ const api = {
   },
   workflow: {
     get: (): Promise<WorkflowTelemetry> => ipcRenderer.invoke('workflow:get'),
+    connect: (): Promise<WorkflowTelemetry> => ipcRenderer.invoke('workflow:connect'),
+    disconnect: (): Promise<WorkflowTelemetry> => ipcRenderer.invoke('workflow:disconnect'),
     subscribe: (listener: (snapshot: WorkflowTelemetry) => void): Unsub => {
       const handler = (_event: Electron.IpcRendererEvent, snapshot: WorkflowTelemetry) => listener(snapshot);
       ipcRenderer.on('workflow:changed', handler);

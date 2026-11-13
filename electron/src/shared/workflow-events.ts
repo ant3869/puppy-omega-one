@@ -30,6 +30,8 @@ export interface WorkflowActivity {
 }
 
 export interface WorkflowTelemetry {
+  /** True only after the user explicitly enables monitoring. */
+  monitoring: boolean;
   connection: ConnectionState;
   phase: WorkflowPhase;
   agent: string | null;
@@ -49,6 +51,7 @@ function freshWorkers(): Record<WorkerKey, WorkerSignal> {
 
 export function initialWorkflow(connection: ConnectionState = 'disconnected'): WorkflowTelemetry {
   return {
+    monitoring: false,
     connection,
     phase: 'idle',
     agent: null,

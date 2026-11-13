@@ -44,6 +44,7 @@ export class WorkflowTransport {
   start(): void {
     if (!this.stopped) return;
     this.stopped = false;
+    this.publish({ ...this.snapshot, monitoring: true });
     this.connect();
   }
 
@@ -56,10 +57,15 @@ export class WorkflowTransport {
     const previous = this.socket;
     this.socket = null;
     if (previous) {
-      previous.removeAllListeners();
+      // Keep the socket error listener until termination finishes; late errors
+      // cannot become unhandled Node events, and stale callbacks are guarded.
       previous.terminate();
     }
-    this.status('disconnected');
+    this.publish({
+      ...changeWorkflowConnection(this.snapshot, 'disconnected'),
+      monitoring: false,
+      activity: 'Live observation stopped; no event connection'
+    });
   }
 
   private reconnect(): void {

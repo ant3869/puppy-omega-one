@@ -20,6 +20,7 @@ export default function SettingsPage({
   const [diagnosing, setDiagnosing] = useState(false);
   const [diagnostics, setDiagnostics] = useState<GuiDiagnostics | null>(null);
   const [streamState, setStreamState] = useState<ConnectionState | null>(null);
+  const [monitorEnabled, setMonitorEnabled] = useState(false);
   const [diagnosticError, setDiagnosticError] = useState<string | null>(null);
 
   async function reconnect() {
@@ -45,9 +46,11 @@ export default function SettingsPage({
       ]);
       setDiagnostics(report);
       setStreamState(stream.connection);
+      setMonitorEnabled(stream.monitoring);
     } catch (error) {
       setDiagnostics(null);
       setStreamState(null);
+      setMonitorEnabled(false);
       setDiagnosticError(error instanceof Error ? error.message : String(error));
     } finally {
       setDiagnosing(false);
@@ -121,8 +124,8 @@ export default function SettingsPage({
             ))}
             <div className="omega-diagnostics-item">
               <span><strong>Event stream</strong><small>Read-only local WebSocket observer</small></span>
-              <span className={'omega-diagnostics-status ' + (streamState === 'connected' ? 'is-responded' : 'is-unreachable')}>
-                {(streamState ?? 'unknown').toUpperCase()}
+              <span className={'omega-diagnostics-status ' + (monitorEnabled && streamState === 'connected' ? 'is-responded' : monitorEnabled ? 'is-unreachable' : 'is-unexpected')}>
+                {monitorEnabled ? (streamState ?? 'unknown').toUpperCase() : 'OFF · MANUAL CONNECT'}
               </span>
             </div>
             <div className="omega-diagnostics-item">

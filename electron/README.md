@@ -122,3 +122,7 @@ This check cannot confirm that an installed GUI supports native programmatic cha
 The **Saved activity** page is a searchable browser for the app's own persisted run briefs, with a detail pane, copy action and link to embedded Puppy GUI chat. A local draft is **not** an executed run. Previously recorded status values are labeled as local records, not independently verified runtime telemetry. Raw active-session JSON is not shown there.
 
 Draft saving is validated in the Electron main process; only draft records with a selected safe workspace and unverified checks are accepted. An invalid or corrupted history file causes an explicit read error instead of silently discarding its contents. See `docs/FRONTEND.md` for the validation boundary and limitations.
+
+## Live monitoring is opt-in
+
+Omega does not open the ChatBridge WebSocket at desktop startup. From **Overview → Live**, click **Connect monitor** to observe events, and **Stop monitor** to close the socket and cancel reconnect attempts. This read-only observer never submits prompts or approves actions, but the server may perform its own connection bookkeeping; verify behavior with your installed GUI before assuming the monitor is completely side-effect-free. Demo and saved records do not require monitoring.

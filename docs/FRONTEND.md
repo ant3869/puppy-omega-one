@@ -120,7 +120,7 @@ Read from `puppy_gui` v0.16.2 `static/js/api.js` and the service layer:
 | Puppy GUI embedded (`<webview>` to 127.0.0.1:8765) | **Wired** |
 | Run-page brief compose + copy | **Wired** (interim trigger — see below) |
 | Sending a prompt into a session | **Stub** — `puppy:sendPrompt` throws a "not wired yet" error on purpose |
-| Read-only live worker event monitor | **Integrated (runtime compatibility pending):** `src/main/services/workflow.ts` connects to loopback `ws://127.0.0.1:<port>/ws/chat` and publishes bounded, typed event summaries over IPC; Overview → Live. The installed GUI server must support that path. |
+| Read-only live worker event monitor | **Opt-in (runtime compatibility pending):** Overview → Live → **Connect monitor** explicitly opens loopback `ws://127.0.0.1:<port>/ws/chat` and publishes bounded, typed event summaries over IPC. **Stop monitor** terminates the socket and cancels retries. Omega startup does not connect. The installed GUI server must support that path. |
 
 **Interim trigger:** until send is wired, the Run page composes and
 persists a **draft** brief — you paste it into the Puppy GUI chat with
@@ -237,3 +237,9 @@ The Electron `runs:save` IPC now accepts **drafts only**. The main process valid
 History JSON is checked for malformed run/worker structures before being sent to the renderer. **Legacy history is read permissively**: older long goals, long briefs, and more than 2,000 records remain readable. Size limits apply only when writing new drafts; the app does not truncate or silently delete saved history. Corruption is surfaced as an error and the original `runs.json` is **not overwritten** by a failed read. This is not a backup system or a guarantee against OS-level file damage. No Code Puppy core/configuration or external GUI files are modified; only Omega's app-local userData holds the draft records.
 
 Automated tests cover valid drafts, fake completion claims, oversized/duplicate worker records, invalid workspace data, corrupt history and older saved statuses. Native chat-send remains disabled pending end-to-end server/session verification.
+
+## Explicit Live Monitor opt-in
+
+The installed `puppy_gui` WebSocket server's connection/session behavior is not fully verified. Omega therefore **never opens a chat WebSocket just because the desktop app started**. Overview → Live displays an inert monitor with **Connect monitor**; the user explicitly enables a read-only local observation session. **Stop monitor** closes its connection and stops automatic retries. Monitoring remains off until another explicit click (or the app restarts). Demo and saved run history work independently.
+
+Connected status confirms only a WebSocket transport, not the identity of the chat session, and the observer **does not send prompts, approvals, or tool actions**. Depending on the server, even opening a WebSocket may trigger normal server-side session bookkeeping; the connected runtime must be manually tested on a disposable project before promising zero backend side effects. Electron itself does not alter Code Puppy core, global configuration, or the GUI source. Tests include no connection before opt-in, explicit stop, no retry after stop, and conservative worker state transitions.
