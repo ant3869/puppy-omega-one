@@ -62,7 +62,7 @@ test('same native context bar appears in Chat and Omega without initiating a rea
 
 test('Omega worker controls are keyboard-accessible and link to the inspector', () => {
   const html = render('omega');
-  assert.match(html, /role="group" aria-label="Interactive Omega workflow map/);
+  assert.match(html, /aria-label="Interactive Omega workflow map:[^"]+" role="group"/);
   assert.equal((html.match(/aria-controls="omega-worker-inspector"/g) ?? []).length, 4);
   assert.equal((html.match(/tabindex="0"/g) ?? []).length, 4);
   assert.match(html, /id="omega-worker-inspector"/);
