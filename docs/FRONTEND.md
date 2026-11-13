@@ -52,6 +52,23 @@ can perform actions inside that installed GUI if the user submits them.**
 | Settings | Reduced-motion preference; read-only diagnostics; safety context | Not a global model/config editor |
 | Shared chat runtime context bar | Explicit read-only refresh of agent, model and saved-session labels | Not live selection controls, not verified to be the same WebSocket session |
 
+### Read-only runtime context bar
+
+Chat and Omega mode share a native **Agent / Model / Saved session** header
+with an explicitly requested **Refresh context** action. The Electron main
+process reads only `GET /api/agents`, `GET /api/models` and
+`GET /api/sessions` from the local GUI, following the already-used
+Puppy GUI client REST shapes. Requests have bounded body sizes, short timeouts,
+no redirect following and no credentials forwarded. The main process extracts
+only the single active agent's short name, active model name and current
+saved-session name; it **discards full model/agent configuration, credentials,
+system prompts, tools, transcript content and other session entries**.
+
+The bar does not poll, switch agents/models, resume sessions or send prompts.
+The labels are *GUI-reported* and **not session-attested**: they do not prove
+the separate event monitor and embedded chat share an active runtime session.
+A server may still do internal bookkeeping while serving read endpoints.
+
 ### Session and telemetry caveat
 
 `electron/src/main/services/workflow-transport.ts` is an **observer** for
