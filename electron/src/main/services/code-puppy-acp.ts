@@ -160,7 +160,7 @@ export class CodePuppyAcpClient extends EventEmitter {
     this.publish();
   }
 
-  async start(projectDir: string, executable = process.env.CODE_PUPPY_EXECUTABLE || 'code-puppy') {
+  async start(projectDir: string, executable = process.env.CODE_PUPPY_EXECUTABLE || 'code-puppy', args: string[] = ['--acp']) {
     this.stop();
     this.snapshot = { connection: 'connecting', projectDir, sessionId: null, events: [], error: null };
     this.eventId = 0;
@@ -168,7 +168,7 @@ export class CodePuppyAcpClient extends EventEmitter {
     const generation = ++this.generation;
     let child: ChildProcessWithoutNullStreams;
     try {
-      child = spawn(executable, ['--acp'], {
+      child = spawn(executable, args, {
         cwd: projectDir,
         shell: false,
         windowsHide: true,
@@ -180,7 +180,8 @@ export class CodePuppyAcpClient extends EventEmitter {
       throw new Error('Could not launch Code Puppy executable');
     }
     this.process = child;
-    child.stdout.on('data', (part: Buffer) => { if (generation === this.generation) this.consume(part); });
+    child.stdout.setEncoding('utf8');
+    child.stdout.on('data', (part: string) => { if (generation === this.generation) this.consume(part); });
     // Do not forward stderr: provider logs can contain credentials or prompt contents.
     child.stderr.on('data', () => undefined);
     child.on('error', () => {
