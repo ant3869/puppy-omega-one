@@ -1,6 +1,7 @@
 let buffer = '';
 let waitingPrompt = null;
 let sessionId = 'fixture-session-1';
+const closeInputAfterSession = process.argv.includes('--close-stdin');
 
 function send(value) {
   process.stdout.write(JSON.stringify({ jsonrpc: '2.0', ...value }) + '\n');
@@ -23,6 +24,10 @@ process.stdin.on('data', (chunk) => {
         send({ id: frame.id, error: { code: -32000, message: 'Unexpected project cwd' } });
       } else {
         send({ id: frame.id, result: { sessionId } });
+        if (closeInputAfterSession) {
+          setTimeout(() => process.stdin.destroy(), 20);
+          setInterval(() => undefined, 1000);
+        }
       }
     } else if (frame.method === 'session/prompt') {
       waitingPrompt = frame.id;
