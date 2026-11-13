@@ -27,16 +27,16 @@ jobs:
           ready="$RUNNER_TEMP/approved-for-prune.txt"
           : > "$ready"
           cat > "$manifest" <<'BRANCHES'
-audit/portable-install-and-reliability|1381080ceab8246f05ec55dc3c25980af5a44484|1|merged
-audit/setup-handoff-reliability|a31e785eed10df6650ce17fcee4020ec667cc60e|2|superseded
-audit/activate-reflect-skill|cb65d1c2bf4815734fed66dcb1649a9a3d2b88fa|3|merged
-feat/animated-omega-command-center|d7714ff7a62cb1055b5513350d96b2f6b4577be6|5|merged
-feat/live-workflow-events|1f8d78485474c5b9ff9a17d6d8e868368fdf65aa|6|merged
-fix/core-isolation-guards|fc707233032d501701257c85418cd01517105bc6|7|merged
-feat/project-bound-gui-launch|ed258a1ea0a2f58e69fb068031eb1400456677ed|8|merged
-feat/dashboard-harness-chat-dock|a5530b6bea7b13cb39954d32130a96d4839807b7|9|merged
-fix/review-findings-core-and-telemetry|PR_HEAD|10|merged
-maintenance/one-time-branch-prune|PR_HEAD|11|merged
+          audit/portable-install-and-reliability|1381080ceab8246f05ec55dc3c25980af5a44484|1|merged
+          audit/setup-handoff-reliability|a31e785eed10df6650ce17fcee4020ec667cc60e|2|superseded
+          audit/activate-reflect-skill|cb65d1c2bf4815734fed66dcb1649a9a3d2b88fa|3|merged
+          feat/animated-omega-command-center|d7714ff7a62cb1055b5513350d96b2f6b4577be6|5|merged
+          feat/live-workflow-events|1f8d78485474c5b9ff9a17d6d8e868368fdf65aa|6|merged
+          fix/core-isolation-guards|fc707233032d501701257c85418cd01517105bc6|7|merged
+          feat/project-bound-gui-launch|ed258a1ea0a2f58e69fb068031eb1400456677ed|8|merged
+          feat/dashboard-harness-chat-dock|a5530b6bea7b13cb39954d32130a96d4839807b7|9|merged
+          fix/review-findings-core-and-telemetry|PR_HEAD|10|merged
+          maintenance/one-time-branch-prune|PR_HEAD|11|merged
           BRANCHES
           gh api "repos/$REPO/pulls?state=open&per_page=100" > "$RUNNER_TEMP/open-prs.json"
           while IFS='|' read -r branch pinned_sha pr mode; do
