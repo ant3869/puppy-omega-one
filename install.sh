@@ -30,12 +30,24 @@ protected_paths=(
   "$HOME/.code-puppy-venv"
   "$HOME/.config/code_puppy"
   "$HOME/.config/code-puppy"
+  "$HOME/puppy_gui"
+  "$HOME/projects/puppy_gui"
 )
 if [[ -n "${XDG_CONFIG_HOME:-}" ]]; then
   protected_paths+=("$XDG_CONFIG_HOME/code_puppy" "$XDG_CONFIG_HOME/code-puppy")
 fi
 if [[ -n "${CODE_PUPPY_PYTHON:-}" && "$CODE_PUPPY_PYTHON" = /* ]]; then
-  protected_paths+=("$(dirname "$CODE_PUPPY_PYTHON")")
+  python_directory="$(dirname "$CODE_PUPPY_PYTHON")"
+  case "$(basename "$python_directory" | tr '[:upper:]' '[:lower:]')" in
+    bin|scripts) protected_paths+=("$(dirname "$python_directory")") ;;
+    *) protected_paths+=("$python_directory") ;;
+  esac
+fi
+if [[ -n "${PUPPY_GUI_LAUNCH:-}" && "$PUPPY_GUI_LAUNCH" = /* ]]; then
+  protected_paths+=("$(dirname "$PUPPY_GUI_LAUNCH")")
+fi
+if [[ -n "${PUPPY_GUI_DIR:-}" && "$PUPPY_GUI_DIR" = /* ]]; then
+  protected_paths+=("$PUPPY_GUI_DIR")
 fi
 # Project under HOME is fine; installation into HOME itself or its ancestor
 # would write templates/.code_puppy into the user's global config tree.
