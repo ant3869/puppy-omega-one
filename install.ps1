@@ -61,13 +61,27 @@ $protected = @(
     (Join-Path $HomeFull '.code-puppy-venv'),
     (Join-Path $HomeFull '.config\code_puppy'),
     (Join-Path $HomeFull '.config\code-puppy'),
-    (Join-Path $HomeFull 'AppData\Roaming\code_puppy')
+    (Join-Path $HomeFull 'AppData\Roaming\code_puppy'),
+    (Join-Path $HomeFull 'puppy_gui'),
+    (Join-Path $HomeFull 'projects\puppy_gui')
 )
 if ($env:XDG_CONFIG_HOME) {
     $protected += (Join-Path $env:XDG_CONFIG_HOME 'code_puppy')
 }
 if ($env:CODE_PUPPY_PYTHON -and [IO.Path]::IsPathRooted($env:CODE_PUPPY_PYTHON)) {
-    $protected += (Split-Path -Parent $env:CODE_PUPPY_PYTHON)
+    $pythonBin = Split-Path -Parent $env:CODE_PUPPY_PYTHON
+    $binName = Split-Path -Leaf $pythonBin
+    if ($binName -ieq 'Scripts' -or $binName -ieq 'bin') {
+        $protected += (Split-Path -Parent $pythonBin)
+    } else {
+        $protected += $pythonBin
+    }
+}
+if ($env:PUPPY_GUI_LAUNCH -and [IO.Path]::IsPathRooted($env:PUPPY_GUI_LAUNCH)) {
+    $protected += (Split-Path -Parent $env:PUPPY_GUI_LAUNCH)
+}
+if ($env:PUPPY_GUI_DIR -and [IO.Path]::IsPathRooted($env:PUPPY_GUI_DIR)) {
+    $protected += $env:PUPPY_GUI_DIR
 }
 foreach ($guarded in $protected) {
     if (Test-InOrAbove $TargetFull $guarded) {
