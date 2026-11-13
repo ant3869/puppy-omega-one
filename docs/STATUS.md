@@ -32,6 +32,7 @@ logs and screenshots have not been independently inspected here.
 | GUI startup | Explicit user action only | Starts existing launcher with selected safe `cwd`; does not patch core |
 | Existing/external GUI attachment | Implemented with warning | Actual external project `cwd` is unknown, not attested |
 | Read-only local diagnostics | Implemented | Four allowlisted GET responses + observer status; bodies discarded |
+| Optional local WebSocket ping preflight | Implemented test utility | Explicit consent and disposable runtime required; sends one fixed ping and records only whether a pong arrived; connection may mutate server state, session/project ownership remains unverified |
 | Native Chat/Omega context chips | Implemented (manual refresh) | Three fixed GET-only endpoints, bounded sanitized agent/model/session names; cannot attest WebSocket session identity or switch runtime configuration |
 | ChatBridge monitor | **Off by default** | User explicitly chooses Connect/Stop; socket receives event summaries only |
 | Worker status visualization | Implemented projection | Event/session association remains **unverified** |
