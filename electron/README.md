@@ -106,6 +106,20 @@ electron/
   src/renderer/src/pages/        AgentWorkspace, WorkflowOverview, Run, Live, Briefs, Progress, Settings
 ```
 
+## Electron startup compatibility
+
+PR #20 corrected the desktop entry (`out/main/index.js`) and sandboxed
+CommonJS preload (`out/preload/index.js`), and fixed native Windows
+canonicalization when a protected path has nonexistent children.
+The preload remains sandboxed, context-isolated, and without Node
+integration in the renderer.
+
+`npm run build` now automatically calls `npm run verify:build`, checking
+actual output files, CommonJS preload syntax, the main-process preload
+reference, and secure BrowserWindow flags. `npm test` includes negative
+build-fixture tests. A green check does **not** establish that a Windows
+Electron GUI rendered correctly; use the [manual QA steps](../docs/LOCAL_QA.md).
+
 ## Build and packaging
 
 ```bash

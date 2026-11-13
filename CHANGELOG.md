@@ -8,6 +8,18 @@ artifact or installed-runtime QA is implied by that version.
 
 ## Unreleased — repository main (2026-11-12)
 
+### Electron startup fix and verification (PRs #20–#21)
+
+- **PR #20:** Corrected Electron's main entry to `out/main/index.js`,
+  generated the sandbox-compatible preload as CommonJS `out/preload/index.js`,
+  and fixed Windows canonical paths when a protected location contains
+  nonexistent descendants. `sandbox: true`, `contextIsolation: true`, and
+  `nodeIntegration: false` remain unchanged.
+- **PR #21:** Added `verify:build` to check actual emitted files, preload
+  module syntax, and security settings after each Electron build. Negative
+  regression tests cover the original broken entry and ESM preload cases.
+  This CI verification does not replace a visual Windows desktop smoke test.
+
 ### First-party harness context (PR #19)
 
 - Added an explicitly refreshed, read-only **Agent / Model / Saved session**

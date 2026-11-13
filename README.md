@@ -133,6 +133,16 @@ transcripts or the full local checkout path. It **cannot verify the
 WebSocket contract or runtime session/project ownership**; follow
 [LOCAL_QA](docs/LOCAL_QA.md) for that separate test.
 
+## Electron startup reliability
+
+[PR #20](https://github.com/ant3869/puppy-omega-one/pull/20)
+fixed the Electron main entry, sandboxed CommonJS preload and Windows
+protected-path canonicalization. `npm run build` now includes a
+`verify:build` check for actual emitted files, preload format and secure
+BrowserWindow settings. This complements—not replaces—the Windows
+visual smoke test. See [desktop setup](electron/README.md) and
+[local QA](docs/LOCAL_QA.md).
+
 ## Safety and current limitations
 
 - **Native automatic prompt dispatch is disabled.** No unknown chat
