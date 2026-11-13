@@ -1,4 +1,4 @@
-import { realpathSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
@@ -22,9 +22,15 @@ function canonical(path: string): string {
 function protectedPythonEnvironment(python: string): string {
   const parent = dirname(python);
   const directory = basename(parent).toLowerCase();
-  // Python venv executables reside in Scripts/ (Windows) or bin/ (POSIX).
-  // Protect the WHOLE venv, including Lib/site-packages and global binaries.
-  return directory === 'scripts' || directory === 'bin' ? dirname(parent) : parent;
+  const candidateRoot = dirname(parent);
+  // Only expand Scripts/bin to a whole environment when pyvenv.cfg proves
+  // this is a Python virtualenv. /bin/python and /usr/bin/python are system
+  // interpreters; protecting / or /usr would block unrelated projects.
+  if ((directory === 'scripts' || directory === 'bin') &&
+      existsSync(join(candidateRoot, 'pyvenv.cfg'))) {
+    return candidateRoot;
+  }
+  return parent;
 }
 
 function within(path: string, root: string): boolean {
