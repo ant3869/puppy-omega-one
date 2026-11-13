@@ -80,6 +80,16 @@ with a disposable project and redacted fixtures.
 - Never submit destructive tasks or change global Code Puppy config
   merely to probe integration.
 
+### Native, non-mutating harness context now available
+
+The shared Chat/Omega workspace includes explicit **Refresh context**:
+three fixed, bounded GET calls to the local GUI read the active agent,
+model and current saved-session label. The main process **discards**
+all raw model/agent/session metadata before returning those short names
+to the UI. No automatic polling or switching is enabled. The session
+label is not a verified ChatBridge session ID and does not establish
+workspace identity. This is **not** the native chat adapter.
+
 ### Phase B — genuine first-party conversation frontend
 
 Once verified, implement a **single session-bound backend adapter**
