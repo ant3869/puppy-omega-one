@@ -38,8 +38,14 @@ if [[ -n "${XDG_CONFIG_HOME:-}" ]]; then
 fi
 if [[ -n "${CODE_PUPPY_PYTHON:-}" && "$CODE_PUPPY_PYTHON" = /* ]]; then
   python_directory="$(dirname "$CODE_PUPPY_PYTHON")"
+  venv_candidate="$(dirname "$python_directory")"
   case "$(basename "$python_directory" | tr '[:upper:]' '[:lower:]')" in
-    bin|scripts) protected_paths+=("$(dirname "$python_directory")") ;;
+    bin|scripts)
+      if [[ -f "$venv_candidate/pyvenv.cfg" ]]; then
+        protected_paths+=("$venv_candidate")
+      else
+        protected_paths+=("$python_directory")
+      fi ;;
     *) protected_paths+=("$python_directory") ;;
   esac
 fi
