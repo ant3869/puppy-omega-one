@@ -114,7 +114,7 @@ export default function App() {
       case 'puppy':
         return <PuppyGuiPage status={status} projectDir={projectDir} onProjectChange={setProjectDir} onStatusChange={setStatus} />;
       case 'live':
-        return <LivePage />;
+        return <LivePage onOpenChat={() => navigate('puppy')} />;
       case 'briefs':
         return <BriefsPage />;
       case 'progress':
