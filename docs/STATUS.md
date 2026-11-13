@@ -4,6 +4,18 @@
 > **Code-level checks passed; installed-runtime behavior and visual QA remain
 > unverified.** This is not a release-readiness certificate.
 
+## Electron startup regression fixes
+
+PR #20 fixed the Electron entrypoint, sandboxed CommonJS preload,
+and Windows protected-workspace canonicalization of nonexistent descendants.
+PR #21 adds automatic build-artifact checks and negative tests.
+The main process points to `out/preload/index.js`; Electron's sandbox,
+context isolation and disabled Node integration remain intact.
+
+GitHub CI verifies the build and test suite. A separate user-operated
+agent reportedly confirmed the Windows window renders, but its original
+logs and screenshots have not been independently inspected here.
+
 ## What works in the Electron shell
 
 | Area | Status | Verification boundary |
