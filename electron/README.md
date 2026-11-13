@@ -116,3 +116,9 @@ Embedded webview navigations and redirects are restricted to the configured loop
 Go to **Settings → Read-only runtime diagnostics → Run connection checks**. Omega sends only four allowlisted GET requests to the configured loopback GUI: health, agents, models, and active session. It also displays the current event-observer connection status and whether Omega launched the GUI for a chosen workspace. Endpoints that return JSON show **Responded**, not “verified compatible.”
 
 This check cannot confirm that an installed GUI supports native programmatic chat-send, and it does not send a prompt or approve tools. No response bodies, transcripts or secret error text are persisted by the diagnostic report. The tests use a disposable loopback HTTP server (`npm test`).
+
+## Saved activity
+
+The **Saved activity** page is a searchable browser for the app's own persisted run briefs, with a detail pane, copy action and link to embedded Puppy GUI chat. A local draft is **not** an executed run. Previously recorded status values are labeled as local records, not independently verified runtime telemetry. Raw active-session JSON is not shown there.
+
+Draft saving is validated in the Electron main process; only draft records with a selected safe workspace and unverified checks are accepted. An invalid or corrupted history file causes an explicit read error instead of silently discarding its contents. See `docs/FRONTEND.md` for the validation boundary and limitations.
