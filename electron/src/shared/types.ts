@@ -43,12 +43,3 @@ export interface OmegaRun {
   updatedAt: string; // ISO timestamp
 }
 
-export interface PuppyStatus {
-  running: boolean;
-  spawnedByUs: boolean;
-  port: number;
-  url: string;
-  error?: string;
-  /** Known only for an existing GUI process started by this app. */
-  launchWorkspace?: string | null;
-}
