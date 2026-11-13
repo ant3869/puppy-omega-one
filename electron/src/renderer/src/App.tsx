@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity, BookOpen, FileText, GitBranch, MessageSquare,
   Settings, PawPrint, X, ScrollText
@@ -34,6 +34,7 @@ export default function App() {
   const [status, setStatus] = useState<PuppyStatus | null>(null);
   const [projectDir, setProjectDir] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
+  const composerRef = useRef<HTMLElement | null>(null);
   const [reduceMotion, setReduceMotion] = useState(() => {
     try {
       const previous = localStorage.getItem('omega:reduce-motion');
@@ -65,11 +66,38 @@ export default function App() {
 
   useEffect(() => {
     if (!composerOpen) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement : null;
+    const closeButton = composerRef.current?.querySelector<HTMLButtonElement>('[aria-label="Close composer"]');
+    closeButton?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setComposerOpen(false);
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setComposerOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const controls = Array.from(
+        composerRef.current?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), a[href]'
+        ) ?? []
+      ).filter((element) => element.getClientRects().length > 0);
+      if (!controls.length) { event.preventDefault(); return; }
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !composerRef.current?.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !composerRef.current?.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      previouslyFocused?.focus();
+    };
   }, [composerOpen]);
 
   const currentModule = useMemo(
@@ -185,7 +213,7 @@ export default function App() {
       {composerOpen && (
         <div className="agent-composer-overlay">
           <button className="agent-composer-shade" type="button" aria-label="Close Omega job composer" onClick={() => setComposerOpen(false)} />
-          <aside className="agent-composer-panel" role="dialog" aria-modal="true" aria-label="Draft an Omega job">
+          <aside ref={composerRef} className="agent-composer-panel" role="dialog" aria-modal="true" aria-label="Draft an Omega job">
             <div className="agent-composer-header">
               <div>
                 <span className="omega-eyebrow">OMEGA / JOB PREPARATION</span>
