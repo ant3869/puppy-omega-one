@@ -95,9 +95,27 @@ test('rejects malformed saved arrays and nested worker objects', () => {
   const record = makeDraft();
   (record.briefs[0] as unknown as Record<string, unknown>).childAgent = null;
   assert.throws(() => assertStoredRuns([record]), /worker record/);
-  assert.throws(() => assertStoredRuns(new Array(2001).fill(makeDraft())), /2000/);
+  assert.doesNotThrow(() => assertStoredRuns(new Array(2001).fill(makeDraft())));
 });
 
 test('accepts empty history while leaving the user data untouched', () => {
   assert.doesNotThrow(() => assertStoredRuns([]));
+});
+
+test('legacy text above new draft limits remains readable without migration', () => {
+  const record = makeDraft();
+  record.goal = 'G'.repeat(7000);
+  record.doneWhen = 'D'.repeat(3000);
+  record.briefs[0].objective = record.goal;
+  record.briefs[0].brief = 'B'.repeat(40000);
+  assert.doesNotThrow(() => assertStoredRuns([record]));
+  assert.throws(() => assertDraftRun(record), /Draft|draft/);
+});
+
+test('existing history can grow beyond 2000 entries without being hidden', () => {
+  const history = Array.from({ length: 2001 }, (_, i) => ({
+    ...makeDraft(), id: 'draft-' + i,
+    briefs: [{ ...makeDraft().briefs[0], parentRunId: 'draft-' + i }]
+  }));
+  assert.doesNotThrow(() => assertStoredRuns(history));
 });
