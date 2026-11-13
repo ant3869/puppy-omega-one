@@ -27,6 +27,10 @@ avoid real credentials in screenshots or logs.
 - [ ] In Overview → Live, explicitly select **Connect monitor**. Confirm
   connection state and check whether the GUI creates/modifies a session.
   **Stop monitor** must close the socket and stop retries.
+- [ ] Open the **Event log** from the sidebar. Filter by severity/worker,
+  search a known synthetic summary and check newest-first ordering. Confirm
+  the view does not persist a transcript and no connection opens until
+  you explicitly choose Connect monitor.
 - [ ] Try a disconnected GUI and a rejected/invalid configured port.
   No worker should appear live because of a draft or stale event.
 
