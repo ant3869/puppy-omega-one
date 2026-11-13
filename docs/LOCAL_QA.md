@@ -71,6 +71,14 @@ mutations are requested by the inspector.
   without resetting the same conversation surface. Check that Omega
   mode retains a readable chat alongside the graph and the draft drawer
   can be opened/closed without dispatching work.
+- [ ] In Omega Demo, Tab to the worker map. Confirm each worker lane has a
+  visible focus indicator and Enter/Space opens that worker's inspector.
+  Check the native RESEARCH / BUILD / TEST / REVIEW buttons with keyboard
+  and screen reader. Verify selected states match the inspector.
+- [ ] Enable **Reduce motion** in Settings; confirm Demo no longer advances
+  automatically and **Next demo stage** advances one illustrative phase per
+  click, while Restart resets the phase. Recheck with OS reduced-motion
+  enabled. Confirm Live monitor stays opt-in and no task is submitted.
 - [ ] Inspect Omega loop → Demo, pause/restart, reduced motion, and Saved runs.
   Confirm every simulated/local status is labeled accordingly.
 - [ ] With an existing disposable-project GUI running, click **Refresh
