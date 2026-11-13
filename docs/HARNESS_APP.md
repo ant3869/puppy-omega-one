@@ -45,7 +45,7 @@ Inspection of the checked-in `ant3869/puppy_gui` main branch found:
   `{ action: "prompt", text }` and renders tool/approval messages.
 - `tests/test_ws.py` describes prompt, response, cancel and ping.
 - `code_puppy_gui/app.py` imports `routes_chat`, but
-  `code_puppy_gui/api/routes_chat.py` **is absent from the public
+  `code_puppy_gui/api/routes_chat.py` **is absent from the checked-in
   main tree reviewed** (along with other imported route modules).
   Therefore **this checkout alone cannot verify** the actual installed
   route, session ownership or approval contract.
