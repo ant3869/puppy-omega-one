@@ -254,6 +254,130 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 .omega-gui-warning svg { flex-shrink: 0; }
 .omega-gui-frame { flex: 1; min-height: 0; overflow: hidden; }
 
+
+.omega-overview-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+}
+.omega-overview-stage {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 22px 26px 34px;
+}
+.omega-overview-layout.is-docked .omega-overview-stage {
+  padding: 17px 18px 26px;
+}
+.omega-overview-layout.is-docked .omega-dashboard-bottom {
+  grid-template-columns: minmax(0, 1fr);
+}
+.omega-overview-layout.is-docked .omega-home-heading {
+  align-items: flex-start;
+  flex-direction: column;
+}
+.omega-overview-layout.is-docked .omega-diagram {
+  overflow-x: auto;
+}
+.omega-overview-layout.is-docked .omega-diagram svg {
+  min-width: 680px;
+}
+.omega-chat-dock {
+  flex: 0 0 clamp(345px, 37%, 540px);
+  min-width: 0;
+  background: #0b151e;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  border-left: 1px solid #3b6573;
+  box-shadow: -16px 0 45px #0005;
+  position: relative;
+  z-index: 3;
+}
+.omega-chat-dock-header {
+  flex: 0 0 auto;
+  padding: 13px 15px;
+  border-bottom: 1px solid #284453;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: linear-gradient(90deg, #142835, #0f202b);
+}
+.omega-chat-dock-header > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.omega-chat-dock-header strong {
+  font-weight: 650;
+  letter-spacing: -.01em;
+  font-size: 15px;
+}
+.omega-chat-dock-eyebrow {
+  letter-spacing: .13em;
+  font-size: 9px;
+  color: #8ecad5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.omega-chat-dock-actions { display: flex; align-items: center; gap: 7px; flex: 0 0 auto; }
+.omega-chat-dock-body { flex: 1; min-height: 0; overflow: auto; }
+.omega-chat-dock-footer {
+  margin: 0;
+  flex: 0 0 auto;
+  padding: 9px 14px;
+  color: #85a0ad;
+  font-size: 10px;
+  border-top: 1px solid #233b47;
+  line-height: 1.45;
+}
+.omega-chat-dock .omega-gui-launch {
+  margin: 0;
+  padding: 19px 17px;
+  gap: 14px;
+  max-width: none;
+}
+.omega-chat-dock .omega-gui-launch h2 { font-size: 23px; }
+.omega-chat-dock .omega-gui-project { padding: 13px; }
+.omega-chat-dock .omega-gui-warning { align-items: flex-start; flex-wrap: wrap; font-size: 11px; }
+.omega-gui-consent > .omega-button { justify-self: start; }
+.omega-gui-message svg { vertical-align: middle; margin-right: 8px; }
+.omega-gui-lock-button {
+  flex-shrink: 0;
+  color: #f8dba5;
+  background: #493522;
+  border: 1px solid #76563b;
+  padding: 5px 9px;
+  border-radius: 5px;
+  font-size: 11px;
+}
+.omega-gui-lock-button:hover { background: #67492b; }
+@media (max-width: 1030px) {
+  .omega-chat-dock {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: min(100%, 510px);
+    height: 100%;
+    box-shadow: -30px 0 60px #000a;
+  }
+  .omega-overview-layout.is-docked .omega-overview-stage { padding: 20px 26px; }
+  .omega-overview-layout.is-docked .omega-home-heading { flex-direction: row; align-items: flex-end; }
+}
+@media (max-width: 600px) {
+  .omega-chat-dock { width: 100%; }
+  .omega-overview-stage { padding: 13px; }
+  .omega-overview-layout.is-docked .omega-overview-stage { padding: 13px; }
+}
+
 @keyframes omega-flow { to { stroke-dashoffset: -64; } }
 @keyframes omega-breathe { 50% { opacity: .4; filter: brightness(1.5); } }
 .reduce-motion .omega-connection-energy.is-lit,

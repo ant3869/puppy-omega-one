@@ -45,12 +45,14 @@ function trimText(text: string | null | undefined, max = 72): string {
 export default function WorkflowOverviewPage({
   server,
   reduceMotion,
+  preferLive,
   onCompose,
   onChat,
   onRuns
 }: {
   server: PuppyStatus | null;
   reduceMotion: boolean;
+  preferLive: boolean;
   onCompose: () => void;
   onChat: () => void;
   onRuns: () => void;
@@ -62,6 +64,10 @@ export default function WorkflowOverviewPage({
   const [runs, setRuns] = useState<OmegaRun[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<LaneKey>('omega-builder');
+
+  useEffect(() => {
+    if (preferLive) setMode('live');
+  }, [preferLive]);
 
   useEffect(() => {
     let alive = true;
@@ -173,14 +179,14 @@ export default function WorkflowOverviewPage({
           <p>One goal. An orchestrator. Specialist agents. Every result checked.</p>
         </div>
         <div className="omega-home-actions">
-          <button className="omega-button omega-button-secondary" onClick={onChat}>Open chat <ArrowRight size={15} /></button>
+          <button className="omega-button omega-button-secondary" onClick={onChat}>{preferLive ? 'Close chat panel' : 'Open chat beside flow'} <ArrowRight size={15} /></button>
           <button className="omega-button omega-button-primary" onClick={onCompose}><Zap size={15} /> Compose a run</button>
         </div>
       </section>
 
       <section className="omega-workflow-panel" aria-label="Omega orchestration workflow">
         <div className="omega-panel-toolbar">
-          <div className="omega-panel-title"><GitBranch size={15} /> LIVE WORKFLOW MAP <span className="omega-panel-number">/ 01</span></div>
+          <div className="omega-panel-title"><GitBranch size={15} /> WORKFLOW MAP <span className="omega-panel-number">/ 01</span></div>
           <div className="omega-toolbar-right">
             <div className="omega-mode-picker" aria-label="Workflow data source">
               <button className={demo ? 'is-selected' : ''} aria-pressed={demo} onClick={() => setMode('demo')}>Demo</button>
@@ -322,7 +328,7 @@ export default function WorkflowOverviewPage({
             <span className="omega-activity-prefix">{demo ? 'DEMO EVENT' : live ? 'RUNTIME EVENT' : 'SAVED STATUS'}</span>
             <span className="omega-activity-message">{activity}</span>
           </div>
-          <span className="omega-graph-disclaimer">{demo ? 'Illustrative sequence only' : live ? connected ? 'ChatBridge · observation only' : 'Stream disconnected · no live claims' : 'Local records · not telemetry'}</span>
+          <span className="omega-graph-disclaimer">{demo ? 'Illustrative sequence only' : live ? connected ? 'ChatBridge observer · session association not verified' : 'Stream disconnected · no live claims' : 'Local records · not telemetry'}</span>
         </div>
       </section>
 

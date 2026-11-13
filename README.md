@@ -93,6 +93,12 @@ To validate the public scaffold itself, see
 `tests/smoke_install.sh` and the GitHub Actions checks. The Electron
 shell is optional and requires a separate `puppy_gui` installation.
 
+## Chat + animated workflow (desktop)
+
+Open the Electron app to see the animated Omega map. Select **Open chat beside flow** to open the **real, embedded Puppy GUI chat** next to the animation, or switch to full chat from the dock header. The dashboard distinguishes Demo, Live ChatBridge observations, and locally saved draft runs. Live stream events are not yet verified as belonging to the same chat session.
+
+Omega requires a project selection and warns before opening an existing GUI whose working directory cannot be verified. It never auto-sends prompts, starts new work, or approves tool calls from the dashboard. Electron restricts embedded GUI navigation to its configured loopback origin. Code Puppy agent tools still operate with your OS user permissions; the runtime is not sandboxed. See [desktop details](docs/FRONTEND.md).
+
 ## Run a job — the concrete walkthrough
 
 The trigger for a run is always **you, giving the orchestrator a goal
