@@ -8,6 +8,18 @@ artifact or installed-runtime QA is implied by that version.
 
 ## Unreleased — repository main (2026-11-12)
 
+### First-party harness context (PR #19)
+
+- Added an explicitly refreshed, read-only **Agent / Model / Saved session**
+  context bar to the shared Chat/Omega workspace. Three fixed GET-only
+  calls to the existing 127.0.0.1 GUI are bounded and stripped in the
+  Electron main process so credentials, agent prompts, other session
+  names and message bodies are not returned to the UI.
+- Existing runtime context is **not attested** as the Live Monitor's
+  particular chat session. No native send, agent/model switch, session
+  resume or approval endpoint is used. Regression tests exercise
+  redirection, invalid input, malformed/oversized JSON and data filtering.
+
 ### Native integration evidence collection
 
 - **PR #18:** Added an explicit, read-only local ChatBridge
