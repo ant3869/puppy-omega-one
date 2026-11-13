@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import AgentWorkspacePage, { type WorkspaceMode } from './AgentWorkspacePage';
-import CodePuppyChatPage from './CodePuppyChatPage';
+import CodePuppyChatPage, { validateChatPrompt } from './CodePuppyChatPage';
 import { unavailableCodePuppy } from '@shared/code-puppy-acp';
 
 function render(mode: WorkspaceMode, reduceMotion = true): string {
@@ -85,4 +85,10 @@ test('switching the composer project locks chat sending until the matching ACP s
   assert.match(html, /Switch to selected project/);
   assert.match(html, /aria-label="Message to Code Puppy"[^>]*disabled/);
   assert.match(html, /disabled[^>]*>.*Send</s);
+});
+
+test('oversized Omega briefs are rejected before clearing the composer', () => {
+  assert.equal(validateChatPrompt('a'.repeat(20000)), null);
+  assert.match(validateChatPrompt('a'.repeat(20001)) || '', /maximum 20,000 characters/);
+  assert.match(validateChatPrompt('  ' ) || '', /Enter a message/);
 });
