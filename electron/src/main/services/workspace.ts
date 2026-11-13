@@ -2,12 +2,59 @@ import { app, dialog, ipcMain, type BrowserWindow } from 'electron';
 import { promises as fs } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { OmegaRun } from '../../shared/types';
+import type { CodePuppySnapshot } from '../../shared/code-puppy-acp';
+import { initialWorkflow, reduceWorkflowEvent, changeWorkflowConnection } from '../../shared/workflow-events';
+import type { WorkflowTelemetry } from '../../shared/workflow-events';
 import { assertProjectWorkspace } from './project-safety';
 import { assertDraftRun, assertStoredRuns } from './draft-validation';
 import { CodePuppyAcpClient } from './code-puppy-acp';
 
 const acp = new CodePuppyAcpClient();
 let writes: Promise<void> = Promise.resolve();
+let workflow: WorkflowTelemetry = initialWorkflow();
+let previousConnection: CodePuppySnapshot['connection'] = 'offline';
+let previousSession: string | null = null;
+let previousEventId = 0;
+let workflowWindow: (() => BrowserWindow | null) | null = null;
+
+function notifyWorkflow() {
+  const window = workflowWindow?.();
+  if (window && !window.isDestroyed()) window.webContents.send('workflow:changed', workflow);
+}
+
+function reflectAcp(snapshot: CodePuppySnapshot) {
+  if (snapshot.sessionId !== previousSession) {
+    workflow = initialWorkflow();
+    previousEventId = 0;
+    previousConnection = 'offline';
+    previousSession = snapshot.sessionId;
+  }
+  const active = snapshot.connection === 'ready' || snapshot.connection === 'working';
+  workflow = changeWorkflowConnection(workflow, workflow.monitoring && active ? 'connected' : 'disconnected');
+  if (workflow.monitoring && active) {
+    if (snapshot.connection === 'working' && previousConnection !== 'working') {
+      workflow = reduceWorkflowEvent(workflow, { type: 'turn_start', agent: 'Code Puppy ACP' }, Date.now());
+    }
+    for (const ev of snapshot.events) {
+      if (ev.id <= previousEventId) continue;
+      if (ev.kind === 'tool' || ev.kind === 'error') {
+        const at = Date.now();
+        const label = ev.kind === 'tool' ? 'ACP tool activity: ' + ev.text.slice(0, 95) : 'ACP error reported';
+        workflow = {
+          ...workflow, activity: label, lastEventAt: at,
+          events: [...workflow.events, { id: (workflow.events.at(-1)?.id ?? 0) + 1, timestamp: at,
+            label, lane: null, tone: ev.kind === 'error' ? 'error' : 'neutral' }].slice(-30)
+        };
+      }
+    }
+    if (snapshot.connection === 'ready' && previousConnection === 'working') {
+      workflow = reduceWorkflowEvent(workflow, { type: 'turn_end', agent: 'Code Puppy ACP' }, Date.now());
+    }
+  }
+  previousEventId = snapshot.events.at(-1)?.id ?? previousEventId;
+  previousConnection = snapshot.connection;
+  notifyWorkflow();
+}
 
 async function validateProject(value: string): Promise<string> {
   return assertProjectWorkspace(value, { configHome: process.env.XDG_CONFIG_HOME });
@@ -43,7 +90,23 @@ async function saveRuns(runs: OmegaRun[]): Promise<void> {
 }
 
 export function registerWorkspaceIpc(getWindow: () => BrowserWindow | null) {
-  acp.on('changed', (snapshot) => {
+  workflowWindow = getWindow;
+  ipcMain.handle('workflow:get', () => workflow);
+  ipcMain.handle('workflow:connect', () => {
+    const snapshot = acp.getSnapshot();
+    if (!snapshot.sessionId) throw new Error('Start a Code Puppy session before viewing live activity');
+    workflow = { ...initialWorkflow('connected'), monitoring: true, agent: 'Code Puppy ACP', activity: 'Watching the selected ACP session' };
+    previousConnection = snapshot.connection === 'working' ? 'ready' : snapshot.connection;
+    reflectAcp(snapshot);
+    return workflow;
+  });
+  ipcMain.handle('workflow:disconnect', () => {
+    workflow = initialWorkflow();
+    notifyWorkflow();
+    return workflow;
+  });
+  acp.on('changed', (snapshot: CodePuppySnapshot) => {
+    reflectAcp(snapshot);
     const window = getWindow();
     if (window && !window.isDestroyed()) window.webContents.send('acp:changed', snapshot);
   });
