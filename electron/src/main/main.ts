@@ -11,7 +11,7 @@ import { registerPuppyIpc, stopServer } from './services/puppy';
 import { registerWorkflowIpc, stopWorkflowEvents } from './services/workflow';
 import { allowedExternalUrl, isTrustedGuiUrl } from './services/webview-policy';
 
-const preloadPath = fileURLToPath(new URL('../preload/index.mjs', import.meta.url));
+const preloadPath = fileURLToPath(new URL('../preload/index.js', import.meta.url));
 const rendererIndexHtml = fileURLToPath(new URL('../renderer/index.html', import.meta.url));
 
 // App icon: assets/icon.png (the minimal neon-Omega puppy mark).

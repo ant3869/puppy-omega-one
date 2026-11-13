@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -11,7 +11,7 @@ test('allows ordinary project inside home without touching global directories', 
     const home = join(root, 'home');
     const project = join(home, 'projects', 'my-project');
     mkdirSync(project, { recursive: true });
-    assert.equal(assertProjectWorkspace(project, { home }), project);
+    assert.equal(assertProjectWorkspace(project, { home }), realpathSync.native(project));
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
@@ -60,7 +60,7 @@ test('blocks site-packages in a custom Python virtual environment', () => {
     assert.throws(() => assertProjectWorkspace(venv, { home, python }), /protected/);
     const regular = join(home, 'projects', 'my-code');
     mkdirSync(regular, { recursive: true });
-    assert.equal(assertProjectWorkspace(regular, { home, python }), regular);
+    assert.equal(assertProjectWorkspace(regular, { home, python }), realpathSync.native(regular));
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
@@ -69,8 +69,8 @@ test('system Python in /bin does not block unrelated project workspaces', () => 
   try {
     const project = join(root, 'safe-project');
     mkdirSync(project, { recursive: true });
-    assert.equal(assertProjectWorkspace(project, { home: join(root, 'home'), python: '/bin/python3' }), project);
-    assert.equal(assertProjectWorkspace(project, { home: join(root, 'home'), python: '/usr/bin/python3' }), project);
+    assert.equal(assertProjectWorkspace(project, { home: join(root, 'home'), python: '/bin/python3' }), realpathSync.native(project));
+    assert.equal(assertProjectWorkspace(project, { home: join(root, 'home'), python: '/usr/bin/python3' }), realpathSync.native(project));
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
@@ -85,6 +85,9 @@ test('blocks both auto-discovered GUI checkouts without GUI env overrides', () =
     for (const folder of [local, nested, join(nested, 'code_puppy_gui')]) {
       assert.throws(() => assertProjectWorkspace(folder, { home }), /protected/);
     }
+    const future = join(nested, 'not-created', 'source');
+    assert.equal(existsSync(future), false);
+    assert.throws(() => assertProjectWorkspace(future, { home }), /protected/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
@@ -97,5 +100,6 @@ test('rejects project symlink redirected to global core', () => {
     mkdirSync(core, { recursive: true });
     symlinkSync(core, link, 'dir');
     assert.throws(() => assertProjectWorkspace(link, { home }), /protected/);
+    assert.throws(() => assertProjectWorkspace(join(link, 'future', 'child'), { home }), /protected/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
