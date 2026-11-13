@@ -14,8 +14,19 @@ function safeName(value: unknown): string | null {
 function nameFrom(body: unknown, key: 'agent' | 'model' | 'session'): string | null {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
   const obj = body as Record<string, unknown>;
-  if (key === 'agent') return safeName(obj.name);
-  if (key === 'model') return safeName(obj.name);
+  if (key === 'agent') {
+    const agents = obj.agents;
+    if (!Array.isArray(agents)) return null;
+    const active = agents.filter((a) =>
+      a && typeof a === 'object' && !Array.isArray(a) && a.active === true
+    );
+    return active.length === 1 ? safeName(active[0].name) : null;
+  }
+  if (key === 'model') {
+    const active = obj.active;
+    return active && typeof active === 'object' && !Array.isArray(active)
+      ? safeName((active as Record<string, unknown>).name) : null;
+  }
   return safeName(obj.current);
 }
 
@@ -61,8 +72,8 @@ export async function readHarnessContext(
   if (!validGuiPort(port)) throw new Error('Invalid loopback GUI port.');
   const origin = `http://127.0.0.1:${port}`;
   const endpoints = [
-    ['agent', '/api/agents/active'],
-    ['model', '/api/models/active'],
+    ['agent', '/api/agents'],
+    ['model', '/api/models'],
     ['session', '/api/sessions']
   ] as const;
 
