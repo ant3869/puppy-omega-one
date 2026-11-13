@@ -90,3 +90,20 @@ test('agent closing stdin fails closed on EPIPE or bounded prompt timeout', { ti
     }
   });
 });
+
+test('submitted Omega briefs remain fully visible in chat history beyond 4000 characters', async () => {
+  await withProject(async (dir) => {
+    const client = new CodePuppyAcpClient();
+    try {
+      await client.start(dir, process.execPath, [fixture]);
+      const brief = 'Y'.repeat(5013);
+      await client.prompt(brief);
+      const userEntries = client.getSnapshot().events.filter((event) => event.kind === 'user');
+      assert.equal(userEntries.length, 1);
+      assert.equal(userEntries[0].text, brief);
+      assert.equal(client.getSnapshot().connection, 'ready');
+    } finally {
+      client.stop();
+    }
+  });
+});
