@@ -19,6 +19,7 @@
 | GUI startup | Explicit user action only | Starts existing launcher with selected safe `cwd`; does not patch core |
 | Existing/external GUI attachment | Implemented with warning | Actual external project `cwd` is unknown, not attested |
 | Read-only local diagnostics | Implemented | Four allowlisted GET responses + observer status; bodies discarded |
+| Native Chat/Omega context chips | Implemented (manual refresh) | Three fixed GET-only endpoints, bounded sanitized agent/model/session names; cannot attest WebSocket session identity or switch runtime configuration |
 | ChatBridge monitor | **Off by default** | User explicitly chooses Connect/Stop; socket receives event summaries only |
 | Worker status visualization | Implemented projection | Event/session association remains **unverified** |
 | Event log navigation | Implemented read-only event search/filter and monitor controls | Up to 30 in-memory summaries only; not session-attested or persisted |
