@@ -62,6 +62,12 @@ session as reported by your installed GUI. These are display-only values,
 not a session picker or proof that the Omega event stream belongs to that
 conversation. It never submits prompts or changes model/configuration.
 
+For safe protocol preflight, `electron/scripts/probe-chatbridge.mjs` can
+**explicitly** test a single loopback WebSocket ping on a disposable installed
+GUI; it needs an acknowledgement flag because even connecting can change
+server session state. A pong is **not** evidence of correct project/session
+binding or safe native dispatch. See [local QA](docs/LOCAL_QA.md).
+
 Omega doesn't start the GUI or extra read-only ChatBridge event monitor at
 app launch. Live monitoring requires explicitly choosing **Connect monitor**
 and can be stopped. The installed GUI may perform its own initialization

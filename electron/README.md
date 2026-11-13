@@ -72,6 +72,15 @@ and whether known REST paths appear in OpenAPI. It **cannot verify**
 the `/ws/chat` session contract, and it never sends prompts or
 changes Code Puppy files. See [LOCAL_QA](../docs/LOCAL_QA.md).
 
+An additional, **explicitly opt-in** compatibility utility is available at
+`scripts/probe-chatbridge.mjs`. It sends only a fixed `ping` over one
+`/ws/chat` loopback WebSocket after `--acknowledge-session-side-effects`
+is supplied. A connection may affect the installed server's sessions;
+run this **only against a disposable GUI project**, compare session state
+before/after, and treat a pong as proof of ping behavior only. No raw
+frames, sessions or transcripts are printed. The Electron app itself does
+not invoke this utility automatically.
+
 ## Safety boundary
 
 - Installers and workspace picker guard against known Code Puppy core

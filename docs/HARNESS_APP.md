@@ -40,12 +40,12 @@ The central conversation is still rendered by an **embedded instance
 of the existing Puppy GUI**. This is a transitional integration, not
 a claim of an independent native ChatBridge client.
 
-Inspection of the public `ant3869/puppy_gui` main branch found:
+Inspection of the checked-in `ant3869/puppy_gui` main branch found:
 - `code_puppy_gui/static/js/chat.js` sends WebSocket actions such as
   `{ action: "prompt", text }` and renders tool/approval messages.
 - `tests/test_ws.py` describes prompt, response, cancel and ping.
 - `code_puppy_gui/app.py` imports `routes_chat`, but
-  `code_puppy_gui/api/routes_chat.py` **is absent from the public
+  `code_puppy_gui/api/routes_chat.py` **is absent from the checked-in
   main tree reviewed** (along with other imported route modules).
   Therefore **this checkout alone cannot verify** the actual installed
   route, session ownership or approval contract.
@@ -63,6 +63,13 @@ against a local GUI, or add `--offline` to inspect files without HTTP.
 This checks only local source-file presence and GET-only health/OpenAPI
 route declarations. It does **not** open `/ws/chat` or attest project
 cwd, agent selections, session/approval ownership or response events.
+
+A separate **opt-in ping-only** CLI, `electron/scripts/probe-chatbridge.mjs`,
+can test one real local WebSocket response after the user acknowledges that
+connecting may itself create/change server sessions. It must be run only
+against a disposable installed GUI project, and its bounded report discards
+all unsolicited frame content. A pong is not evidence of session ownership,
+correct project cwd, approvals, or connection-side-effect safety.
 
 This is a safe **first step**, not Phase A completion. The installed
 runtime's actual WebSocket/session behavior still needs manual verification
