@@ -1,22 +1,25 @@
-# Progress
+# Project progress (Omega template)
 
-Where we are: what is done, what is next, and a dated log line per
-session. The orchestrator reads this at session start and appends to it
-at session end (using a researcher summary and a builder file update).
+This file is copied into the **selected project** for the project's own
+session handoff. It is **not** the Puppy Omega One repository changelog or
+a claim that Code Puppy has already been installed or tested here.
 
 ## Done
 
-- (none yet — first run will fill this in)
+- (No project work verified yet.)
 
 ## Next
 
-- Verify model aliases with `/model` in Code Puppy in the target environment and swap the
-  placeholders in `.code_puppy/agents/*.json` and, optionally, your user-level Code Puppy settings.
-- Run a first small job end to end (2 workers) and confirm the
-  verify-before-accept loop works on the target environment.
+- [ ] Inspect the installed Code Puppy `/model` catalog and replace
+  **unverified** model alias values in project-local
+  `.code_puppy/agents/omega-*-agent.json`.
+- [ ] Confirm this is the intended **project workspace**, not Code Puppy
+  core/config, a GUI checkout or Python environment.
+- [ ] Run one harmless, manual test goal with a runnable `Done when:`
+  check; verify the actual GUI session and project before allowing edits.
+- [ ] Record exact test commands and results here. Do not mark a worker
+  response as a passing check without rerunning that check.
 
 ## Session log
 
-- 2026-11-12 — Harness installed from puppy-omega-one templates. Models
-  still placeholders (`claude-opus-5-5` / `claude-sonnet-5-5` /
-  `claude-haiku-5-5`); alias verification pending.
+- (Add a dated entry after the **first verified project session**.)
