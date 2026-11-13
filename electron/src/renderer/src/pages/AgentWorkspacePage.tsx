@@ -75,7 +75,6 @@ export default function AgentWorkspacePage({
             </div>
             <div className="agent-loop-body">
               <WorkflowOverviewPage
-                server={null}
                 reduceMotion={reduceMotion}
                 preferLive={false}
                 onCompose={onCompose}
