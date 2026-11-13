@@ -1,0 +1,35 @@
+name: One-time PR12 branch cleanup
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/prune-pr12-once.yml'
+permissions:
+  contents: write
+  pull-requests: read
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove only the inspected merged PR12 branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          branch="feat/read-only-runtime-diagnostics"
+          inspected="50c23505fdf30ab236171aef03d71f8f12d68e94"
+          pr="$(gh api "repos/$REPO/pulls/12")"
+          [[ "$(jq -r '.merged' <<< "$pr")" == true ]]
+          [[ "$(jq -r '.head.ref' <<< "$pr")" == "$branch" ]]
+          [[ "$(jq -r '.head.sha' <<< "$pr")" == "$inspected" ]]
+          gh api "repos/$REPO/pulls?state=open&per_page=100" > "$RUNNER_TEMP/active-prs.json"
+          if jq -e --arg branch "$branch" 'any(.[]; .head.ref == $branch)' "$RUNNER_TEMP/active-prs.json" > /dev/null; then
+            echo "Branch is still in use by an open PR" >&2
+            exit 1
+          fi
+          sha="$(gh api "repos/$REPO/git/ref/heads/$branch" --jq '.object.sha')"
+          [[ "$sha" == "$inspected" ]] || { echo "Branch has moved; refusing deletion" >&2; exit 1; }
+          gh api --method DELETE "repos/$REPO/git/refs/heads/$branch"
+          echo "Deleted merged PR12 branch. No source files changed."
