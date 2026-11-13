@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Check, Clipboard, Clock3, FileText, FolderOpen, RefreshCw, Search } from 'lucide-react';
+import { Check, Clipboard, Clock3, FileText, FolderOpen, MessageSquare, RefreshCw, Search } from 'lucide-react';
 import type { OmegaRun, RunStatus } from '@shared/types';
 
 const STATUS_LABEL: Record<RunStatus, string> = {
@@ -19,7 +19,7 @@ function briefText(run: OmegaRun): string | null {
   return text?.trim() ? text : null;
 }
 
-export default function LivePage() {
+export default function LivePage({ onOpenChat }: { onOpenChat: () => void }) {
   const [runs, setRuns] = useState<OmegaRun[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -138,10 +138,15 @@ export default function LivePage() {
                   <h3>{selected.goal}</h3>
                   <p>{formatTime(selected.startedAt)} · ID: {selected.id}</p>
                 </div>
-                <button className="omega-button omega-button-secondary" onClick={() => void copyBrief()} disabled={!selectedBrief}>
-                  {copied ? <Check size={15} /> : <Clipboard size={15} />}
-                  {copied ? 'Copied' : 'Copy brief'}
-                </button>
+                <div className="omega-history-actions">
+                  <button className="omega-button omega-button-secondary" onClick={() => void copyBrief()} disabled={!selectedBrief}>
+                    {copied ? <Check size={15} /> : <Clipboard size={15} />}
+                    {copied ? 'Copied' : 'Copy brief'}
+                  </button>
+                  <button className="omega-button omega-button-secondary" onClick={onOpenChat}>
+                    <MessageSquare size={15} /> Open chat
+                  </button>
+                </div>
               </div>
               <div className="omega-history-field">
                 <span>PROJECT WORKSPACE</span>
