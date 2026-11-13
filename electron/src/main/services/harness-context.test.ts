@@ -11,12 +11,13 @@ test('only three GET requests to literal loopback endpoints and a tiny allowlist
     assert.equal(init.credentials, 'omit');
     assert.equal(init.cache, 'no-store');
     assert.equal(init.referrerPolicy, 'no-referrer');
-    if (url.endsWith('/api/agents/active')) return Response.json({
-      name: 'omega-builder', tools: ['shell', 'edit_file'], system_prompt: 'TOP SECRET'
+    if (url.endsWith('/api/agents')) return Response.json({
+      agents: [{ name: 'omega-builder', active: true, tools: ['shell'], system_prompt: 'TOP SECRET' },
+               { name: 'private-worker', active: false }]
     });
-    if (url.endsWith('/api/models/active')) return Response.json({
-      name: 'example-model', settings: { key: 'not-in-snapshot' },
-      api_key: 'DO_NOT_EXPOSE'
+    if (url.endsWith('/api/models')) return Response.json({
+      active: { name: 'example-model', settings: { key: 'not-in-snapshot' } },
+      models: [{ name: 'example-model', api_key: 'DO_NOT_EXPOSE' }]
     });
     return Response.json({
       current: 'work-session', sessions: [{ name: 'private-customer', messages: ['secret'] }]
@@ -24,8 +25,8 @@ test('only three GET requests to literal loopback endpoints and a tiny allowlist
   };
   const result = await readHarnessContext(8765, fetcher);
   assert.deepEqual(paths, [
-    'http://127.0.0.1:8765/api/agents/active',
-    'http://127.0.0.1:8765/api/models/active',
+    'http://127.0.0.1:8765/api/agents',
+    'http://127.0.0.1:8765/api/models',
     'http://127.0.0.1:8765/api/sessions'
   ]);
   assert.deepEqual(result.agent, { state: 'available', value: 'omega-builder' });
@@ -49,8 +50,8 @@ test('redirect, failure, malformed and oversized responses are not surfaced to r
     async () => new Response(null, { status: 302, headers: { Location: 'https://example.com/secret' } }),
     async () => { throw new Error('Bearer secret123'); },
     async () => new Response('{invalid-json'),
-    async () => Response.json({ name: 'A'.repeat(97), current: 'A'.repeat(97) }),
-    async () => Response.json({ name: 'A', current: 'A', messages: 'x'.repeat(150000) })
+    async () => Response.json({ agents: [{ name: 'A'.repeat(97), active: true }], active: { name: 'A'.repeat(97) }, current: 'A'.repeat(97) }),
+    async () => Response.json({ agents: [{ name: 'A', active: true }], active: { name: 'A' }, current: 'A', messages: 'x'.repeat(150000) })
   ];
   for (const response of cases) {
     const result = await readHarnessContext(8765, response);
@@ -73,8 +74,19 @@ test('non-loopback or invalid ports cannot start requests', async () => {
 
 test('control characters in reported labels are rendered as single-line names', async () => {
   const result = await readHarnessContext(8765, async () => Response.json({
-    name: 'omega-builder\nInjected status', current: 'session\rmessage'
+    agents: [{ name: 'omega-builder\nInjected status', active: true }],
+    active: { name: 'example-model' },
+    current: 'session\rmessage'
   }));
   assert.equal(result.agent.value, 'omega-builder Injected status');
   assert.equal(result.session.value, 'session message');
+});
+
+test('conflicting active agent flags are not guessed', async () => {
+  const result = await readHarnessContext(8765, async (url) => Response.json(
+    url.endsWith('/api/agents')
+      ? { agents: [{ name: 'one', active: true }, { name: 'two', active: true }] }
+      : { active: { name: 'model' }, current: 'saved' }
+  ));
+  assert.deepEqual(result.agent, { state: 'unavailable', value: null });
 });
