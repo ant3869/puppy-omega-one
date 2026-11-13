@@ -23,6 +23,7 @@ logs and screenshots have not been independently inspected here.
 | Chat-first landing and app navigation | Implemented | Chat is the initial route; current transport remains the separately installed GUI; manual UX QA pending |
 | Omega orchestration mode | Implemented UI | Switches the same chat workspace into a conversation + worker graph split view; Live session attribution pending |
 | Demo workflow | Implemented, visibly simulated | Never presented as a real run |
+| Omega keyboard and reduced-motion exploration | Implemented UI | Worker lanes can be selected using visible keyboard focus or native buttons; Reduce motion replaces autoplay with manually stepped Demo stages; manual accessibility QA still pending |
 | Saved history and brief composition | Implemented | Local Omega `userData/runs.json` only; drafts do not submit prompts |
 | Search/copy saved briefs, open chat | Implemented | Local history and clipboard; live send is manual |
 | Embedded Puppy GUI chat | Integrated webview | Requires separately installed GUI; behavior belongs to that GUI |
