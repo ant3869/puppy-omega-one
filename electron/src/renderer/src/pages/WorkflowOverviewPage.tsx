@@ -96,14 +96,15 @@ export default function WorkflowOverviewPage({
 
   useEffect(() => {
     let alive = true;
+    let receivedPush = false;
     const unsubscribe = window.omega.workflow.subscribe((snapshot) => {
+      receivedPush = true;
       if (alive) setTelemetry(snapshot);
     });
     void window.omega.workflow.get().then((snapshot) => {
-      if (alive) {
-        setTelemetry((previous) => previous && (previous.lastEventAt ?? 0) > (snapshot.lastEventAt ?? 0) ? previous : snapshot);
-      }
-    }).catch(() => { if (alive) setTelemetry(null); });
+      // A late initial response must not overwrite a newer connect/stop push.
+      if (alive && !receivedPush) setTelemetry(snapshot);
+    }).catch(() => { if (alive && !receivedPush) setTelemetry(null); });
     return () => {
       alive = false;
       unsubscribe();
