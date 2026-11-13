@@ -421,6 +421,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 .omega-history-detail { min-width: 0; border: 1px solid #2e4856; background: #101d27; border-radius: 8px; padding: 19px; display: grid; gap: 19px; }
 .omega-history-detail-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
 .omega-history-detail-heading > div { min-width: 0; }
+.omega-history-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 7px; flex-shrink: 0; }
 .omega-history-detail-kicker { color: #7ab5bf; letter-spacing: .12em; font-size: 9px; font-weight: 650; }
 .omega-history-detail-heading h3 { margin: 8px 0; font-size: 19px; color: #e2f0f2; line-height: 1.35; overflow-wrap: anywhere; }
 .omega-history-detail-heading p { color: #819eaf; font-size: 10px; overflow-wrap: anywhere; }
