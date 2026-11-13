@@ -85,7 +85,7 @@ export class CodePuppyAcpClient extends EventEmitter {
       return;
     }
     if (!frame || frame.jsonrpc !== '2.0') return;
-    if (typeof frame.id === 'number' && this.pending.has(frame.id)) {
+    if (typeof frame.method !== 'string' && typeof frame.id === 'number' && this.pending.has(frame.id) && (Object.hasOwn(frame, 'result') || Object.hasOwn(frame, 'error'))) {
       const pending = this.pending.get(frame.id)!;
       this.pending.delete(frame.id);
       if (pending.timer) clearTimeout(pending.timer);
@@ -111,7 +111,13 @@ export class CodePuppyAcpClient extends EventEmitter {
     if (!update) return;
     const kind = update.sessionUpdate;
     const content = message(update.content);
-    if (kind === 'agent_message_chunk') this.add('text', safeString(content?.text));
+    if (kind === 'agent_message_chunk' && typeof content?.text === 'string') {
+      // Preserve the complete chunk across bounded UI events rather than cutting it at 4,000.
+      const text = content.text;
+      for (let offset = 0; offset < text.length; offset += 4000) {
+        this.add('text', text.slice(offset, offset + 4000));
+      }
+    }
     if (kind === 'agent_thought_chunk') this.add('thinking', safeString(content?.text, 600));
     if (kind === 'tool_call' || kind === 'tool_call_update') {
       this.add('tool', safeString(update.title, 180) || 'Agent tool activity');
