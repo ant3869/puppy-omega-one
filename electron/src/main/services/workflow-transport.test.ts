@@ -99,3 +99,55 @@ test('transport rejects non-loopback endpoints', () => {
   assert.throws(() => new WorkflowTransport('ws://localhost:8765/ws/chat'), /loopback/);
   assert.throws(() => new WorkflowTransport('ws://127.0.0.1:8765/not-chat'), /loopback/);
 });
+
+test('opening Omega does not create an unrequested chat WebSocket', async () => {
+  const server = await listen();
+  const port = (server.address() as AddressInfo).port;
+  let connections = 0;
+  server.on('connection', () => { connections++; });
+  const transport = new WorkflowTransport(`ws://127.0.0.1:${port}/ws/chat`, 50);
+  try {
+    assert.equal(transport.getState().monitoring, false);
+    await new Promise((resolve) => setTimeout(resolve, 65));
+    assert.equal(connections, 0, 'No transport connection until explicit start');
+    transport.start();
+    await waitUntil(() => transport.getState().connection === 'connected');
+    assert.equal(transport.getState().monitoring, true);
+    assert.equal(connections, 1);
+    transport.stop();
+    await waitUntil(() => transport.getState().connection === 'disconnected');
+    assert.equal(transport.getState().monitoring, false);
+    assert.match(transport.getState().activity, /stopped/);
+  } finally {
+    transport.stop();
+    await closeServer(server);
+  }
+});
+
+test('explicit disconnect prevents background reconnect to a returning server', async () => {
+  const first = await listen();
+  const port = (first.address() as AddressInfo).port;
+  const transport = new WorkflowTransport(`ws://127.0.0.1:${port}/ws/chat`, 75);
+  try {
+    transport.start();
+    await waitUntil(() => transport.getState().connection === 'connected');
+    await closeServer(first);
+    await waitUntil(() => transport.getState().connection === 'disconnected');
+    assert.equal(transport.getState().monitoring, true);
+    transport.stop();
+    assert.equal(transport.getState().monitoring, false);
+
+    const second = await listen(port);
+    let count = 0;
+    second.on('connection', () => { count++; });
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 190));
+      assert.equal(count, 0, 'No retry should run after explicit stop');
+      assert.equal(transport.getState().connection, 'disconnected');
+    } finally {
+      await closeServer(second);
+    }
+  } finally {
+    transport.stop();
+  }
+});
