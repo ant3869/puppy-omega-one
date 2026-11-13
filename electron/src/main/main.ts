@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { registerPuppyIpc, stopServer } from './services/puppy';
 import { registerWorkflowIpc, startWorkflowEvents, stopWorkflowEvents } from './services/workflow';
+import { allowedExternalUrl, isTrustedGuiUrl } from './services/webview-policy';
 
 const preloadPath = fileURLToPath(new URL('../preload/index.mjs', import.meta.url));
 const rendererIndexHtml = fileURLToPath(new URL('../renderer/index.html', import.meta.url));
@@ -44,24 +45,14 @@ function createWindow() {
 
   // Only browser-safe links can leave the app; never pass file:, javascript:, etc.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    try {
-      const protocol = new URL(url).protocol;
-      if (protocol === 'https:' || protocol === 'http:') void shell.openExternal(url);
-    } catch {
-      // Malformed links are denied.
-    }
+    if (allowedExternalUrl(url)) void shell.openExternal(url);
     return { action: 'deny' };
   });
 
   // An embedded view may load only our localhost puppy_gui service.
   mainWindow.webContents.on('will-attach-webview', (event, preferences, params) => {
     const port = Number(process.env.PUPPY_GUI_PORT ?? 8765);
-    try {
-      if (new URL(params.src).origin !== `http://127.0.0.1:${port}`) {
-        event.preventDefault();
-        return;
-      }
-    } catch {
+    if (!isTrustedGuiUrl(params.src, port)) {
       event.preventDefault();
       return;
     }
@@ -69,6 +60,31 @@ function createWindow() {
     preferences.nodeIntegration = false;
     preferences.contextIsolation = true;
     preferences.sandbox = true;
+  });
+
+  // An attached webview cannot follow redirects to file:, external domains,
+  // privileged app schemes, or arbitrary local services.
+  mainWindow.webContents.on('did-attach-webview', (_event, guest) => {
+    const port = Number(process.env.PUPPY_GUI_PORT ?? 8765);
+    guest.setWindowOpenHandler(({ url }) => {
+      if (allowedExternalUrl(url) && !isTrustedGuiUrl(url, port)) {
+        void shell.openExternal(url);
+      }
+      return { action: 'deny' };
+    });
+    const restrict = (event: Electron.Event, navigation: unknown) => {
+      const target = typeof navigation === 'string'
+        ? navigation
+        : navigation && typeof navigation === 'object' && 'url' in navigation
+          ? String(navigation.url)
+          : '';
+      if (!isTrustedGuiUrl(target, port)) {
+        event.preventDefault();
+        if (allowedExternalUrl(target)) void shell.openExternal(target);
+      }
+    };
+    guest.on('will-navigate', restrict);
+    guest.on('will-redirect', restrict);
   });
 
   const url = process.env.ELECTRON_RENDERER_URL;
