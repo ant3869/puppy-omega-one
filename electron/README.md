@@ -36,6 +36,7 @@ installation, **not** a copy of core bundled in Omega.
 | Overview → Open chat beside flow | Dock the existing Puppy GUI webview beside the animated map |
 | Compose run | Select guarded project, set goal / `Done when:`, compose a **draft** |
 | Saved activity | Search historical draft records; inspect/copy briefs and open chat |
+| Event log | Inspect the 30 most recent sanitized event summaries with severity/worker/search filters |
 | Worker briefs | Read locally stored worker briefs/check records |
 | Project documents | Read guarded workspace progress/decision/known-issue files |
 | Settings | Reduce animations, read-only GUI diagnostics, safety notes |

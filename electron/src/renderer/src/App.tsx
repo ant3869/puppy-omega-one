@@ -1,19 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Activity, BookOpen, FileText, LayoutDashboard, MessageSquare,
-  Play, Settings, PawPrint, X, Maximize2
+  Play, Settings, PawPrint, X, Maximize2, ScrollText
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { PuppyStatus } from '@shared/types';
 import WorkflowOverviewPage from './pages/WorkflowOverviewPage';
 import RunPage from './pages/RunPage';
 import LivePage from './pages/LivePage';
+import EventLogPage from './pages/EventLogPage';
 import BriefsPage from './pages/BriefsPage';
 import ProgressPage from './pages/ProgressPage';
 import PuppyGuiPage from './pages/PuppyGuiPage';
 import SettingsPage from './pages/SettingsPage';
 
-type ModuleId = 'overview' | 'run' | 'puppy' | 'live' | 'briefs' | 'progress' | 'settings';
+type ModuleId = 'overview' | 'run' | 'puppy' | 'live' | 'log' | 'briefs' | 'progress' | 'settings';
 type NavItem = { id: ModuleId; label: string; icon: LucideIcon };
 
 const modules: NavItem[] = [
@@ -21,6 +22,7 @@ const modules: NavItem[] = [
   { id: 'run', label: 'Compose run', icon: Play },
   { id: 'puppy', label: 'Harness chat', icon: MessageSquare },
   { id: 'live', label: 'Saved activity', icon: Activity },
+  { id: 'log', label: 'Event log', icon: ScrollText },
   { id: 'briefs', label: 'Worker briefs', icon: FileText },
   { id: 'progress', label: 'Project documents', icon: BookOpen }
 ];
@@ -115,6 +117,8 @@ export default function App() {
         return <PuppyGuiPage status={status} projectDir={projectDir} onProjectChange={setProjectDir} onStatusChange={setStatus} />;
       case 'live':
         return <LivePage onOpenChat={() => navigate('puppy')} />;
+      case 'log':
+        return <EventLogPage />;
       case 'briefs':
         return <BriefsPage />;
       case 'progress':

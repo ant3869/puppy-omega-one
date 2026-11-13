@@ -84,6 +84,7 @@ same as creating/test-running a platform installer; see
 | **Overview** | Animated workflow; Demo is explicitly simulated |
 | **Compose run** | Creates a **local draft** with a project workspace and acceptance check |
 | **Saved activity** | Search, inspect, copy stored briefs, open chat |
+| **Event log** | Filter/search up to 30 recent sanitized in-memory monitor summaries; never raw transcripts |
 | **Worker briefs / Project docs** | Read local Omega records and project documents |
 | **Harness chat** | Embeds the **real separately installed Puppy GUI**; sending is done inside its UI |
 | **Settings** | Reduced motion, read-only local endpoint diagnostics and safety information |

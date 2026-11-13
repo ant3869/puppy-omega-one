@@ -13,6 +13,7 @@ Puppy Omega One (Electron main + sandboxed React renderer)
   ├─ Overview: interactive SVG workflow, Demo / Saved / Live
   ├─ Compose: local draft with goal, done-when check, worker selection
   ├─ Saved activity: searchable draft history, inspect/copy/open chat
+  ├─ Event log: bounded, sanitized observation summaries and filters
   ├─ Worker briefs + project progress docs: local records/files
   ├─ Settings: reduce motion, four read-only endpoint probes
   ├─ Optional Live Monitor: explicit read-only WebSocket observer
@@ -41,6 +42,7 @@ can perform actions inside that installed GUI if the user submits them.**
 | Overview → Live | Bounded event summaries, worker states, errors, approval alerts | **Off by default**; session association unverified |
 | Compose run | Goal/acceptance check/project picker, worker selection, draft save/copy | Never sends a prompt or starts a worker |
 | Saved activity | Search, full history, details, copy brief, open GUI chat | Older statuses remain unverified saved data |
+| Event log | Search/filter recent sanitized activity and opt in to monitoring | 30 in-memory entries; no raw transcript persistence, session binding unknown |
 | Worker briefs | Expandable local record view | No independent check verification |
 | Project docs | Reads selected `docs/progress.md`, `decisions.md`, `known-issues.md` | Does not write project docs |
 | Harness chat | Existing Puppy GUI in a guarded full page or dock | Requires separate installation; behavior depends on that GUI |

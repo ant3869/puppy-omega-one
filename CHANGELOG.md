@@ -28,6 +28,9 @@ artifact or installed-runtime QA is implied by that version.
 - **PR #14:** Made the read-only ChatBridge Live Monitor opt-in. Opening Omega,
   opening its chat dock, or switching to Live no longer starts the extra
   observation socket. Stop monitor closes that socket and cancels retries.
+- **Event Log improvement:** Added a sidebar log view over the existing bounded,
+  sanitized in-memory events, with search, severity/worker filters, and explicit
+  monitor controls. No raw transcript storage or automatic dispatch.
 
 ### Safety and reliability
 - **PRs #1 and #3:** Installer/reliability foundation and reflect-skill updates.
