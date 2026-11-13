@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { OmegaRun } from '../../shared/types';
-import { assertDraftRun } from './draft-validation';
+import { assertDraftRun, assertStoredRuns } from './draft-validation';
 
 function makeDraft(): OmegaRun {
   const now = '2026-11-12T20:00:00.000Z';
@@ -79,4 +79,25 @@ test('accepts different known workers with unique IDs', () => {
     ...record.briefs[0], id: 'worker-002', childAgent: 'omega-tester', model: 'local-model'
   });
   assert.doesNotThrow(() => assertDraftRun(record));
+});
+
+test('reads historical records without claiming they are verified live activity', () => {
+  const record = makeDraft();
+  record.status = 'completed';
+  record.briefs[0].status = 'completed';
+  record.briefs[0].checkResult = 'pass';
+  assert.doesNotThrow(() => assertStoredRuns([record]));
+  assert.throws(() => assertDraftRun(record), /Draft|draft/);
+});
+
+test('rejects malformed saved arrays and nested worker objects', () => {
+  assert.throws(() => assertStoredRuns({ runs: [] }), /Saved history/);
+  const record = makeDraft();
+  (record.briefs[0] as unknown as Record<string, unknown>).childAgent = null;
+  assert.throws(() => assertStoredRuns([record]), /worker record/);
+  assert.throws(() => assertStoredRuns(new Array(2001).fill(makeDraft())), /2000/);
+});
+
+test('accepts empty history while leaving the user data untouched', () => {
+  assert.doesNotThrow(() => assertStoredRuns([]));
 });
