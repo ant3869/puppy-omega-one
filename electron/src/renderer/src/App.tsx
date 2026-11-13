@@ -183,7 +183,7 @@ export default function App() {
           </div>
           <div className="omega-shell-meta">
             <span>CODING AGENT WORKSPACE</span>
-            <span className="omega-shell-status"><i className={status?.running ? 'is-online' : ''} />
+            <span className="omega-shell-status"><i className={snapshot.connection === 'ready' || snapshot.connection === 'working' ? 'is-online' : ''} />
               {'CODE PUPPY ' + snapshot.connection.toUpperCase()}
             </span>
           </div>
@@ -192,12 +192,12 @@ export default function App() {
           <div className={'agent-workspace-mount ' + (!workspaceVisible ? 'is-hidden' : '')}>
             <AgentWorkspacePage
               mode={activeModule === 'omega' ? 'omega' : 'chat'}
-              status={status}
+              snapshot={snapshot}
               projectDir={projectDir}
               reduceMotion={reduceMotion}
               onModeChange={(mode: WorkspaceMode) => navigate(mode)}
               onProjectChange={setProjectDir}
-                            onCompose={() => setComposerOpen(true)}
+              onCompose={() => setComposerOpen(true)}
               onSavedActivity={() => navigate('live')}
             />
           </div>
