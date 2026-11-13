@@ -57,7 +57,8 @@ export class WorkflowTransport {
     const previous = this.socket;
     this.socket = null;
     if (previous) {
-      previous.removeAllListeners();
+      // Keep the socket error listener until termination finishes; late errors
+      // cannot become unhandled Node events, and stale callbacks are guarded.
       previous.terminate();
     }
     this.publish({
