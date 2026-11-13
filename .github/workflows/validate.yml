@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate docs, status and local links
+        run: python3 tests/check_docs.py
       - name: Validate shell syntax
         run: bash -n install.sh tests/smoke_install.sh
       - name: Smoke-test installation and agent manifests
