@@ -16,6 +16,31 @@ avoid real credentials in screenshots or logs.
 - [ ] Run `cd electron && npm test && npm run typecheck && npm run build`
   and the platform-appropriate installer smoke tests, if available.
 
+## Windows Electron startup verification
+
+After a clean build, from `H:\projects\puppy-omega-one\electron`:
+
+```powershell
+npm test
+npm run typecheck
+npm run build
+npm run verify:build
+Test-Path .\out\main\index.js
+Test-Path .\out\preload\index.js
+Get-Content .\out\preload\index.js -TotalCount 8
+$env:ELECTRON_ENABLE_LOGGING='1'; npm run dev 2>&1 | Tee-Object "$env:TEMP\omega-electron-dev.log"
+```
+
+- [ ] Chat/Omega renders in the actual window; no blank dark content.
+- [ ] Main and CommonJS preload build artifacts exist.
+- [ ] The application loads `index.js`, not stale `index.mjs`.
+- [ ] Logs lack `Unable to load preload script`, `Cannot use import statement outside a module`, and `window.omega` undefined / React TypeError.
+- [ ] A nonexistent child under a protected GUI checkout is still rejected.
+
+The user reports an agent tested PR #20 and found it good. Original
+local logs/screenshots have not been independently reviewed here;
+CI artifact verification is **not** a replacement for this checklist.
+
 ## Safe read-only preflight (optional, before active observation)
 
 From the project root, with Python 3 installed and an **existing**
