@@ -107,3 +107,49 @@ test('submitted Omega briefs remain fully visible in chat history beyond 4000 ch
     }
   });
 });
+
+test('ongoing ACP progress refreshes the prompt inactivity watchdog', { timeout: 5000 }, async () => {
+  await withProject(async (dir) => {
+    const client = new CodePuppyAcpClient();
+    try {
+      await client.start(dir, process.execPath, [fixture]);
+      const started = Date.now();
+      await client.prompt('steady progress', 180);
+      assert.ok(Date.now() - started >= 250, 'The active turn must outlast its single inactivity interval');
+      const response = client.getSnapshot();
+      assert.equal(response.connection, 'ready');
+      assert.match(response.events.filter((ev) => ev.kind === 'text').map((ev) => ev.text).join(''), /tick/);
+    } finally {
+      client.stop();
+    }
+  });
+});
+
+test('two valid ACP frames arriving in one stdout read do not trip the per-frame limit', () => {
+  const client = new CodePuppyAcpClient();
+  const internal = client as unknown as {
+    snapshot: { connection: string; sessionId: string | null };
+    consume(payload: string): void;
+  };
+  internal.snapshot.connection = 'ready';
+  internal.snapshot.sessionId = 'fixture-session-1';
+  const frame = (text: string) => JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'session/update',
+    params: { sessionId: 'fixture-session-1',
+      update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text } } }
+  });
+  const maximum = 512 * 1024;
+  const first = frame('A'.repeat(maximum - frame('').length - 16));
+  const last = frame('end-marker');
+  assert.ok(first.length < maximum);
+  assert.ok(first.length + last.length > maximum);
+  internal.consume(first + '\n' + last + '\n');
+  const result = client.getSnapshot();
+  assert.equal(result.connection, 'ready');
+  const full = result.events.filter((ev) => ev.kind === 'text').map((ev) => ev.text).join('');
+  assert.ok(full.startsWith('A'.repeat(100)));
+  assert.ok(full.endsWith('end-marker'));
+  assert.equal(full.length, maximum - frame('').length - 16 + 'end-marker'.length);
+  client.stop();
+});
