@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import AgentWorkspacePage, { type WorkspaceMode } from './AgentWorkspacePage';
+import CodePuppyChatPage from './CodePuppyChatPage';
 import { unavailableCodePuppy } from '@shared/code-puppy-acp';
 
 function render(mode: WorkspaceMode, reduceMotion = true): string {
@@ -72,4 +73,16 @@ test('reduced motion permits stepping through Demo without autoplay controls', (
   const animated = render('omega', false);
   assert.match(animated, /aria-label="Pause demo"/);
   assert.doesNotMatch(animated, /aria-label="Next demo stage"/);
+});
+
+test('switching the composer project locks chat sending until the matching ACP session starts', () => {
+  const html = renderToStaticMarkup(React.createElement(CodePuppyChatPage, {
+    snapshot: { connection: 'ready', projectDir: '/project-A', sessionId: 'session-A', events: [], error: null },
+    projectDir: '/project-B',
+    onProjectChange: () => undefined
+  }));
+  assert.match(html, /Selected project differs from the active Code Puppy session/);
+  assert.match(html, /Switch to selected project/);
+  assert.match(html, /aria-label="Message to Code Puppy"[^>]*disabled/);
+  assert.match(html, /disabled[^>]*>.*Send</s);
 });
