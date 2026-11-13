@@ -2,6 +2,13 @@ import React, { useState } from 'react';
 import { FolderOpen, Play, Send, Square, StopCircle } from 'lucide-react';
 import type { CodePuppySnapshot } from '@shared/code-puppy-acp';
 
+export function validateChatPrompt(value: string): string | null {
+  const length = value.trim().length;
+  if (!length) return 'Enter a message before sending.';
+  if (length > 20000) return 'Message is too long (maximum 20,000 characters). Shorten the brief and retry.';
+  return null;
+}
+
 export default function CodePuppyChatPage({
   snapshot, projectDir, onProjectChange
 }: {
@@ -42,13 +49,19 @@ export default function CodePuppyChatPage({
 
   async function send() {
     const prompt = text.trim();
-    if (!prompt || !canSend || !projectDir || busy) return;
-    setText('');
+    if (!canSend || !projectDir || busy) return;
+    const validationError = validateChatPrompt(text);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setError(null);
+    setText('');
     try {
       // The request stays in progress while ACP streams updates to the UI.
       await window.omega.acp.prompt(prompt, projectDir);
     } catch (cause) {
+      setText(prompt);
       setError(cause instanceof Error ? cause.message : 'Code Puppy did not complete the prompt');
     }
   }
