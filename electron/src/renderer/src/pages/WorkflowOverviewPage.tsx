@@ -63,6 +63,7 @@ export default function WorkflowOverviewPage({
   const [tick, setTick] = useState(0);
   const [runs, setRuns] = useState<OmegaRun[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [monitorError, setMonitorError] = useState<string | null>(null);
   const [selected, setSelected] = useState<LaneKey>('omega-builder');
 
   useEffect(() => {
@@ -120,6 +121,7 @@ export default function WorkflowOverviewPage({
   const demo = mode === 'demo';
   const live = mode === 'live';
   const connected = telemetry?.connection === 'connected';
+  const monitoring = telemetry?.monitoring === true;
   const liveWorker = telemetry?.workers[selected] ?? null;
   const liveAttention = telemetry?.attention ?? null;
   const currentLane = LANES.find((lane) => lane.key === selected) ?? LANES[1];
@@ -158,12 +160,22 @@ export default function WorkflowOverviewPage({
     [latest, demo, live, phase, connected, telemetry]
   );
 
+  async function toggleMonitor() {
+    setMonitorError(null);
+    try {
+      if (monitoring) await window.omega.workflow.disconnect();
+      else await window.omega.workflow.connect();
+    } catch (cause) {
+      setMonitorError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
   const activity = demo
     ? EXAMPLES[phase]
     : live
-      ? telemetry?.connection === 'connected'
-        ? telemetry.activity
-        : telemetry?.activity ?? 'Connecting to local ChatBridge event stream'
+      ? !monitoring
+        ? 'Live monitor off · Connect monitor to observe runtime events'
+        : telemetry?.activity ?? 'Waiting for local ChatBridge event stream'
       : latest
         ? latest.status === 'draft'
           ? 'Draft composed · not submitted to the harness'
@@ -193,15 +205,21 @@ export default function WorkflowOverviewPage({
               <button className={live ? 'is-selected' : ''} aria-pressed={live} onClick={() => setMode('live')}>Live</button>
               <button className={mode === 'records' ? 'is-selected' : ''} aria-pressed={mode === 'records'} onClick={() => setMode('records')}>Saved runs</button>
             </div>
+            {live && (
+              <button className="omega-monitor-toggle" aria-pressed={monitoring} onClick={() => void toggleMonitor()}>
+                <Radio size={13} /> {monitoring ? 'Stop monitor' : 'Connect monitor'}
+              </button>
+            )}
             {demo && (
               <button className="omega-icon-button" onClick={() => setPlaying(!playing)} title={playing ? 'Pause animation' : 'Play animation'} aria-label={playing ? 'Pause demo' : 'Play demo'}>
                 {playing ? <Pause size={15} /> : <Play size={15} />}
               </button>
             )}
             {demo && <button className="omega-icon-button" onClick={() => setTick(0)} title="Restart demo" aria-label="Restart demo"><RotateCcw size={15} /></button>}
-            <span className={'omega-source-label ' + (demo ? 'is-demo' : '')}>{demo ? 'SIMULATED · NOT LIVE' : live ? (connected ? 'LIVE EVENTS · CHECKS UNVERIFIED' : 'EVENT STREAM OFFLINE') : 'LOCAL RECORDS · NOT TELEMETRY'}</span>
+            <span className={'omega-source-label ' + (demo ? 'is-demo' : '')}>{demo ? 'SIMULATED · NOT LIVE' : live ? !monitoring ? 'MONITOR OFF · OPT IN' : connected ? 'LIVE EVENTS · CHECKS UNVERIFIED' : 'EVENT STREAM OFFLINE' : 'LOCAL RECORDS · NOT TELEMETRY'}</span>
           </div>
         </div>
+        {monitorError && live && <p className="omega-monitor-error" role="alert">{monitorError}</p>}
         <div className={'omega-diagram ' + (reduceMotion ? 'reduce-motion' : '') + (demo && !playing ? ' is-paused' : '')}>
           <svg viewBox="0 0 1200 722" aria-label="Goal flows to orchestrator, out to researcher, builder, tester, and reviewer, through checks, then back for final verification" role="img">
             <defs>
@@ -355,7 +373,7 @@ export default function WorkflowOverviewPage({
         <section className="omega-health-panel">
           <div className="omega-card-heading"><span>SYSTEM / STATE</span><Radio size={15} /></div>
           <div className="omega-health-row"><span><span className={'omega-small-light ' + (server?.running ? 'is-ok' : 'is-down')} /> Puppy GUI service</span><strong>{server?.running ? 'CONNECTED' : server ? 'OFFLINE' : 'CHECKING'}</strong></div>
-          <div className="omega-health-row"><span><ShieldCheck size={14} /> Event telemetry</span><strong className={connected ? '' : 'omega-muted'}>{connected ? 'STREAM CONNECTED' : telemetry?.connection === 'connecting' ? 'CONNECTING' : 'DISCONNECTED'}</strong></div>
+          <div className="omega-health-row"><span><ShieldCheck size={14} /> Event telemetry</span><strong className={connected ? '' : 'omega-muted'}>{!monitoring ? 'MONITOR OFF' : connected ? 'STREAM CONNECTED' : telemetry?.connection === 'connecting' ? 'CONNECTING' : 'DISCONNECTED'}</strong></div>
           <div className="omega-health-row"><span><CheckCircle2 size={14} /> Stored run briefs</span><strong>{loadError ? 'UNAVAILABLE' : runs.length + ' RECORDS'}</strong></div>
           {live && liveAttention && <p className="omega-health-error" role="alert">{liveAttention.message} · <button className="omega-text-button" onClick={onChat}>Open chat</button></p>}
           {loadError && <p className="omega-health-error" role="alert">{trimText(loadError, 94)}</p>}
@@ -375,7 +393,7 @@ export default function WorkflowOverviewPage({
                 </li>
               ))}
             </ol>
-          ) : <p className="omega-trace-empty">No events received. Start a turn in Harness Chat; the live monitor updates when a compatible event stream is available.</p>}
+          ) : <p className="omega-trace-empty">{monitoring ? 'No events received yet. Start a turn in Harness Chat; actual event/session compatibility remains unverified.' : 'Live observation is off. Choose Connect monitor to open a read-only connection to the local GUI.'}</p>}
         </section>
       )}
     </div>
