@@ -186,6 +186,15 @@ export class CodePuppyAcpClient extends EventEmitter {
       throw new Error('Could not launch Code Puppy executable');
     }
     this.process = child;
+    child.stdin.on('error', () => {
+      if (generation === this.generation) this.fail('Code Puppy ACP input pipe closed unexpectedly');
+    });
+    child.stdout.on('error', () => {
+      if (generation === this.generation) this.fail('Code Puppy ACP output pipe failed');
+    });
+    child.stderr.on('error', () => {
+      // The diagnostic stream isn't part of the protocol; ignore its errors.
+    });
     child.stdout.setEncoding('utf8');
     child.stdout.on('data', (part: string) => { if (generation === this.generation) this.consume(part); });
     // Do not forward stderr: provider logs can contain credentials or prompt contents.
