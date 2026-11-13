@@ -404,7 +404,7 @@ export default function WorkflowOverviewPage({
                 </li>
               ))}
             </ol>
-          ) : <p className="omega-trace-empty">{monitoring ? 'No ACP events observed yet. Run a prompt in the conversation pane.' : 'Live observation is off. Choose Show live ACP to display events from this chat's existing ACP session.'}</p>}
+          ) : <p className="omega-trace-empty">{monitoring ? 'No ACP events observed yet. Run a prompt in the conversation pane.' : 'Live observation is off. Choose Show live ACP to display events from the active Code Puppy ACP session.'}</p>}
         </section>
       )}
     </div>
