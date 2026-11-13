@@ -14,7 +14,7 @@ function validId(value: unknown): value is string {
  * The Electron renderer only creates draft records. It cannot assert that
  * an agent ran, a check passed, or approval was granted by writing runs.json.
  */
-export function assertDraftRun(value: unknown): asserts value is OmegaRun {
+export function assertDraftRun(value: unknown): asserts value is OmegaRun & { projectDir: string } {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error('Invalid draft record.');
   }
