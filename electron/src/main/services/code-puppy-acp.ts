@@ -3,7 +3,13 @@ import { EventEmitter } from 'node:events';
 import type { CodePuppyChatEvent, CodePuppySnapshot } from '../../shared/code-puppy-acp';
 import { unavailableCodePuppy } from '../../shared/code-puppy-acp';
 
-type Pending = { resolve(value: unknown): void; reject(error: Error): void; timer: NodeJS.Timeout | null };
+type Pending = {
+  resolve(value: unknown): void;
+  reject(error: Error): void;
+  timer: NodeJS.Timeout | null;
+  sessionId: string | null;
+  refresh?: () => void;
+};
 const MAX_FRAME = 512 * 1024;
 const MAX_EVENTS = 256;
 const MAX_PROMPT = 20000;
@@ -62,16 +68,25 @@ export class CodePuppyAcpClient extends EventEmitter {
   private rpc(method: string, params: unknown, timeoutMs = 0): Promise<unknown> {
     const id = this.nextRequest++;
     return new Promise((resolve, reject) => {
-      const timer = timeoutMs ? setTimeout(() => {
-        this.pending.delete(id);
-        reject(new Error(method + ' timed out'));
-      }, timeoutMs) : null;
-      this.pending.set(id, { resolve, reject, timer });
+      const fields = message(params);
+      const sessionId = method === 'session/prompt' && typeof fields?.sessionId === 'string' ? fields.sessionId : null;
+      const entry: Pending = { resolve, reject, timer: null, sessionId };
+      const refresh = () => {
+        if (entry.timer) clearTimeout(entry.timer);
+        entry.timer = timeoutMs ? setTimeout(() => {
+          if (this.pending.get(id) !== entry) return;
+          this.pending.delete(id);
+          reject(new Error(method + ' timed out after inactivity'));
+        }, timeoutMs) : null;
+      };
+      if (sessionId) entry.refresh = refresh;
+      this.pending.set(id, entry);
+      refresh();
       try {
         this.write({ jsonrpc: '2.0', id, method, params });
       } catch (error) {
         this.pending.delete(id);
-        if (timer) clearTimeout(timer);
+        if (entry.timer) clearTimeout(entry.timer);
         reject(error instanceof Error ? error : new Error('Failed to send ACP request'));
       }
     });
@@ -109,6 +124,10 @@ export class CodePuppyAcpClient extends EventEmitter {
     if (!params || params.sessionId !== this.snapshot.sessionId) return;
     const update = message(params.update);
     if (!update) return;
+    // Any valid progress update for this session resets its inactivity watchdog.
+    for (const pending of this.pending.values()) {
+      if (pending.sessionId === params.sessionId) pending.refresh?.();
+    }
     const kind = update.sessionUpdate;
     const content = message(update.content);
     if (kind === 'agent_message_chunk' && typeof content?.text === 'string') {
@@ -126,10 +145,6 @@ export class CodePuppyAcpClient extends EventEmitter {
 
   private consume(chunk: Buffer | string) {
     this.inbound += String(chunk);
-    if (this.inbound.length > MAX_FRAME) {
-      this.fail('Code Puppy sent an oversized ACP message');
-      return;
-    }
     let index;
     while ((index = this.inbound.indexOf('\n')) >= 0) {
       const line = this.inbound.slice(0, index).trim();
@@ -147,6 +162,9 @@ export class CodePuppyAcpClient extends EventEmitter {
         }
       }
     }
+    // Only the incomplete trailing frame is bounded; multiple complete frames
+    // may legitimately arrive together in a single stdout read.
+    if (this.inbound.length > MAX_FRAME) this.fail('Code Puppy sent an oversized ACP message');
   }
 
   private fail(reason: string) {
