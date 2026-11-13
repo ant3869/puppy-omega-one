@@ -3,8 +3,9 @@
 > **PLACEHOLDER MODELS:** the agent JSON files under
 > `.code_puppy/agents/` pin placeholder aliases (`claude-opus-5-5`,
 > `claude-sonnet-5-5`, `claude-haiku-5-5`). Run `/model` in Code Puppy
-> in the target environment, note the real alias strings, and swap them in. Nothing here
-> is load-bearing until those match your build.
+> in the target environment, note the real alias strings, and swap them in.
+> These are **not verified current provider API model IDs**. Do not use them
+> as-is without testing the installed runtime.
 
 ## The system
 
@@ -21,12 +22,12 @@ not a hard sandbox. The researcher has no shell or editor tools. If the orchestr
 | `omega-tester` | Haiku 5.5 (`claude-haiku-5-5`), effort medium | Runs tests, triages output, PASS/FAIL first. |
 | `omega-researcher` | Haiku 5.5 (`claude-haiku-5-5`), effort medium | Searches codebase, summarizes with file + line cites. Read-only. |
 
-Why Sonnet writes and reviews instead of Haiku: on Anthropic's own
-numbers Sonnet scores 70.6% vs Haiku's 39.2% on agentic coding
-(Terminal-Bench 4.0). Haiku does the checkable, read-only work where a
-mistake is cheap to spot. Full reasoning in the Puppy Omega One repo's
-`docs/MODELS.md` (it lives in the repo, not in installed projects —
-only `templates/` gets copied in).
+The role split is a **starting hypothesis**, not a verified provider
+benchmark for this installation. Use a capable coding model for edits
+and review; use lower-cost models for deterministic checks or read-only
+research only when their output is verified. Revisit model choices if
+the provider catalog or runtime differs. See the source repo's
+`docs/MODELS.md` (not copied into installed projects).
 
 ## Code Puppy core isolation
 
@@ -83,10 +84,10 @@ modify files permitted by the current OS user.
   know it.
 - **Every brief ends with a runnable "Done when:" check.** If the check
   can't be run or seen, the brief isn't ready.
-- **Keep briefs short.** A Haiku worker's prompt past ~100k tokens
-  costs 5× more and its quality drops fastest — flip it to Sonnet
-  instead (change the `"model"` string in its agent JSON, or
-  `/pin_model <agent> <model>`).
+- **Keep briefs short.** Token pricing and context thresholds vary by
+  provider; check the **current account billing terms** before making
+  cost assumptions. Escalate a worker's model only after confirming
+  that model is available and safe to use in this installation.
 - **One job per worker.** A worker does its brief and stops; it doesn't
   pick up extra work or re-plan the job.
 
@@ -106,8 +107,9 @@ modify files permitted by the current OS user.
 - `docs/decisions.md` — what's settled, with the date and why.
 - `docs/known-issues.md` — gotchas and their fixes.
 
-Read them at session start, update them at session end. They are the
-only memory that survives compaction.
+Read them at session start and update them at session end. They are the
+project-local written handoff; they are **not** the only possible memory
+in an installed runtime.
 
 ## Compaction
 
@@ -123,5 +125,6 @@ Omega only if you independently choose to. Type `/context` to inspect usage.
 - `CLAUDE_CODE_SUBAGENT_MODEL` and `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`
   env vars do nothing — models are pinned in agent JSON,
   compaction in `puppy.cfg`.
-- No `xhigh` effort (closest is `high`), no `ultracode` fan-out mode.
-  Parallelism is multiple `invoke_agent` calls in one response.
+- The researched Code Puppy revision did not expose the reel's
+  `ultracode` mode or the same effort vocabulary. Verify available
+  effort and delegation options in your installed runtime.
