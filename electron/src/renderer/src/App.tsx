@@ -1,37 +1,39 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Activity, BookOpen, FileText, LayoutDashboard, MessageSquare,
-  Play, Settings, PawPrint, X, Maximize2, ScrollText
+  Activity, BookOpen, FileText, GitBranch, MessageSquare,
+  Settings, PawPrint, X, ScrollText
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { PuppyStatus } from '@shared/types';
-import WorkflowOverviewPage from './pages/WorkflowOverviewPage';
+import AgentWorkspacePage, { type WorkspaceMode } from './pages/AgentWorkspacePage';
 import RunPage from './pages/RunPage';
 import LivePage from './pages/LivePage';
 import EventLogPage from './pages/EventLogPage';
 import BriefsPage from './pages/BriefsPage';
 import ProgressPage from './pages/ProgressPage';
-import PuppyGuiPage from './pages/PuppyGuiPage';
 import SettingsPage from './pages/SettingsPage';
 
-type ModuleId = 'overview' | 'run' | 'puppy' | 'live' | 'log' | 'briefs' | 'progress' | 'settings';
+type ModuleId = 'chat' | 'omega' | 'live' | 'log' | 'briefs' | 'progress' | 'settings';
 type NavItem = { id: ModuleId; label: string; icon: LucideIcon };
 
 const modules: NavItem[] = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'run', label: 'Compose run', icon: Play },
-  { id: 'puppy', label: 'Harness chat', icon: MessageSquare },
+  { id: 'chat', label: 'Chat', icon: MessageSquare },
+  { id: 'omega', label: 'Omega loop', icon: GitBranch },
   { id: 'live', label: 'Saved activity', icon: Activity },
   { id: 'log', label: 'Event log', icon: ScrollText },
   { id: 'briefs', label: 'Worker briefs', icon: FileText },
   { id: 'progress', label: 'Project documents', icon: BookOpen }
 ];
 
+function isWorkspace(id: ModuleId): boolean {
+  return id === 'chat' || id === 'omega';
+}
+
 export default function App() {
-  const [activeModule, setActiveModule] = useState<ModuleId>('overview');
+  const [activeModule, setActiveModule] = useState<ModuleId>('chat');
   const [status, setStatus] = useState<PuppyStatus | null>(null);
   const [projectDir, setProjectDir] = useState<string | null>(null);
-  const [chatDockOpen, setChatDockOpen] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(() => {
     try {
       const previous = localStorage.getItem('omega:reduce-motion');
@@ -39,7 +41,8 @@ export default function App() {
     } catch {
       // Storage may be disabled; system preference still applies.
     }
-    return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    return typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   });
 
   useEffect(() => {
@@ -60,8 +63,18 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!composerOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setComposerOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [composerOpen]);
+
   const currentModule = useMemo(
-    () => [...modules, { id: 'settings' as ModuleId, label: 'Settings', icon: Settings }].find((item) => item.id === activeModule),
+    () => [...modules, { id: 'settings' as ModuleId, label: 'Settings', icon: Settings }]
+      .find((item) => item.id === activeModule),
     [activeModule]
   );
 
@@ -74,49 +87,15 @@ export default function App() {
     }
   }
 
-  const navigate = (next: ModuleId) => setActiveModule(next);
+  function navigate(next: ModuleId) {
+    setActiveModule(next);
+    setComposerOpen(false);
+  }
 
-  function renderPage() {
+  function renderAuxiliaryPage() {
     switch (activeModule) {
-      case 'overview':
-        return (
-          <div className={'omega-overview-layout ' + (chatDockOpen ? 'is-docked' : '')}>
-            <div className="omega-overview-stage">
-              <WorkflowOverviewPage
-                server={status}
-                reduceMotion={reduceMotion}
-                preferLive={chatDockOpen}
-                onCompose={() => navigate('run')}
-                onChat={() => setChatDockOpen((value) => !value)}
-                onRuns={() => navigate('live')}
-              />
-            </div>
-            {chatDockOpen && (
-              <aside className="omega-chat-dock" aria-label="Embedded harness chat">
-                <div className="omega-chat-dock-header">
-                  <div>
-                    <span className="omega-chat-dock-eyebrow">HARNESS / CONNECTED WORKSPACE</span>
-                    <strong>Code Puppy Chat</strong>
-                  </div>
-                  <div className="omega-chat-dock-actions">
-                    <button className="omega-icon-button" title="Open full chat" aria-label="Open full chat" onClick={() => { setChatDockOpen(false); navigate('puppy'); }}><Maximize2 size={15} /></button>
-                    <button className="omega-icon-button" title="Close chat dock" aria-label="Close chat dock" onClick={() => setChatDockOpen(false)}><X size={17} /></button>
-                  </div>
-                </div>
-                <div className="omega-chat-dock-body">
-                  <PuppyGuiPage status={status} projectDir={projectDir} onProjectChange={setProjectDir} onStatusChange={setStatus} compact />
-                </div>
-                <p className="omega-chat-dock-footer">Embedded Puppy GUI · never auto-sends prompts · agent tools are not sandboxed</p>
-              </aside>
-            )}
-          </div>
-        );
-      case 'run':
-        return <RunPage onOpenPuppy={() => navigate('puppy')} projectDir={projectDir} onProjectChange={setProjectDir} />;
-      case 'puppy':
-        return <PuppyGuiPage status={status} projectDir={projectDir} onProjectChange={setProjectDir} onStatusChange={setStatus} />;
       case 'live':
-        return <LivePage onOpenChat={() => navigate('puppy')} />;
+        return <LivePage onOpenChat={() => navigate('chat')} />;
       case 'log':
         return <EventLogPage />;
       case 'briefs':
@@ -129,11 +108,15 @@ export default function App() {
             status={status}
             reduceMotion={reduceMotion}
             onReduceMotionChange={changeMotion}
-            onOpenChat={() => navigate('puppy')}
+            onOpenChat={() => navigate('chat')}
           />
         );
+      default:
+        return null;
     }
   }
+
+  const workspaceVisible = isWorkspace(activeModule);
 
   return (
     <div className="omega-shell">
@@ -170,19 +153,57 @@ export default function App() {
       <div className="omega-shell-main">
         <header className="omega-shell-header">
           <div className="omega-shell-location">
-            <strong>OMEGA ONE</strong>
+            <strong>PUPPY OMEGA ONE</strong>
             <span className="omega-slash">/</span>
-            <span>{currentModule?.label ?? 'Overview'}</span>
+            <span>{currentModule?.label ?? 'Chat'}</span>
           </div>
           <div className="omega-shell-meta">
-            <span>ORCHESTRATION CONSOLE</span>
-            <span className="omega-shell-status"><i className={status?.running ? 'is-online' : ''} /> {status === null ? 'SERVER CHECKING' : status.running ? 'HARNESS CONNECTED' : 'HARNESS OFFLINE'}</span>
+            <span>CODING AGENT WORKSPACE</span>
+            <span className="omega-shell-status"><i className={status?.running ? 'is-online' : ''} />
+              {status === null ? 'CHECKING LOCAL GUI' : status.running ? 'LOCAL GUI RESPONDING' : 'LOCAL GUI OFFLINE'}
+            </span>
           </div>
         </header>
-        <main className={'omega-shell-content ' + (activeModule === 'puppy' || activeModule === 'overview' && chatDockOpen ? 'is-full' : '')}>
-          {renderPage()}
+        <main className={'omega-shell-content ' + (workspaceVisible ? 'is-full' : '')}>
+          <div className={'agent-workspace-mount ' + (!workspaceVisible ? 'is-hidden' : '')}>
+            <AgentWorkspacePage
+              mode={activeModule === 'omega' ? 'omega' : 'chat'}
+              status={status}
+              projectDir={projectDir}
+              reduceMotion={reduceMotion}
+              onModeChange={(mode: WorkspaceMode) => navigate(mode)}
+              onProjectChange={setProjectDir}
+              onStatusChange={setStatus}
+              onCompose={() => setComposerOpen(true)}
+              onSavedActivity={() => navigate('live')}
+            />
+          </div>
+          {!workspaceVisible && renderAuxiliaryPage()}
         </main>
       </div>
+
+      {composerOpen && (
+        <div className="agent-composer-overlay">
+          <button className="agent-composer-shade" type="button" aria-label="Close Omega job composer" onClick={() => setComposerOpen(false)} />
+          <aside className="agent-composer-panel" role="dialog" aria-modal="true" aria-label="Draft an Omega job">
+            <div className="agent-composer-header">
+              <div>
+                <span className="omega-eyebrow">OMEGA / JOB PREPARATION</span>
+                <strong>Draft a specialist run</strong>
+              </div>
+              <button className="omega-icon-button" aria-label="Close composer" onClick={() => setComposerOpen(false)}><X size={17}/></button>
+            </div>
+            <div className="agent-composer-body">
+              <RunPage
+                onOpenPuppy={() => navigate('chat')}
+                projectDir={projectDir}
+                onProjectChange={setProjectDir}
+              />
+            </div>
+            <p className="agent-composer-foot">Draft only. Paste into your verified Code Puppy chat to run it; nothing is dispatched automatically.</p>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }
