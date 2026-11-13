@@ -2,7 +2,7 @@ import { app, BrowserWindow, shell } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { registerWorkspaceIpc, stopCodePuppy } from './services/workspace';
-import { allowedExternalUrl } from './services/webview-policy';
+import { allowedExternalUrl } from './services/external-links';
 
 const preloadPath = fileURLToPath(new URL('../preload/index.js', import.meta.url));
 const rendererIndexHtml = fileURLToPath(new URL('../renderer/index.html', import.meta.url));
