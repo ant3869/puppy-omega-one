@@ -24,7 +24,7 @@ test('ordinary chat is the main workspace and Omega is optional', () => {
   const html = render('chat');
   assert.match(html, /Chat with Code Puppy/);
   assert.match(html, /AGENT CONVERSATION/);
-  assert.match(html, /Choose a workspace|Connect the harness/);
+  assert.match(html, /Choose a workspace|Start your coding workspace/);
   assert.match(html, /aria-pressed="true"[^>]*>.*Chat</s);
   assert.doesNotMatch(html, /OMEGA \/ WORKFLOW/);
 });
