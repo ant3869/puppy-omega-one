@@ -156,6 +156,7 @@ export default function RunPage({ onOpenPuppy, projectDir, onProjectChange }: { 
           value={goal}
           onChange={(e) => { setGoal(e.target.value); setBrief(null); setCopied(false); }}
           rows={3}
+          maxLength={5000}
           placeholder="e.g. Add a CSV export to the report page"
           className="w-full px-3 py-2 text-sm border focus:outline-none"
           style={inputStyle}
@@ -169,6 +170,7 @@ export default function RunPage({ onOpenPuppy, projectDir, onProjectChange }: { 
         <input
           value={doneWhen}
           onChange={(e) => { setDoneWhen(e.target.value); setBrief(null); setCopied(false); }}
+          maxLength={2000}
           placeholder="e.g. npm test passes and the CSV downloads with all rows"
           className="w-full px-3 py-2 text-sm border focus:outline-none"
           style={inputStyle}
