@@ -164,6 +164,21 @@ context isolation. External HTTP(S) links are opened via the OS browser
 instead of navigating the embedded GUI. This is defense-in-depth,
 **not proof that an untrusted local GUI is safe to run**.
 
+## Electron build entry and preload contract
+
+`electron/package.json` sets `main` to `out/main/index.js`,
+and `electron.vite.config.ts` emits the **sandboxed** preload as
+CommonJS `out/preload/index.js`. `main.ts` loads that `.js` path.
+`sandbox: true`, `contextIsolation: true`, and `nodeIntegration: false`
+are preserved. Windows `canonical()` resolves the deepest existing
+parent with `realpathSync.native()` before re-appending missing segments.
+
+`npm run build` invokes `npm run verify:build` automatically; it verifies
+the actual build artifacts and preload syntax. `npm test` includes
+negative fixtures for wrong entrypoints, ESM preloads, and disabled sandbox.
+These are **static checks**: only a real desktop smoke run can establish
+that the window renders. For Windows checks, see [LOCAL_QA.md](LOCAL_QA.md).
+
 ## Developer workflow
 
 ```bash
