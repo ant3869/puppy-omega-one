@@ -43,7 +43,7 @@ function reflectAcp(snapshot: CodePuppySnapshot) {
         workflow = {
           ...workflow, activity: label, lastEventAt: at,
           events: [...workflow.events, { id: (workflow.events.at(-1)?.id ?? 0) + 1, timestamp: at,
-            label, lane: null, tone: (ev.kind === 'error' ? 'error' : 'neutral') as const }].slice(-30)
+            label, lane: null, tone: (ev.kind === 'error' ? 'error' : 'neutral') as 'error' | 'neutral' }].slice(-30)
         };
       }
     }
