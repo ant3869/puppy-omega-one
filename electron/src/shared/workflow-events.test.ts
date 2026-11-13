@@ -110,3 +110,48 @@ test('cancellation does not become a successful completion', () => {
   const state = reduceWorkflowEvent(initialWorkflow('connected'), { type: 'turn_cancelled' }, 8);
   assert.equal(state.phase, 'cancelled');
 });
+
+test('reconnection cannot resurrect a worker that finished while the socket was down', () => {
+  let state = initialWorkflow('connected');
+  state = reduceWorkflowEvent(state, { type: 'turn_start', agent: 'omega-orchestrator' }, 1);
+  state = reduceWorkflowEvent(state, {
+    type: 'message',
+    kind: 'SubAgentInvocationMessage',
+    data: { agent_name: 'omega-builder', prompt: 'Build a feature' }
+  }, 2);
+  assert.equal(state.workers['omega-builder'].phase, 'running');
+  state = changeWorkflowConnection(state, 'disconnected');
+  assert.equal(state.workers['omega-builder'].phase, 'unknown');
+  assert.equal(state.phase, 'idle');
+  state = changeWorkflowConnection(state, 'connecting');
+  state = changeWorkflowConnection(state, 'connected');
+  assert.equal(state.workers['omega-builder'].phase, 'unknown');
+  assert.notEqual(state.phase, 'delegating');
+  assert.equal(state.lastEventAt, 2);
+});
+
+test('cancelled worker remains cancelled rather than pulsing as running', () => {
+  let state = reduceWorkflowEvent(initialWorkflow('connected'), { type: 'turn_start' }, 1);
+  state = reduceWorkflowEvent(state, {
+    type: 'message',
+    kind: 'SubAgentInvocationMessage',
+    data: { agent_name: 'omega-tester', prompt: 'Run tests' }
+  }, 2);
+  state = reduceWorkflowEvent(state, { type: 'cancelling' }, 3);
+  assert.equal(state.workers['omega-tester'].phase, 'running');
+  state = reduceWorkflowEvent(state, { type: 'turn_cancelled' }, 4);
+  assert.equal(state.phase, 'cancelled');
+  assert.equal(state.workers['omega-tester'].phase, 'cancelled');
+});
+
+test('end of turn does not keep orphaned worker marked running', () => {
+  let state = reduceWorkflowEvent(initialWorkflow('connected'), { type: 'turn_start' }, 1);
+  state = reduceWorkflowEvent(state, {
+    type: 'message',
+    kind: 'SubAgentInvocationMessage',
+    data: { agent_name: 'omega-reviewer', prompt: 'Review' }
+  }, 2);
+  state = reduceWorkflowEvent(state, { type: 'turn_end' }, 3);
+  assert.equal(state.phase, 'finished');
+  assert.equal(state.workers['omega-reviewer'].phase, 'unknown');
+});

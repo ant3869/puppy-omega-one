@@ -12,7 +12,7 @@ export const WORKER_KEYS = [
 export type WorkerKey = (typeof WORKER_KEYS)[number];
 export type ConnectionState = 'connecting' | 'connected' | 'disconnected';
 export type WorkflowPhase = 'idle' | 'planning' | 'delegating' | 'attention' | 'finished' | 'cancelled';
-export type WorkerPhase = 'idle' | 'running' | 'responded' | 'failed';
+export type WorkerPhase = 'idle' | 'running' | 'responded' | 'failed' | 'unknown' | 'cancelled';
 
 export interface WorkerSignal {
   phase: WorkerPhase;
@@ -61,11 +61,31 @@ export function initialWorkflow(connection: ConnectionState = 'disconnected'): W
   };
 }
 
+function finishRunningWorkers(
+  workers: Record<WorkerKey, WorkerSignal>,
+  status: 'unknown' | 'cancelled',
+  message: string
+): Record<WorkerKey, WorkerSignal> {
+  return Object.fromEntries(WORKER_KEYS.map((key) => [
+    key,
+    workers[key].phase === 'running'
+      ? { ...workers[key], phase: status, detail: message }
+      : workers[key]
+  ])) as Record<WorkerKey, WorkerSignal>;
+}
+
 export function changeWorkflowConnection(previous: WorkflowTelemetry, connection: ConnectionState): WorkflowTelemetry {
   if (previous.connection === connection) return previous;
+  const lost = connection === 'disconnected';
   return {
     ...previous,
     connection,
+    phase: lost && (previous.phase === 'planning' || previous.phase === 'delegating')
+      ? 'idle'
+      : previous.phase,
+    workers: lost
+      ? finishRunningWorkers(previous.workers, 'unknown', 'Connection lost before completion; outcome unknown')
+      : previous.workers,
     activity: connection === 'disconnected'
       ? 'Event connection lost; last observations may be stale'
       : connection === 'connecting'
@@ -154,7 +174,8 @@ export function reduceWorkflowEvent(previous: WorkflowTelemetry, raw: unknown, n
     const failed = previous.attention?.kind === 'error';
     return addActivity({
       ...previous,
-      phase: failed ? 'attention' : 'finished'
+      phase: failed ? 'attention' : 'finished',
+      workers: finishRunningWorkers(previous.workers, 'unknown', 'Turn ended without a worker completion event')
     }, now, failed ? 'Turn ended after an error; inspect chat' : 'Turn ended; verification not confirmed', null, failed ? 'error' : 'neutral');
   }
 
@@ -162,7 +183,10 @@ export function reduceWorkflowEvent(previous: WorkflowTelemetry, raw: unknown, n
     const cancelled = type === 'turn_cancelled';
     return addActivity({
       ...previous,
-      phase: cancelled ? 'cancelled' : 'attention'
+      phase: cancelled ? 'cancelled' : 'attention',
+      workers: cancelled
+        ? finishRunningWorkers(previous.workers, 'cancelled', 'Turn cancelled before worker completion')
+        : previous.workers
     }, now, cancelled ? 'Agent turn cancelled' : 'Cancellation requested', null, 'warning');
   }
 
