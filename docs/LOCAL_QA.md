@@ -63,6 +63,37 @@ mutations are requested by the inspector.
 - [ ] Do **not** treat OpenAPI as evidence of a WebSocket route:
   websocket endpoints are normally absent from that REST schema.
 
+## Explicit opt-in WebSocket ping check (disposable runtime only)
+
+**Do not run this on an existing real-work session.** Opening a WebSocket
+may create/change server-side session records even when no prompt is sent.
+First start the installed Puppy GUI against a disposable project that has
+no important workspace or session data. Record session/project state
+**before and after** the probe using the installed GUI, not Omega's guessed
+context.
+
+From `electron`:
+
+```powershell
+node .\scripts\probe-chatbridge.mjs --origin http://127.0.0.1:8765 --acknowledge-session-side-effects
+```
+
+Without the acknowledgement flag the command opens **zero** connections.
+With it, the tool attempts one loopback-only `/ws/chat` connection,
+sends exactly `{"action":"ping"}`, ignores all non-pong frames, and closes
+after a bounded timeout or pong. The JSON report contains only outcome
+flags/counts, never server messages, credentials, transcript, or session IDs.
+A `pong_observed` result supports **only** a ping response from that
+instance. It does **not** verify session identity, project cwd, approval
+behavior, reconnects, multiple subscribers, or whether server state changed.
+
+- [ ] Verify actual session count/identity and project context before/after
+  connecting; manually note any effects without publishing sensitive IDs.
+- [ ] Confirm only the fixed ping was sent and no prompts or tool approvals
+  were issued.
+- [ ] If the route is unavailable or side effects are unexpected, leave native
+  dispatch disabled and document only redacted findings.
+
 ## Observe without submitting a task
 
 - [ ] Launch Omega. Confirm it **does not spawn Code Puppy** or open an
