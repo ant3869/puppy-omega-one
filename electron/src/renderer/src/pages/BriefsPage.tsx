@@ -10,14 +10,28 @@ import type { OmegaRun } from '@shared/types';
 
 export default function BriefsPage() {
   const [runs, setRuns] = useState<OmegaRun[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    void window.omega.runs.list().then(setRuns).catch(() => setRuns([]));
+    let active = true;
+    void window.omega.runs.list().then((records) => {
+      if (active) {
+        setRuns(records);
+        setError(null);
+      }
+    }).catch((cause) => {
+      if (active) setError(cause instanceof Error ? cause.message : 'Saved briefs are unavailable.');
+    });
+    return () => { active = false; };
   }, []);
 
   const records = runs.flatMap((r) =>
     r.briefs.map((b) => ({ run: r, brief: b }))
   );
+
+  if (error) {
+    return <p role="alert" className="omega-history-error">Could not read saved briefs: {error}. The original history file was not changed.</p>;
+  }
 
   if (records.length === 0) {
     return (
