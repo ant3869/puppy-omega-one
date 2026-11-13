@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Activity, ArrowRight, CheckCircle2, CircleAlert, GitBranch, Pause, Play, Radio, RotateCcw, ShieldCheck, SkipForward, Zap } from 'lucide-react';
-import type { OmegaRun, PuppyStatus, RunStatus } from '@shared/types';
+import type { OmegaRun, RunStatus } from '@shared/types';
 import type { WorkerKey, WorkflowTelemetry } from '@shared/workflow-events';
 import { tokens } from '../lib/tokens';
 
@@ -43,14 +43,12 @@ function trimText(text: string | null | undefined, max = 72): string {
 }
 
 export default function WorkflowOverviewPage({
-  server,
   reduceMotion,
   preferLive,
   onCompose,
   onChat,
   onRuns
 }: {
-  server: PuppyStatus | null;
   reduceMotion: boolean;
   preferLive: boolean;
   onCompose: () => void;
@@ -175,8 +173,8 @@ export default function WorkflowOverviewPage({
     ? EXAMPLES[phase]
     : live
       ? !monitoring
-        ? 'Live monitor off · Connect monitor to observe runtime events'
-        : telemetry?.activity ?? 'Waiting for local ChatBridge event stream'
+        ? 'ACP live view off · Connect to observe this chat session'
+        : telemetry?.activity ?? 'Waiting for direct Code Puppy ACP events'
       : latest
         ? latest.status === 'draft'
           ? 'Draft composed · not submitted to the harness'
@@ -208,7 +206,7 @@ export default function WorkflowOverviewPage({
             </div>
             {live && (
               <button className="omega-monitor-toggle" aria-pressed={monitoring} onClick={() => void toggleMonitor()}>
-                <Radio size={13} /> {monitoring ? 'Stop monitor' : 'Connect monitor'}
+                <Radio size={13} /> {monitoring ? 'Stop monitor' : 'Show live ACP'}
               </button>
             )}
             {demo && (reduceMotion ? (
@@ -353,7 +351,7 @@ export default function WorkflowOverviewPage({
             <span className="omega-activity-prefix">{demo ? 'DEMO EVENT' : live ? 'RUNTIME EVENT' : 'SAVED STATUS'}</span>
             <span className="omega-activity-message">{activity}</span>
           </div>
-          <span className="omega-graph-disclaimer">{demo ? 'Illustrative sequence only' : live ? connected ? 'ChatBridge observer · session association not verified' : 'Stream disconnected · no live claims' : 'Local records · not telemetry'}</span>
+          <span className="omega-graph-disclaimer">{demo ? 'Illustrative sequence only' : live ? connected ? 'Direct ACP session · worker attribution not verified' : 'Stream disconnected · no live claims' : 'Local records · not telemetry'}</span>
         </div>
       </section>
 
@@ -385,12 +383,12 @@ export default function WorkflowOverviewPage({
 
         <section className="omega-health-panel">
           <div className="omega-card-heading"><span>SYSTEM / STATE</span><Radio size={15} /></div>
-          <div className="omega-health-row"><span><span className={'omega-small-light ' + (server?.running ? 'is-ok' : 'is-down')} /> Local GUI endpoint</span><strong>{server?.running ? 'CONNECTED' : server ? 'OFFLINE' : 'CHECKING'}</strong></div>
+           <div className="omega-health-row"><span><span className={'omega-small-light ' + (connected ? 'is-ok' : 'is-down')} /> Code Puppy ACP session</span><strong>{connected ? 'ACTIVE' : 'NOT CONNECTED'}</strong></div>
           <div className="omega-health-row"><span><ShieldCheck size={14} /> Event telemetry</span><strong className={connected ? '' : 'omega-muted'}>{!monitoring ? 'MONITOR OFF' : connected ? 'STREAM CONNECTED' : telemetry?.connection === 'connecting' ? 'CONNECTING' : 'DISCONNECTED'}</strong></div>
           <div className="omega-health-row"><span><CheckCircle2 size={14} /> Stored run briefs</span><strong>{loadError ? 'UNAVAILABLE' : runs.length + ' RECORDS'}</strong></div>
           {live && liveAttention && <p className="omega-health-error" role="alert">{liveAttention.message} · <button className="omega-text-button" onClick={onChat}>Open chat</button></p>}
           {loadError && <p className="omega-health-error" role="alert">{trimText(loadError, 94)}</p>}
-          {server?.error && !server.running && <p className="omega-health-error" role="alert">{trimText(server.error, 94)}</p>}
+          
           <button className="omega-text-button" onClick={onRuns}>Inspect run records <ArrowRight size={14} /></button>
         </section>
       </div>
@@ -406,7 +404,7 @@ export default function WorkflowOverviewPage({
                 </li>
               ))}
             </ol>
-          ) : <p className="omega-trace-empty">{monitoring ? 'No events received yet. Use the conversation pane; actual event/session compatibility remains unverified.' : 'Live observation is off. Choose Connect monitor to open a read-only connection to the local GUI.'}</p>}
+          ) : <p className="omega-trace-empty">{monitoring ? 'No ACP events observed yet. Run a prompt in the conversation pane.' : 'Live observation is off. Choose Show live ACP to display events from this chat's existing ACP session.'}</p>}
         </section>
       )}
     </div>
