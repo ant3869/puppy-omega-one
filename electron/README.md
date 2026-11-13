@@ -102,3 +102,11 @@ composes and copies a brief for pasting into the embedded Puppy GUI.
 See `../docs/FRONTEND.md` for confirmed boundaries and setup details.
 
 Run `npm test` for workflow event reducer regressions.
+
+## Chat beside the workflow
+
+From Overview, choose **Open chat beside flow**. The real installed Puppy GUI chat opens alongside the animated worker map. Use **Open full chat** to expand it. The Live graph listens to a separate read-only event connection; event-to-chat-session matching still needs testing against the installed server.
+
+A project must be selected before chat access. If the GUI is already running externally, or its recorded launch project differs, the chat stays behind an explicit **unverified workspace** acknowledgement. This does not restrict what Code Puppy's shell tools can access: review the actual runtime folder before running write-capable work. The Omega shell does not send prompts or approvals by itself.
+
+Embedded webview navigations and redirects are restricted to the configured loopback GUI origin; unsafe external/file/script URLs are denied. The tests run with `npm test`, including chat access and webview URL policy cases.
