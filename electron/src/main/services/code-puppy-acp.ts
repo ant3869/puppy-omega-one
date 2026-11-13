@@ -42,7 +42,7 @@ export class CodePuppyAcpClient extends EventEmitter {
   }
 
   private add(kind: CodePuppyChatEvent['kind'], text: string) {
-    const cleaned = safeString(text);
+    const cleaned = safeString(text, kind === 'user' ? MAX_PROMPT : 4000);
     if (!cleaned) return;
     const last = this.snapshot.events.at(-1);
     if (last && kind === 'text' && last.kind === kind && last.text.length + cleaned.length < 12000) {
