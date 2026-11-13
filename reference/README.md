@@ -1,4 +1,4 @@
-# Reference — where Puppy Omega One came from
+# Reference — historical Omega research
 
 This folder holds the original research the harness was built from.
 
@@ -15,3 +15,17 @@ This folder holds the original research the harness was built from.
 > Historical note: the reference documents record the original research and
 > may describe the old installer behavior. Follow the root README and
 > `docs/ARCHITECTURE.md` for current installation instructions.
+
+
+## Read before reusing these notes
+
+**Archived research, not a current setup or security guide.** The
+original references predate the merged Electron features and include
+model IDs, prices, terminal behavior and installer outlines that have
+**not been reverified** against an installed runtime or current provider.
+
+For current instructions use [root README](../README.md), the
+[implementation matrix](../docs/STATUS.md), [models](../docs/MODELS.md),
+[costs](../docs/COSTS.md), and [QA checklist](../docs/LOCAL_QA.md).
+Current installers **do not** modify global `puppy.cfg`, and native
+chat-send remains disabled pending real-session verification.
