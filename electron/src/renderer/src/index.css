@@ -347,6 +347,72 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 .omega-chat-dock .omega-gui-launch h2 { font-size: 23px; }
 .omega-chat-dock .omega-gui-project { padding: 13px; }
 .omega-chat-dock .omega-gui-warning { align-items: flex-start; flex-wrap: wrap; font-size: 11px; }
+
+/* Chat is the application workspace; Omega is a mode inside it. */
+.agent-workspace-mount { height: 100%; min-height: 0; min-width: 0; }
+.agent-workspace-mount.is-hidden { display: none; }
+.agent-workspace { height: 100%; min-height: 0; min-width: 0; display: flex; flex-direction: column; background: #09121b; color: #d8edf2; }
+.agent-workspace-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: 0 0 auto; padding: 13px 20px; border-bottom: 1px solid #2a4653; background: linear-gradient(110deg,#14242f,#0d1720); }
+.agent-workspace-identity { min-width: 0; }
+.agent-workspace-identity h1 { font-size: 19px; letter-spacing: -.02em; margin: 5px 0 3px; line-height: 1.2; font-weight: 670; color: #e6f4f7; }
+.agent-workspace-identity p { margin: 0; color: #8eacba; font-size: 11px; line-height: 1.5; }
+.agent-workspace-actions { display: flex; align-items: center; flex: 0 0 auto; gap: 9px; }
+.agent-mode-switch { display: inline-flex; align-items: stretch; gap: 3px; padding: 3px; border: 1px solid #345465; border-radius: 6px; background: #0c1923; }
+.agent-mode-switch button { display: flex; align-items: center; gap: 7px; border: 0; border-radius: 4px; padding: 8px 11px; color: #83a7b7; background: transparent; white-space: nowrap; font-size: 11px; }
+.agent-mode-switch button.is-active { color: #b6eff8; background: #21414f; box-shadow: inset 0 0 0 1px #477b88; }
+.agent-mode-switch button:hover { color: #d8f3fa; }
+.agent-mode-switch button:focus-visible, .agent-prepare-button:focus-visible { outline: 2px solid #8de9f4; outline-offset: 2px; }
+.agent-prepare-button { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 11px; border-radius: 5px; white-space: nowrap; border: 1px solid #3f8597; background: #1e4654; color: #d5f5f9; font-size: 11px; }
+.agent-prepare-button:hover { background: #2b6272; }
+.agent-workspace-layout { flex: 1; display: grid; grid-template-columns: minmax(0,1fr); min-height: 0; min-width: 0; overflow: hidden; }
+.agent-workspace-layout.with-omega { grid-template-columns: minmax(355px, 42fr) minmax(500px, 58fr); }
+.agent-chat-surface { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: #0b1720; border-right: 1px solid #2f5362; }
+.agent-surface-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex: 0 0 auto; padding: 10px 15px; border-bottom: 1px solid #264451; background: #11232f; color: #8ec7d6; font-size: 10px; font-weight: 650; letter-spacing: .085em; }
+.agent-surface-bar > span { display: inline-flex; align-items: center; gap: 8px; }
+.agent-surface-bar > span:last-child { font-size: 9px; letter-spacing: .04em; color: #7f9cae; }
+.agent-runtime-label { white-space: nowrap; }
+.agent-runtime-label i { display: inline-block; height: 7px; width: 7px; border-radius: 50%; background: #6d8392; }
+.agent-runtime-label i.is-online { background: #69d8ae; box-shadow: 0 0 7px #69d8ae77; }
+.agent-chat-body { flex: 1; min-height: 0; overflow: auto; }
+.agent-chat-body > .omega-embedded-gui { min-height: 0; height: 100%; }
+.agent-chat-body > .omega-gui-launch { margin: 3vh auto 0; }
+.agent-chat-foot { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; padding: 9px 14px; border-top: 1px solid #243c49; color: #8ca8b5; font: 10px ui-monospace, SFMono-Regular, Consolas,monospace; min-width: 0; }
+.agent-chat-foot > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.agent-chat-bridge-label { margin-left: auto; font-size: 9px; flex: 0 0 auto; color: #678f9e; }
+.agent-loop-surface { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #0b1620; }
+.agent-loop-body { overflow: auto; flex: 1; min-height: 0; padding: 12px 14px 25px; }
+.agent-loop-body .omega-home { max-width: none; }
+.agent-loop-body .omega-home-heading { flex-direction: column; align-items: flex-start; }
+.agent-loop-body .omega-diagram { overflow-x: auto; }
+.agent-loop-body .omega-diagram svg { min-width: 620px; }
+.agent-loop-body .omega-dashboard-bottom { grid-template-columns: minmax(0,1fr); }
+.agent-workspace-boundary { display: flex; align-items: center; gap: 9px; padding: 8px 16px; min-height: 31px; background: #0d1f29; border-top: 1px solid #284251; color: #83a5b5; font-size: 10px; line-height: 1.4; }
+.agent-workspace-boundary svg { flex: 0 0 auto; }
+.agent-composer-overlay { position: fixed; inset: 0; z-index: 20; display: flex; justify-content: flex-end; background: #02080f8c; }
+.agent-composer-shade { position: absolute; inset: 0; border: 0; background: transparent; cursor: default; }
+.agent-composer-panel { position: relative; display: flex; flex-direction: column; flex: 0 1 min(660px,100%); background: #0f1d27; border-left: 1px solid #456d7e; box-shadow: -22px 0 60px #0009; min-width: 0; min-height: 0; }
+.agent-composer-header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid #355766; }
+.agent-composer-header > div { display: grid; gap: 5px; }
+.agent-composer-header strong { color: #e2f3f6; font-size: 17px; }
+.agent-composer-body { flex: 1; min-height: 0; overflow: auto; padding: 18px 24px; }
+.agent-composer-foot { margin: 0; border-top: 1px solid #294553; padding: 11px 18px; color: #a1beca; font-size: 11px; line-height: 1.5; }
+@media (max-width: 1260px) {
+  .agent-workspace-toolbar { flex-wrap: wrap; }
+  .agent-workspace-layout.with-omega { grid-template-columns: minmax(330px, 45fr) minmax(410px, 55fr); }
+}
+@media (max-width: 930px) {
+  .agent-workspace-layout.with-omega { display: flex; flex-direction: column-reverse; overflow: auto; }
+  .agent-workspace-layout.with-omega .agent-chat-surface { flex: 0 0 55vh; min-height: 310px; border-top: 1px solid #31505c; }
+  .agent-workspace-layout.with-omega .agent-loop-surface { flex: 0 0 480px; min-height: 0; }
+}
+@media (max-width: 620px) {
+  .agent-workspace-toolbar { padding: 10px; }
+  .agent-workspace-actions { width: 100%; flex-wrap: wrap; }
+  .agent-mode-switch { flex: 1 1 auto; justify-content: space-around; }
+  .agent-workspace-layout.with-omega .agent-loop-surface { flex-basis: 460px; }
+  .agent-workspace-boundary { font-size: 9px; }
+}
+
 .omega-gui-consent > .omega-button { justify-self: start; }
 .omega-gui-message svg { vertical-align: middle; margin-right: 8px; }
 .omega-gui-lock-button {
