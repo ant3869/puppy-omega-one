@@ -48,6 +48,25 @@ jobs:
           if (!$rejected) { throw 'Installer allowed junction redirected to global core' }
           if (Test-Path (Join-Path $unsafe 'AGENTS.md')) { throw 'Installer wrote files before rejecting junction' }
           if ((Get-Content $sentinel -Raw).Trim() -ne 'untouched') { throw 'Junction test changed core sentinel' }
+          # A configured Python inside Scripts/ must protect the entire venv.
+          $venv = Join-Path $env:RUNNER_TEMP 'omega-custom-python-venv'
+          $sitePackage = Join-Path $venv 'Lib\site-packages\code_puppy'
+          New-Item -ItemType Directory -Path $sitePackage -Force | Out-Null
+          Set-Content -Path (Join-Path $sitePackage 'sentinel') -Value 'untouched'
+          $env:CODE_PUPPY_PYTHON = Join-Path $venv 'Scripts\python.exe'
+          $rejected = $false
+          try { ./install.ps1 -Target $sitePackage -Force } catch { $rejected = $true }
+          Remove-Item Env:CODE_PUPPY_PYTHON -ErrorAction SilentlyContinue
+          if (!$rejected) { throw 'Installer allowed package source in custom Python venv' }
+          if (Test-Path (Join-Path $sitePackage 'AGENTS.md')) { throw 'Custom Python venv was modified' }
+          if ((Get-Content (Join-Path $sitePackage 'sentinel') -Raw).Trim() -ne 'untouched') { throw 'Custom Python sentinel changed' }
+          # Also block an automatically discovered GUI checkout inside home.
+          $gui = Join-Path $env:USERPROFILE 'projects\puppy_gui'
+          New-Item -ItemType Directory -Path $gui -Force | Out-Null
+          $rejected = $false
+          try { ./install.ps1 -Target $gui -Force } catch { $rejected = $true }
+          if (!$rejected) { throw 'Installer allowed auto-discovered GUI checkout' }
+          if (Test-Path (Join-Path $gui 'AGENTS.md')) { throw 'Auto-discovered GUI checkout was modified' }
 
   electron:
     runs-on: ubuntu-latest
