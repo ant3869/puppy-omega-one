@@ -46,3 +46,16 @@ test('app mode labels do not claim native chat or live execution', () => {
     assert.match(html, /Existing GUI connection/);
   }
 });
+
+test('same native context bar appears in Chat and Omega without initiating a read on render', () => {
+  for (const mode of ['chat', 'omega'] as const) {
+    const html = render(mode);
+    assert.match(html, /Read-only local harness context/);
+    assert.match(html, /Agent/);
+    assert.match(html, /Model/);
+    assert.match(html, /Saved session/);
+    assert.match(html, /Not checked/);
+    assert.match(html, /Refresh local GUI context/);
+    assert.match(html, /Start the GUI first/);
+  }
+});

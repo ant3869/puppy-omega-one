@@ -59,7 +59,7 @@
     "dist:mac": "electron-builder --mac",
     "dist:win": "electron-builder --win",
     "preview": "electron-vite preview",
-    "test": "tsx --test src/shared/workflow-events.test.ts src/main/services/workflow-transport.test.ts src/main/services/project-safety.test.ts src/main/services/gui-launch.test.ts src/shared/chat-access.test.ts src/main/services/webview-policy.test.ts src/main/services/diagnostics.test.ts src/main/services/draft-validation.test.ts src/shared/event-log.test.ts src/renderer/src/pages/AgentWorkspacePage.test.tsx"
+    "test": "tsx --test src/shared/workflow-events.test.ts src/main/services/workflow-transport.test.ts src/main/services/project-safety.test.ts src/main/services/gui-launch.test.ts src/shared/chat-access.test.ts src/main/services/webview-policy.test.ts src/main/services/diagnostics.test.ts src/main/services/draft-validation.test.ts src/shared/event-log.test.ts src/renderer/src/pages/AgentWorkspacePage.test.tsx src/main/services/harness-context.test.ts"
   },
   "type": "module",
   "version": "0.1.0"

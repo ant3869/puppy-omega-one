@@ -56,6 +56,12 @@ runtime. Set `PUPPY_GUI_LAUNCH` or `PUPPY_GUI_DIR` and
 5. Browse **Saved activity**, **Event log**, **Worker briefs** and
    **Project documents** without treating records as verified runtime results.
 
+The chat header also has a **read-only runtime context bar**: click **Refresh
+context** to see the active agent, active model and currently named saved
+session as reported by your installed GUI. These are display-only values,
+not a session picker or proof that the Omega event stream belongs to that
+conversation. It never submits prompts or changes model/configuration.
+
 Omega doesn't start the GUI or extra read-only ChatBridge event monitor at
 app launch. Live monitoring requires explicitly choosing **Connect monitor**
 and can be stopped. The installed GUI may perform its own initialization

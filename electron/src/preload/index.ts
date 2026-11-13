@@ -7,6 +7,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type { OmegaRun, PuppyStatus } from '@shared/types';
 import type { WorkflowTelemetry } from '@shared/workflow-events';
 import type { GuiDiagnostics } from '@shared/gui-diagnostics';
+import type { HarnessContext } from '@shared/harness-context';
 
 type Unsub = () => void;
 
@@ -21,6 +22,7 @@ const api = {
     getActiveSession: (): Promise<unknown> => ipcRenderer.invoke('puppy:getActiveSession'),
     getCost: (): Promise<unknown> => ipcRenderer.invoke('puppy:getCost'),
     diagnostics: (): Promise<GuiDiagnostics> => ipcRenderer.invoke('puppy:diagnostics'),
+    readContext: (): Promise<HarnessContext> => ipcRenderer.invoke('puppy:readContext'),
     // TODO: not wired — throws until the chat-send endpoint is verified.
     sendPrompt: (prompt: string): Promise<unknown> => ipcRenderer.invoke('puppy:sendPrompt', prompt)
   },

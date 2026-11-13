@@ -48,6 +48,13 @@ mutations are requested by the inspector.
   can be opened/closed without dispatching work.
 - [ ] Inspect Omega loop → Demo, pause/restart, reduced motion, and Saved runs.
   Confirm every simulated/local status is labeled accordingly.
+- [ ] With an existing disposable-project GUI running, click **Refresh
+  context** in Chat. Compare the reported agent/model/saved-session names
+  against the installed GUI and verify no model, agent or session changed.
+  Test an unavailable route and confirm it displays **Not reported**;
+  no raw tools, credentials or transcript bodies appear in DevTools/IPC.
+- [ ] Switch to Omega mode and confirm the same context bar is present,
+  without implicitly refreshing it or opening the monitor socket.
 - [ ] In Settings, use **Run connection checks** only if the separate GUI is
   already running. Record HTTP result codes, not response bodies.
 - [ ] In Omega loop → Live, explicitly select **Connect monitor**. Confirm

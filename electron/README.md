@@ -45,6 +45,13 @@ installation, **not** a copy of core bundled in Omega.
 | Settings | Reduce animations, read-only GUI diagnostics, safety notes |
 | Omega loop → Live | Click **Connect monitor** to begin local read-only event observation |
 
+The main Chat/Omega workspace also has **Refresh context**, a
+read-only, explicitly triggered view of the installed GUI's reported
+active agent, active model and saved session. It filters endpoint responses
+in the Electron main process, not the renderer. The labels are **not
+proven to belong to the observed WebSocket session** and cannot switch
+runtime state.
+
 **No automatic chat observer connection, GUI launch, native send or
 approval at startup.** Live Monitor is off until you explicitly connect.
 Clicking **Stop monitor** closes it and cancels retries. A received event
