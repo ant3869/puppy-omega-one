@@ -64,33 +64,33 @@ const RUN_STATUSES = new Set<RunStatus>([
 /**
  * History is read-only evidence from Omega's own file, not live telemetry.
  * Fail explicitly on corrupted records rather than silently wiping them.
- * Historical status fields are allowed for compatibility, but not writable
- * through the draft-only IPC.
+ * Historical status fields and long legacy briefs are accepted to preserve
+ * existing data; only new drafts are limited and writable through IPC.
  */
 export function assertStoredRuns(value: unknown): asserts value is OmegaRun[] {
-  if (!Array.isArray(value) || value.length > 2000) {
-    throw new Error('Saved history must be an array of at most 2000 records.');
+  if (!Array.isArray(value)) {
+    throw new Error('Saved history must be an array of records.');
   }
   for (const run of value) {
     if (!run || typeof run !== 'object' || Array.isArray(run) ||
         !validId(run.id) ||
-        !validString(run.goal, 5000) ||
-        !validString(run.doneWhen, 2000) ||
+        (typeof run.goal !== 'string' || !run.goal.trim()) ||
+        (typeof run.doneWhen !== 'string' || !run.doneWhen.trim()) ||
         !RUN_STATUSES.has(run.status) ||
-        (run.projectDir !== null && !validString(run.projectDir, 4096)) ||
+        (run.projectDir !== null && typeof run.projectDir !== 'string') ||
         !validString(run.startedAt, 100) ||
         !Number.isFinite(Date.parse(run.startedAt)) ||
         !validString(run.updatedAt, 100) ||
         !Number.isFinite(Date.parse(run.updatedAt)) ||
-        !Array.isArray(run.briefs) || run.briefs.length > 4) {
+        !Array.isArray(run.briefs)) {
       throw new Error('Saved history contains a malformed run.');
     }
     for (const worker of run.briefs) {
       if (!worker || !validId(worker.id) || worker.parentRunId !== run.id ||
-          !validString(worker.childAgent, 50) ||
-          !validString(worker.model, 120) ||
-          !validString(worker.objective, 5000) ||
-          typeof worker.brief !== 'string' || worker.brief.length > 30000 ||
+          (typeof worker.childAgent !== 'string' || !worker.childAgent.trim()) ||
+          typeof worker.model !== 'string' ||
+          typeof worker.objective !== 'string' ||
+          typeof worker.brief !== 'string' ||
           !RUN_STATUSES.has(worker.status) ||
           (worker.checkResult !== null && worker.checkResult !== 'pass' && worker.checkResult !== 'fail') ||
           (worker.checkCommand !== null && typeof worker.checkCommand !== 'string') ||
