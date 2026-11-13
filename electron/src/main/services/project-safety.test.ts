@@ -46,6 +46,37 @@ test('protects custom Python and Puppy GUI locations', () => {
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('blocks site-packages in a custom Python virtual environment', () => {
+  const root = mkdtempSync(join(tmpdir(), 'omega-venv-site-packages-'));
+  try {
+    const home = join(root, 'home');
+    const venv = join(root, 'custom-venv');
+    const python = join(venv, 'bin', 'python');
+    const packageSource = join(venv, 'lib', 'python3.13', 'site-packages', 'code_puppy');
+    mkdirSync(packageSource, { recursive: true });
+    mkdirSync(join(venv, 'bin'), { recursive: true });
+    assert.throws(() => assertProjectWorkspace(packageSource, { home, python }), /protected/);
+    assert.throws(() => assertProjectWorkspace(venv, { home, python }), /protected/);
+    const regular = join(home, 'projects', 'my-code');
+    mkdirSync(regular, { recursive: true });
+    assert.equal(assertProjectWorkspace(regular, { home, python }), regular);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('blocks both auto-discovered GUI checkouts without GUI env overrides', () => {
+  const root = mkdtempSync(join(tmpdir(), 'omega-discovered-gui-'));
+  try {
+    const home = join(root, 'home');
+    const local = join(home, 'puppy_gui');
+    const nested = join(home, 'projects', 'puppy_gui');
+    mkdirSync(local, { recursive: true });
+    mkdirSync(nested, { recursive: true });
+    for (const folder of [local, nested, join(nested, 'code_puppy_gui')]) {
+      assert.throws(() => assertProjectWorkspace(folder, { home }), /protected/);
+    }
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('rejects project symlink redirected to global core', () => {
   const root = mkdtempSync(join(tmpdir(), 'omega-symlink-workspace-'));
   try {
