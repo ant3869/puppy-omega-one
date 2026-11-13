@@ -16,6 +16,28 @@ avoid real credentials in screenshots or logs.
 - [ ] Run `cd electron && npm test && npm run typecheck && npm run build`
   and the platform-appropriate installer smoke tests, if available.
 
+## Safe read-only preflight (optional, before active observation)
+
+From the project root, with Python 3 installed and an **existing**
+`puppy_gui` checkout:
+
+```powershell
+python .\tools\inspect_chatbridge.py --gui-root "C:\path\to\puppy_gui" --offline
+```
+
+With the local GUI **already running**, omit `--offline` to additionally
+perform only `GET /api/health` and `GET /openapi.json` on
+`http://127.0.0.1:8765`. Set `--origin http://127.0.0.1:PORT` for
+a custom loopback port. No prompts, approvals, WebSockets or session
+mutations are requested by the inspector.
+
+- [ ] Record whether the **installed** checkout contains
+  `code_puppy_gui/api/routes_chat.py`. This is a file-presence check,
+  **not proof** of the chat protocol.
+- [ ] Record loopback health and known REST route-presence flags.
+- [ ] Do **not** treat OpenAPI as evidence of a WebSocket route:
+  websocket endpoints are normally absent from that REST schema.
+
 ## Observe without submitting a task
 
 - [ ] Launch Omega. Confirm it **does not spawn Code Puppy** or open an
