@@ -20,6 +20,7 @@ import { dirname, join } from 'node:path';
 import type { OmegaRun, PuppyStatus } from '../../shared/types';
 import { assertProjectWorkspace } from './project-safety';
 import { guiLaunchSpec } from './gui-launch';
+import { probeGui } from './diagnostics';
 
 const PORT = Number(process.env.PUPPY_GUI_PORT ?? 8765);
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -245,6 +246,7 @@ export function registerPuppyIpc(getWindow: () => BrowserWindow | null) {
   ipcMain.handle('puppy:getActiveSession', () => apiGet('/api/sessions/active'));
   ipcMain.handle('puppy:getCost', () => apiGet('/api/cost/active'));
   ipcMain.handle('puppy:getHealth', () => apiGet('/api/health'));
+  ipcMain.handle('puppy:diagnostics', () => probeGui(PORT));
 
   // Native prompt send stays disabled: client-side GUI WebSocket commands
   // exist, but the server route and project/session binding are unverified.
