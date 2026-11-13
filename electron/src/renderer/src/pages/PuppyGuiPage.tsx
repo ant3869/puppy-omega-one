@@ -47,7 +47,7 @@ export default function PuppyGuiPage({
 
   async function start() {
     if (!projectDir) {
-      setError('Choose a project folder before launching Code Puppy GUI.');
+      setError('Choose a project folder before starting the local coding agent.');
       return;
     }
     setStarting(true);
@@ -58,7 +58,7 @@ export default function PuppyGuiPage({
       onStatusChange(result);
       if (!result.running) setError(result.error ?? 'The local GUI did not start.');
       else if (result.error) setNotice(result.error);
-      else setNotice('GUI process started with the selected folder as its working directory.');
+      else setNotice('Puppy GUI launched for the selected folder; confirm the runtime project before edits.');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -75,8 +75,8 @@ export default function PuppyGuiPage({
   if (access === 'offline' || access === 'choose-project') {
     return (
       <div className={'omega-gui-launch ' + (compact ? 'is-compact' : '')}>
-        <div className="omega-eyebrow"><FolderOpen size={14} /> HARNESS / WORKSPACE</div>
-        <h2>{access === 'choose-project' ? 'Choose a workspace' : 'Connect the harness'}</h2>
+        <div className="omega-eyebrow"><FolderOpen size={14} /> CODING AGENT / WORKSPACE</div>
+        <h2>{access === 'choose-project' ? 'Choose a workspace' : 'Start your coding workspace'}</h2>
         <p>{access === 'choose-project'
           ? 'A local GUI is already running, but its project is not verified. Choose a project to review access safely.'
           : 'Select an existing project before starting the installed Puppy GUI. Omega does not install or change Code Puppy packages.'}</p>
@@ -87,7 +87,7 @@ export default function PuppyGuiPage({
         </div>
         {access === 'offline' && (
           <button className="omega-button omega-button-primary" onClick={() => void start()} disabled={!projectDir || starting}>
-            <PlayCircle size={16} /> {starting ? 'Starting…' : 'Start GUI in this project'}
+            <PlayCircle size={16} /> {starting ? 'Starting…' : 'Start Code Puppy in this project'}
           </button>
         )}
         {error && <p role="alert" className="omega-gui-message is-error">{error}</p>}
