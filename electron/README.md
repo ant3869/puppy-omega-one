@@ -56,6 +56,15 @@ start the existing GUI or acknowledge an existing external GUI's unknown
 working directory. You type and submit prompts inside the existing GUI
 webview. Omega's `puppy:sendPrompt` IPC stays deliberately disabled.
 
+## Checking the installed backend
+
+The main repo includes `tools/inspect_chatbridge.py`: a **read-only,
+GET-only** loopback/source-file preflight for the existing GUI. It can
+report whether the installed checkout contains a chat-route module
+and whether known REST paths appear in OpenAPI. It **cannot verify**
+the `/ws/chat` session contract, and it never sends prompts or
+changes Code Puppy files. See [LOCAL_QA](../docs/LOCAL_QA.md).
+
 ## Safety boundary
 
 - Installers and workspace picker guard against known Code Puppy core

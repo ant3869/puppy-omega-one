@@ -25,6 +25,17 @@
 | Native send, automatic dispatch/approval | **Disabled** | No verified server route/session binding |
 | Platform installers / packaged binaries | Configured targets | Manual installation/package smoke test outstanding |
 
+## Read-only compatibility inspection
+
+`tools/inspect_chatbridge.py` checks optional local GUI **file presence**
+and, unless `--offline` is selected, makes only two GET requests to an
+explicit `http://127.0.0.1:PORT` origin: `/api/health` and
+`/openapi.json`. It blocks redirects and rejects remote URLs; only
+known REST endpoint-presence flags leave the inspector. No credentials,
+transcripts, local file paths, WebSockets or runtime mutations are collected
+by the report. Python unit tests run in CI with a disposable loopback
+server. **This does not verify native chat/session support.**
+
 ## Precise safety boundary
 
 - Installers copy **project-scoped templates**. They block home/global

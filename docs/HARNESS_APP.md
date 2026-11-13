@@ -56,6 +56,18 @@ WebSocket session without verifying how the installed server behaves.
 
 ## Next engineering phases
 
+### Non-mutating preflight tool now available
+
+Run `python tools/inspect_chatbridge.py --gui-root <existing-puppy_gui-dir>`
+against a local GUI, or add `--offline` to inspect files without HTTP.
+This checks only local source-file presence and GET-only health/OpenAPI
+route declarations. It does **not** open `/ws/chat` or attest project
+cwd, agent selections, session/approval ownership or response events.
+
+This is a safe **first step**, not Phase A completion. The installed
+runtime's actual WebSocket/session behavior still needs manual verification
+with a disposable project and redacted fixtures.
+
 ### Phase A — verify a real installed backend
 
 - Test against a deliberately disposable project and installed GUI.
