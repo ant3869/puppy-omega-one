@@ -1,8 +1,10 @@
 # Puppy Omega One — Electron desktop console
 
-The Electron/React console adds a functional UI around **a separately
-installed Puppy GUI**. It is more than an empty starter shell, but
-**not yet** a native autonomous dispatch implementation. See
+The Electron/React console is being built as a **chat-first coding-agent
+application with Omega as its signature orchestration mode**. Its current
+conversation transport still embeds the separately installed Puppy GUI;
+**native session-bound chat is not yet implemented or verified**. See
+[HARNESS_APP.md](../docs/HARNESS_APP.md) for the integration plan. See
 [Current status](../docs/STATUS.md), [Frontend architecture](../docs/FRONTEND.md)
 and [Changelog](../CHANGELOG.md).
 
@@ -32,15 +34,16 @@ installation, **not** a copy of core bundled in Omega.
 
 | Location | Behavior |
 | --- | --- |
-| Overview | Animated diagram with clearly labeled Demo, Saved and Live modes |
-| Overview → Open chat beside flow | Dock the existing Puppy GUI webview beside the animated map |
+| Chat (default) | Ordinary conversation as the main application surface, using the existing GUI transport |
+| Omega loop | Same conversation surface beside the animated specialist/verification graph; source modes labeled Demo / Saved / Live |
+| Draft Omega job | Opens the draft-only job composer in a drawer over the workspace |
 | Compose run | Select guarded project, set goal / `Done when:`, compose a **draft** |
 | Saved activity | Search historical draft records; inspect/copy briefs and open chat |
 | Event log | Inspect the 30 most recent sanitized event summaries with severity/worker/search filters |
 | Worker briefs | Read locally stored worker briefs/check records |
 | Project documents | Read guarded workspace progress/decision/known-issue files |
 | Settings | Reduce animations, read-only GUI diagnostics, safety notes |
-| Overview → Live | Click **Connect monitor** to begin local read-only event observation |
+| Omega loop → Live | Click **Connect monitor** to begin local read-only event observation |
 
 **No automatic chat observer connection, GUI launch, native send or
 approval at startup.** Live Monitor is off until you explicitly connect.
@@ -48,7 +51,7 @@ Clicking **Stop monitor** closes it and cancels retries. A received event
 does not prove it belongs to the same chat session; a worker response
 does not prove a check passed.
 
-For actual chat, select a safe project in Harness Chat and **explicitly**
+For actual chat, select a safe project in the Chat workspace and **explicitly**
 start the existing GUI or acknowledge an existing external GUI's unknown
 working directory. You type and submit prompts inside the existing GUI
 webview. Omega's `puppy:sendPrompt` IPC stays deliberately disabled.
@@ -83,8 +86,8 @@ electron/
   src/main/services/project-safety.ts    Protected workspace guard
   src/preload/index.ts            Typed window.omega bridge
   src/shared/                    Run, monitor and diagnostic contracts
-  src/renderer/src/App.tsx        Overview-first navigation and dock
-  src/renderer/src/pages/        Overview, Run, Live, Briefs, Progress, Chat, Settings
+  src/renderer/src/App.tsx        Chat-first navigation, persistent conversation and draft drawer
+  src/renderer/src/pages/        AgentWorkspace, WorkflowOverview, Run, Live, Briefs, Progress, Settings
 ```
 
 ## Build and packaging

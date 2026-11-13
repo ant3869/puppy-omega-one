@@ -8,6 +8,20 @@ artifact or installed-runtime QA is implied by that version.
 
 ## Unreleased — repository main (2026-11-12)
 
+### Product direction and conversation-first workspace
+
+- **Chat-first harness redesign (PR #17):** Chat is now the application's
+  initial screen, with the existing installed GUI conversation presented as
+  the main workspace surface. Omega is a mode of **that same mounted
+  conversation**, showing the animated orchestration graph alongside chat
+  rather than opening a separate harness/dock. The Omega draft composer is
+  accessed from a workspace drawer; saved activity, logs, worker briefs
+  and project docs remain available in the sidebar.
+- Added `docs/HARNESS_APP.md` to document the native session-bound
+  chat/backend goal and the verified-runtime requirement. The current
+  embedded GUI remains an **interim transport** and automatic dispatch
+  is still disabled. Added UI composition tests.
+
 ### User-facing features
 - **PR #5:** Introduced the dark Electron orchestration command center,
   overview-first navigation, animated workflow SVG, labeled Demo playback,

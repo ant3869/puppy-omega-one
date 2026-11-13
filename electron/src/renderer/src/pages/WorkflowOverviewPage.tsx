@@ -192,8 +192,8 @@ export default function WorkflowOverviewPage({
           <p>One goal. An orchestrator. Specialist agents. Every result checked.</p>
         </div>
         <div className="omega-home-actions">
-          <button className="omega-button omega-button-secondary" onClick={onChat}>{preferLive ? 'Close chat panel' : 'Open chat beside flow'} <ArrowRight size={15} /></button>
-          <button className="omega-button omega-button-primary" onClick={onCompose}><Zap size={15} /> Compose a run</button>
+          <button className="omega-button omega-button-secondary" onClick={onChat}>Focus chat <ArrowRight size={15} /></button>
+          <button className="omega-button omega-button-primary" onClick={onCompose}><Zap size={15} /> Draft Omega job</button>
         </div>
       </section>
 
@@ -373,7 +373,7 @@ export default function WorkflowOverviewPage({
 
         <section className="omega-health-panel">
           <div className="omega-card-heading"><span>SYSTEM / STATE</span><Radio size={15} /></div>
-          <div className="omega-health-row"><span><span className={'omega-small-light ' + (server?.running ? 'is-ok' : 'is-down')} /> Puppy GUI service</span><strong>{server?.running ? 'CONNECTED' : server ? 'OFFLINE' : 'CHECKING'}</strong></div>
+          <div className="omega-health-row"><span><span className={'omega-small-light ' + (server?.running ? 'is-ok' : 'is-down')} /> Local GUI endpoint</span><strong>{server?.running ? 'CONNECTED' : server ? 'OFFLINE' : 'CHECKING'}</strong></div>
           <div className="omega-health-row"><span><ShieldCheck size={14} /> Event telemetry</span><strong className={connected ? '' : 'omega-muted'}>{!monitoring ? 'MONITOR OFF' : connected ? 'STREAM CONNECTED' : telemetry?.connection === 'connecting' ? 'CONNECTING' : 'DISCONNECTED'}</strong></div>
           <div className="omega-health-row"><span><CheckCircle2 size={14} /> Stored run briefs</span><strong>{loadError ? 'UNAVAILABLE' : runs.length + ' RECORDS'}</strong></div>
           {live && liveAttention && <p className="omega-health-error" role="alert">{liveAttention.message} · <button className="omega-text-button" onClick={onChat}>Open chat</button></p>}
@@ -394,7 +394,7 @@ export default function WorkflowOverviewPage({
                 </li>
               ))}
             </ol>
-          ) : <p className="omega-trace-empty">{monitoring ? 'No events received yet. Start a turn in Harness Chat; actual event/session compatibility remains unverified.' : 'Live observation is off. Choose Connect monitor to open a read-only connection to the local GUI.'}</p>}
+          ) : <p className="omega-trace-empty">{monitoring ? 'No events received yet. Use the conversation pane; actual event/session compatibility remains unverified.' : 'Live observation is off. Choose Connect monitor to open a read-only connection to the local GUI.'}</p>}
         </section>
       )}
     </div>

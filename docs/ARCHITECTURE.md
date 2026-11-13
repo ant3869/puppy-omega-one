@@ -241,8 +241,12 @@ harness talks to Code Puppy:
   Code Puppy package or global settings. See [STATUS.md](STATUS.md).
 - **UI:** the Electron main process handles guarded IPC, project selection,
   GUI lifecycle, run-draft persistence and an opt-in read-only WebSocket.
-  The sandboxed renderer shows Overview, Compose, Saved history, Briefs,
-  Project documents, Settings and an embedded GUI webview.
+  The sandboxed renderer opens directly into Chat. Omega loop is an
+  alternate layout of that **same mounted conversation** alongside the
+  worker-flow graph. Drafting happens inside an Omega job drawer;
+  history, briefs, project docs, logs and settings are supporting views.
+  The existing GUI webview remains an **interim chat transport** until
+  verified native session integration exists.
 - **Data:** only Omega-local `userData/runs.json` is written by the draft
   path. A new draft is **never** a verified running or completed job.
   Historical records remain readable but unverified.

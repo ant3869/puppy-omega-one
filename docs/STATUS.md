@@ -8,12 +8,14 @@
 
 | Area | Status | Verification boundary |
 | --- | --- | --- |
-| Landing screen, animation, navigation and settings | Implemented | Typecheck/build and reducer tests; manual visual QA pending |
+| Chat-first landing and app navigation | Implemented | Chat is the initial route; current transport remains the separately installed GUI; manual UX QA pending |
+| Omega orchestration mode | Implemented UI | Switches the same chat workspace into a conversation + worker graph split view; Live session attribution pending |
 | Demo workflow | Implemented, visibly simulated | Never presented as a real run |
 | Saved history and brief composition | Implemented | Local Omega `userData/runs.json` only; drafts do not submit prompts |
 | Search/copy saved briefs, open chat | Implemented | Local history and clipboard; live send is manual |
 | Embedded Puppy GUI chat | Integrated webview | Requires separately installed GUI; behavior belongs to that GUI |
-| Chat dock beside workflow | Implemented | Desktop UI/size verification pending |
+| Embedded GUI conversation | Interim implementation | Chat and Omega reuse one mounted conversation component; first-party native chat is not yet implemented |
+| Omega job preparation drawer | Implemented, draft-only | No automatic prompt dispatch; the user submits copied briefs in the installed GUI |
 | GUI startup | Explicit user action only | Starts existing launcher with selected safe `cwd`; does not patch core |
 | Existing/external GUI attachment | Implemented with warning | Actual external project `cwd` is unknown, not attested |
 | Read-only local diagnostics | Implemented | Four allowlisted GET responses + observer status; bodies discarded |
