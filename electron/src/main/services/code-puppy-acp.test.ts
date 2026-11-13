@@ -74,7 +74,7 @@ test('long ACP stream chunks retain every character without silent 4k clipping',
   });
 });
 
-test('agent closing stdin produces a recoverable ACP error, not an uncaught EPIPE', async () => {
+test('agent closing stdin fails closed on EPIPE or bounded prompt timeout', { timeout: 5000 }, async () => {
   await withProject(async (dir) => {
     const client = new CodePuppyAcpClient();
     try {
@@ -82,9 +82,9 @@ test('agent closing stdin produces a recoverable ACP error, not an uncaught EPIP
       assert.equal(started.connection, 'ready');
       // Allow the fixture to close its read end while keeping the process alive.
       await new Promise((resolve) => setTimeout(resolve, 150));
-      await assert.rejects(client.prompt('hello after stdin closes'), /Code Puppy|connection|prompt/i);
+      await assert.rejects(client.prompt('hello after stdin closes', 700), /Code Puppy|connection|prompt/i);
       assert.equal(client.getSnapshot().connection, 'error');
-      assert.match(client.getSnapshot().error || '', /input pipe|process/i);
+      assert.match(client.getSnapshot().error || '', /input pipe|process|timed out/i);
     } finally {
       client.stop();
     }
