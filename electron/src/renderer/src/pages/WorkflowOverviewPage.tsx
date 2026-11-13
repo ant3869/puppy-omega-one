@@ -202,7 +202,7 @@ export default function WorkflowOverviewPage({
             <span className={'omega-source-label ' + (demo ? 'is-demo' : '')}>{demo ? 'SIMULATED · NOT LIVE' : live ? (connected ? 'LIVE EVENTS · CHECKS UNVERIFIED' : 'EVENT STREAM OFFLINE') : 'LOCAL RECORDS · NOT TELEMETRY'}</span>
           </div>
         </div>
-        <div className={'omega-diagram ' + (reduceMotion ? 'reduce-motion' : '')}>
+        <div className={'omega-diagram ' + (reduceMotion ? 'reduce-motion' : '') + (demo && !playing ? ' is-paused' : '')}>
           <svg viewBox="0 0 1200 722" aria-label="Goal flows to orchestrator, out to researcher, builder, tester, and reviewer, through checks, then back for final verification" role="img">
             <defs>
               <filter id="omega-glow" x="-80%" y="-80%" width="260%" height="260%">
