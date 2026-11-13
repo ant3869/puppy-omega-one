@@ -207,3 +207,15 @@ The **Compose run** page requires a selected workspace and embeds a core-isolati
 **Project-bound startup:** Omega shares a validated project folder between the run composer and the chat launcher. An explicit GUI launch now starts the existing `launch_gui.py` with its **working directory set to that selected project**, and passes the GUI's supported `--host`, `--port`, and `--no-browser` CLI flags. No other Code Puppy files are patched by Omega. If an already-running GUI is found, Omega does **not** restart it or claim its working directory; the chat view warns that the external workspace is unknown or different. Users must confirm the runtime's actual project before approving write-capable tasks. Native prompt-send remains disabled. Starting an installed GUI could still cause that underlying runtime's normal state changes; this is not an OS sandbox.
 
 Tests include negative installation into home/core, symlink and Windows junction redirection checks, workspace selection guard tests, and normal-project install smoke checks.
+
+## Overview chat dock and guarded embedded GUI
+
+The overview's **Open chat beside flow** button opens a responsive side dock with the existing Puppy GUI webview while the workflow animation stays visible. **Open full chat** switches to the full-width embedded GUI. Opening the dock selects Live visual mode, rather than implying a simulated Demo sequence is the active runtime. The WebSocket observer remains read-only; its events are not yet guaranteed to correspond to the same GUI session.
+
+This is the **real embedded Puppy GUI chat interface**, not a newly implemented native prompt-send endpoint. The desktop shell still does not issue prompts, approvals, model changes, package installs, or agent dispatch automatically. Native chat-send remains disabled until the installed server's route and session binding can be verified.
+
+When the GUI is already running from a working directory Omega cannot verify, the embedded chat is **locked behind an explicit per-project acknowledgement**. The user must select a project, review the mismatch/unknown-cwd warning, and choose to open the existing GUI. That acknowledgement is reset when the selected project or known GUI ownership changes. An Omega-owned launch with a matching requested project is distinguished from an external server, but that launch cwd does **not** prove the runtime has retained the same cwd after startup. This UI barrier is not a security sandbox.
+
+The main process now restricts embedded webview initial URLs, navigation and redirects to the configured `http://127.0.0.1:<port>` origin. Browser-safe external links, when opened by the GUI, go through the host browser rather than navigating the embedded privileged surface. Renderer isolation, sandboxing, and denial of arbitrary preload scripts remain in place. Policy and access decisions are covered by unit tests.
+
+Manual QA still needed: check the GUI's responsive chat layout inside the dock, the installed runtime's actual current project, live-event/session association, and file-writing behavior with an intentionally disposable test project.
