@@ -241,11 +241,10 @@ export function registerPuppyIpc(getWindow: () => BrowserWindow | null) {
   ipcMain.handle('puppy:getCost', () => apiGet('/api/cost/active'));
   ipcMain.handle('puppy:getHealth', () => apiGet('/api/health'));
 
-  // TODO (not wired): sending a prompt + streaming live run events.
-  // The chat-send/stream endpoint was NOT verified against routes_chat +
-  // static/js/chat.js in puppy_gui. Do not guess it — see docs/FRONTEND.md.
-  // Until it is wired, the Run page composes the brief and copies it for
-  // pasting into the Puppy GUI chat view.
+  // Native prompt send stays disabled: client-side GUI WebSocket commands
+  // exist, but the server route and project/session binding are unverified.
+  // Use the embedded real Puppy GUI for interactive chat and approvals.
+  // The separate read-only event observer does not send prompts.
   ipcMain.handle('puppy:sendPrompt', () => {
     throw new Error(
       'puppy:sendPrompt is not wired yet — verify the chat-send endpoint in puppy_gui routes_chat / static/js/chat.js first (see docs/FRONTEND.md).'
