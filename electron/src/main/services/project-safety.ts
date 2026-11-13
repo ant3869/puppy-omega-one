@@ -1,6 +1,6 @@
 import { realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 export interface WorkspaceBoundaries {
   home?: string;
@@ -17,6 +17,14 @@ function canonical(path: string): string {
   } catch {
     return absolute;
   }
+}
+
+function protectedPythonEnvironment(python: string): string {
+  const parent = dirname(python);
+  const directory = basename(parent).toLowerCase();
+  // Python venv executables reside in Scripts/ (Windows) or bin/ (POSIX).
+  // Protect the WHOLE venv, including Lib/site-packages and global binaries.
+  return directory === 'scripts' || directory === 'bin' ? dirname(parent) : parent;
 }
 
 function within(path: string, root: string): boolean {
@@ -43,9 +51,11 @@ export function assertProjectWorkspace(directory: string, limits: WorkspaceBound
     join(home, '.config', 'code_puppy'),
     join(home, '.config', 'code-puppy'),
     join(home, 'AppData', 'Roaming', 'code_puppy'),
+    join(home, 'puppy_gui'),
+    join(home, 'projects', 'puppy_gui'),
     limits.configHome ? join(limits.configHome, 'code_puppy') : '',
     limits.configHome ? join(limits.configHome, 'code-puppy') : '',
-    limits.python && isAbsolute(limits.python) ? dirname(limits.python) : '',
+    limits.python && isAbsolute(limits.python) ? protectedPythonEnvironment(limits.python) : '',
     limits.guiDir ?? '',
     limits.guiLaunch && isAbsolute(limits.guiLaunch) ? dirname(limits.guiLaunch) : ''
   ].filter(Boolean);
