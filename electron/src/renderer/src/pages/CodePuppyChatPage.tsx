@@ -80,12 +80,12 @@ export default function CodePuppyChatPage({
         <button type="button" className="omega-button omega-button-secondary" onClick={() => void chooseProject()} disabled={busy || snapshot.connection === 'working' || snapshot.connection === 'connecting'}>
           <FolderOpen size={14}/> {projectDir ? 'Change' : 'Choose project'}
         </button>
-        {sessionActive && !projectMismatch || snapshot.connection === 'working' ? (
+        {(sessionActive && !projectMismatch) || snapshot.connection === 'working' ? (
           <button type="button" className="omega-button omega-button-secondary" onClick={() => void stop()}>
             <StopCircle size={14}/> Stop
           </button>
         ) : (
-          <button type="button" className="omega-button omega-button-primary" onClick={() => void start()} disabled={!projectDir || busy || snapshot.connection === 'working' || snapshot.connection === 'connecting'}>
+          <button type="button" className="omega-button omega-button-primary" onClick={() => void start()} disabled={!projectDir || busy || snapshot.connection === 'connecting'}>
             <Play size={14}/> {snapshot.connection === 'connecting' ? 'Connecting…' : projectMismatch ? 'Switch to selected project' : 'Start Code Puppy'}
           </button>
         )}
