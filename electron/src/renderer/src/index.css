@@ -178,6 +178,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 .omega-worker:hover rect:first-child, .omega-worker.is-selected rect:first-child { stroke: #8adbe8; }
 .omega-worker.is-active rect:first-child { stroke: #78dfee; filter: drop-shadow(0 0 13px #42d7ed60); }
 .omega-worker.is-failed rect:first-child { stroke: #fa6a70; filter: drop-shadow(0 0 10px #ee53554d); }
+.omega-worker:focus-visible rect:first-child { stroke: #e9fcff; stroke-width: 3; filter: drop-shadow(0 0 8px #62d9ed); }
 .omega-worker-label { fill: #ebf5f5; font-size: 26px; font-weight: 750; letter-spacing: 1px; }
 .omega-worker .omega-worker-strip { stroke: none; }
 .omega-pulse-dot { animation: omega-breathe 1.1s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
@@ -200,6 +201,10 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 .omega-graph-disclaimer { font-size: 10px; color: #7895a5; white-space: nowrap; }
 .omega-dashboard-bottom { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr); gap: 16px; }
 .omega-detail-panel, .omega-health-panel { background: linear-gradient(135deg, #14222d, #0c1721); border: 1px solid #2b4352; border-radius: 9px; min-width: 0; padding: 17px 19px; }
+.omega-worker-shortcuts { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 13px; }
+.omega-worker-shortcuts button { border: 1px solid #41606d; border-radius: 5px; background: #172a35; color: #c3dce5; font-size: 10px; font-weight: 700; letter-spacing: .04em; min-height: 32px; padding: 6px 10px; }
+.omega-worker-shortcuts button:hover { background: #254450; }
+.omega-worker-shortcuts button[aria-pressed="true"] { border-color: #83dce9; background: #20434e; color: #ecfcff; }
 .omega-card-heading { display: flex; justify-content: space-between; align-items: center; color: #9ab2bd; font-size: 10px; letter-spacing: .15em; font-weight: 750; }
 .omega-card-heading svg { color: #75d8e6; }
 .omega-detail-main { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-top: 15px; }

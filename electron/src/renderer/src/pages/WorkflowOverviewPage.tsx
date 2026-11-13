@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, ArrowRight, CheckCircle2, CircleAlert, GitBranch, Pause, Play, Radio, RotateCcw, ShieldCheck, Zap } from 'lucide-react';
+import { Activity, ArrowRight, CheckCircle2, CircleAlert, GitBranch, Pause, Play, Radio, RotateCcw, ShieldCheck, SkipForward, Zap } from 'lucide-react';
 import type { OmegaRun, PuppyStatus, RunStatus } from '@shared/types';
 import type { WorkerKey, WorkflowTelemetry } from '@shared/workflow-events';
 import { tokens } from '../lib/tokens';
@@ -211,18 +211,23 @@ export default function WorkflowOverviewPage({
                 <Radio size={13} /> {monitoring ? 'Stop monitor' : 'Connect monitor'}
               </button>
             )}
-            {demo && (
+            {demo && (reduceMotion ? (
+              <button className="omega-icon-button" onClick={() => setTick((previous) => previous + 1)}
+                title="Next demo stage" aria-label="Next demo stage">
+                <SkipForward size={15} />
+              </button>
+            ) : (
               <button className="omega-icon-button" onClick={() => setPlaying(!playing)} title={playing ? 'Pause animation' : 'Play animation'} aria-label={playing ? 'Pause demo' : 'Play demo'}>
                 {playing ? <Pause size={15} /> : <Play size={15} />}
               </button>
-            )}
+            ))}
             {demo && <button className="omega-icon-button" onClick={() => setTick(0)} title="Restart demo" aria-label="Restart demo"><RotateCcw size={15} /></button>}
             <span className={'omega-source-label ' + (demo ? 'is-demo' : '')}>{demo ? 'SIMULATED · NOT LIVE' : live ? !monitoring ? 'MONITOR OFF · OPT IN' : connected ? 'LIVE EVENTS · CHECKS UNVERIFIED' : 'EVENT STREAM OFFLINE' : 'LOCAL RECORDS · NOT TELEMETRY'}</span>
           </div>
         </div>
         {monitorError && live && <p className="omega-monitor-error" role="alert">{monitorError}</p>}
         <div className={'omega-diagram ' + (reduceMotion ? 'reduce-motion' : '') + (demo && !playing ? ' is-paused' : '')}>
-          <svg viewBox="0 0 1200 722" aria-label="Goal flows to orchestrator, out to researcher, builder, tester, and reviewer, through checks, then back for final verification" role="img">
+          <svg viewBox="0 0 1200 722" aria-label="Interactive Omega workflow map: choose a specialist worker to inspect" role="group">
             <defs>
               <filter id="omega-glow" x="-80%" y="-80%" width="260%" height="260%">
                 <feGaussianBlur stdDeviation="5" result="blur" />
@@ -280,7 +285,7 @@ export default function WorkflowOverviewPage({
               <rect x="924" y="164" width="226" height="90" rx="9" />
               <text className="omega-svg-kicker" x="946" y="189">RUNTIME / CONTEXT</text>
               <text className="omega-svg-label-small" x="946" y="219">Session + model</text>
-              <text className="omega-svg-caption" x="946" y="240">No context % available</text>
+              <text className="omega-svg-caption" x="946" y="240">Session not verified</text>
             </g>
 
             <g className={'omega-orchestrator ' + (isOrchestrating ? 'is-active' : '')}>
@@ -310,6 +315,7 @@ export default function WorkflowOverviewPage({
                   tabIndex={0}
                   aria-label={'Select ' + lane.label + ' worker'}
                   aria-pressed={isSelected}
+                   aria-controls="omega-worker-inspector"
                   onClick={() => setSelected(lane.key)}
                   onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelected(lane.key); } }}
                   className={'omega-worker ' + (active ? 'is-active ' : '') + (isSelected ? 'is-selected ' : '') + (failed ? 'is-failed' : '')}
@@ -352,8 +358,14 @@ export default function WorkflowOverviewPage({
       </section>
 
       <div className="omega-dashboard-bottom">
-        <section className="omega-detail-panel">
+        <section className="omega-detail-panel" id="omega-worker-inspector" aria-label="Selected worker details">
           <div className="omega-card-heading"><span>INSPECTOR / {currentLane.label}</span><Activity size={15} /></div>
+          <div className="omega-worker-shortcuts" role="group" aria-label="Choose worker to inspect">
+            {LANES.map((lane) => (
+              <button key={lane.key} type="button" aria-pressed={selected === lane.key}
+                onClick={() => setSelected(lane.key)}>{lane.label}</button>
+            ))}
+          </div>
           <div className="omega-detail-main">
             <div>
               <span className="omega-detail-tag">{demo ? 'EXAMPLE AGENT' : live ? connected ? 'LIVE DELEGATION' : 'STREAM DISCONNECTED' : record ? 'SAVED DELEGATION' : 'NO RECORD'}</span>
