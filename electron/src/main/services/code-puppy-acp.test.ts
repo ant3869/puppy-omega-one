@@ -57,3 +57,19 @@ test('unavailable CLI fails visibly instead of suggesting a GUI fallback', async
     }
   });
 });
+
+test('long ACP stream chunks retain every character without silent 4k clipping', async () => {
+  await withProject(async (dir) => {
+    const client = new CodePuppyAcpClient();
+    try {
+      await client.start(dir, process.execPath, [fixture]);
+      await client.prompt('long text');
+      const text = client.getSnapshot().events.filter((ev) => ev.kind === 'text').map((ev) => ev.text).join('');
+      assert.equal(text.length, 5013);
+      assert.equal(text, 'X'.repeat(5013));
+      assert.equal(client.getSnapshot().connection, 'ready');
+    } finally {
+      client.stop();
+    }
+  });
+});
