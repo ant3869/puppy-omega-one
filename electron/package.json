@@ -31,7 +31,7 @@
     "react-dom": "^18.3.1",
     "ws": "^8.18.0"
   },
-  "description": "Puppy Omega One desktop shell — Electron front end over the Code Puppy GUI server. Starter, not a finished app; see docs/FRONTEND.md.",
+  "description": "Chat-first coding agent workspace with an integrated Omega orchestration mode; installed Puppy GUI transport pending native session verification.",
   "devDependencies": {
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.12",
@@ -59,7 +59,7 @@
     "dist:mac": "electron-builder --mac",
     "dist:win": "electron-builder --win",
     "preview": "electron-vite preview",
-    "test": "tsx --test src/shared/workflow-events.test.ts src/main/services/workflow-transport.test.ts src/main/services/project-safety.test.ts src/main/services/gui-launch.test.ts src/shared/chat-access.test.ts src/main/services/webview-policy.test.ts src/main/services/diagnostics.test.ts src/main/services/draft-validation.test.ts src/shared/event-log.test.ts"
+    "test": "tsx --test src/shared/workflow-events.test.ts src/main/services/workflow-transport.test.ts src/main/services/project-safety.test.ts src/main/services/gui-launch.test.ts src/shared/chat-access.test.ts src/main/services/webview-policy.test.ts src/main/services/diagnostics.test.ts src/main/services/draft-validation.test.ts src/shared/event-log.test.ts src/renderer/src/pages/AgentWorkspacePage.test.tsx"
   },
   "type": "module",
   "version": "0.1.0"
