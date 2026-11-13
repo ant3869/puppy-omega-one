@@ -12,10 +12,17 @@ export interface WorkspaceBoundaries {
 
 function canonical(path: string): string {
   const absolute = resolve(path);
-  try {
-    return realpathSync.native(absolute);
-  } catch {
-    return absolute;
+  let candidate = absolute;
+  const missing: string[] = [];
+  while (true) {
+    try {
+      return resolve(realpathSync.native(candidate), ...missing);
+    } catch {
+      const parent = dirname(candidate);
+      if (parent === candidate) return absolute;
+      missing.unshift(basename(candidate));
+      candidate = parent;
+    }
   }
 }
 
