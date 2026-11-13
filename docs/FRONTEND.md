@@ -10,14 +10,16 @@
 
 ```text
 Puppy Omega One (Electron main + sandboxed React renderer)
-  ├─ Overview: interactive SVG workflow, Demo / Saved / Live
-  ├─ Compose: local draft with goal, done-when check, worker selection
+  ├─ Chat: first screen; regular coding-agent conversation
+  ├─ Omega loop: same conversation + interactive SVG worker flow
+  ├─ Draft Omega job: in-workspace goal/acceptance-check drawer
   ├─ Saved activity: searchable draft history, inspect/copy/open chat
   ├─ Event log: bounded, sanitized observation summaries and filters
   ├─ Worker briefs + project progress docs: local records/files
   ├─ Settings: reduce motion, four read-only endpoint probes
   ├─ Optional Live Monitor: explicit read-only WebSocket observer
-  └─ Harness chat: restricted <webview> showing installed puppy_gui
+  └─ Chat transport: restricted <webview> showing installed puppy_gui
+     (interim until verified first-party native backend)
                       │
           http://127.0.0.1:PORT (existing GUI only)
                       │
@@ -37,15 +39,16 @@ can perform actions inside that installed GUI if the user submits them.**
 
 | View | Works today | Limit |
 | --- | --- | --- |
-| Overview → Demo | Deterministic animation; pause/restart/reduced motion | Clearly labeled simulated; no real task dispatched |
-| Overview → Saved | Uses Omega's own `runs.json` data | Recorded statuses are **not live telemetry** |
-| Overview → Live | Bounded event summaries, worker states, errors, approval alerts | **Off by default**; session association unverified |
-| Compose run | Goal/acceptance check/project picker, worker selection, draft save/copy | Never sends a prompt or starts a worker |
+| Chat (default route) | Ordinary conversation in the central pane | Uses the separately installed GUI, not a native chat backend |
+| Omega loop → Demo | Same conversation beside deterministic animated graph | Clearly labeled simulated; no real task dispatched |
+| Omega loop → Saved | Uses Omega's own `runs.json` records | Recorded statuses are **not live telemetry** |
+| Omega loop → Live | Bounded event summaries, worker states, errors, approval alerts | **Off by default**; session association unverified |
+| Draft Omega job drawer | Goal, acceptance check, project picker, worker selection, draft save/copy | Never sends a prompt or starts a worker |
 | Saved activity | Search, full history, details, copy brief, open GUI chat | Older statuses remain unverified saved data |
 | Event log | Search/filter recent sanitized activity and opt in to monitoring | 30 in-memory entries; no raw transcript persistence, session binding unknown |
 | Worker briefs | Expandable local record view | No independent check verification |
 | Project docs | Reads selected `docs/progress.md`, `decisions.md`, `known-issues.md` | Does not write project docs |
-| Harness chat | Existing Puppy GUI in a guarded full page or dock | Requires separate installation; behavior depends on that GUI |
+| Chat transport | Existing Puppy GUI under one mounted workspace component | Requires separate installation; behavior belongs to that GUI |
 | Settings | Reduced-motion preference; read-only diagnostics; safety context | Not a global model/config editor |
 
 ### Session and telemetry caveat
@@ -77,7 +80,7 @@ Do not infer compatibility from a health 200 or browser chat alone.
 
 - Opening Omega performs **no GUI launch and no ChatBridge observer connect**.
   It checks whether a local GUI health endpoint responds.
-- In Harness chat, select a project folder. The Electron **main process**
+- In the Chat workspace, select a project folder. The Electron **main process**
   validates it against known home, global config, Python virtualenv and GUI
   source paths; installers reject redirecting links and protected targets.
 - **Start GUI in this project** explicitly invokes the existing
