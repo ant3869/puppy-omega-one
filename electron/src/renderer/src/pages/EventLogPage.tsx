@@ -54,10 +54,9 @@ export default function EventLogPage() {
     setPending(true);
     setError(null);
     try {
-      const result = monitoring
-        ? await window.omega.workflow.disconnect()
-        : await window.omega.workflow.connect();
-      setTelemetry(result);
+      if (monitoring) await window.omega.workflow.disconnect();
+      else await window.omega.workflow.connect();
+      // The pushed snapshot is authoritative; an IPC reply can be older.
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Monitor connection could not be changed.');
     } finally {
