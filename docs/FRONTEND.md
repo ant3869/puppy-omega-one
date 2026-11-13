@@ -83,6 +83,17 @@ The labels are *GUI-reported* and **not session-attested**: they do not prove
 the separate event monitor and embedded chat share an active runtime session.
 A server may still do internal bookkeeping while serving read endpoints.
 
+### Optional standalone protocol preflight
+
+`electron/scripts/probe-chatbridge.mjs` is a separate CLI, not a renderer
+feature or dispatch IPC. Without the explicit session-side-effects
+acknowledgement it makes no WebSocket connection. With acknowledgement,
+it opens one exact loopback `/ws/chat` socket, sends one `ping` action,
+discards unsolicited content and emits only a bounded status summary.
+**Connecting may still change server-side session state**; use a disposable
+installation and compare state manually. A pong does not establish
+session/project identity, approvals or safe native prompt sending.
+
 ### Session and telemetry caveat
 
 `electron/src/main/services/workflow-transport.ts` is an **observer** for
