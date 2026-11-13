@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -55,11 +55,22 @@ test('blocks site-packages in a custom Python virtual environment', () => {
     const packageSource = join(venv, 'lib', 'python3.13', 'site-packages', 'code_puppy');
     mkdirSync(packageSource, { recursive: true });
     mkdirSync(join(venv, 'bin'), { recursive: true });
+    writeFileSync(join(venv, 'pyvenv.cfg'), 'home = /usr/bin\n');
     assert.throws(() => assertProjectWorkspace(packageSource, { home, python }), /protected/);
     assert.throws(() => assertProjectWorkspace(venv, { home, python }), /protected/);
     const regular = join(home, 'projects', 'my-code');
     mkdirSync(regular, { recursive: true });
     assert.equal(assertProjectWorkspace(regular, { home, python }), regular);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('system Python in /bin does not block unrelated project workspaces', () => {
+  const root = mkdtempSync(join(tmpdir(), 'omega-system-python-'));
+  try {
+    const project = join(root, 'safe-project');
+    mkdirSync(project, { recursive: true });
+    assert.equal(assertProjectWorkspace(project, { home: join(root, 'home'), python: '/bin/python3' }), project);
+    assert.equal(assertProjectWorkspace(project, { home: join(root, 'home'), python: '/usr/bin/python3' }), project);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
