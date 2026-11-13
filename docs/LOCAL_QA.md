@@ -1,170 +1,51 @@
-# Safe local GUI verification checklist
+# Direct Code Puppy ACP — safe local verification
 
-This is a **manual checklist**, not evidence that any of the steps have
-already passed. Run it only in a disposable test project, with an installed
-Code Puppy / Puppy GUI environment you control. Back up important config and
-avoid real credentials in screenshots or logs.
+**Manual checklist, not a claim these checks passed.** Work only in a
+disposable project, outside Code Puppy core/config/venvs, with no secrets
+or important source changes.
 
-## Preparation
-
-- [ ] Use a fresh **disposable** project folder, outside Code Puppy core,
-  global config, GUI checkout and Python environments.
-- [ ] Verify the installed `launch_gui.py` path and Python interpreter.
-  Record exact local versions; do not assume the public source matches.
-- [ ] Keep a record of the config, agent and runtime directories you need
-  to protect. Do not put secrets into issue comments or public PRs.
-- [ ] Run `cd electron && npm test && npm run typecheck && npm run build`
-  and the platform-appropriate installer smoke tests, if available.
-
-## Windows Electron startup verification
-
-After a clean build, from `H:\projects\puppy-omega-one\electron`:
-
-```powershell
-npm test
-npm run typecheck
-npm run build
-npm run verify:build
-Test-Path .\out\main\index.js
-Test-Path .\out\preload\index.js
-Get-Content .\out\preload\index.js -TotalCount 8
-$env:ELECTRON_ENABLE_LOGGING='1'; npm run dev 2>&1 | Tee-Object "$env:TEMP\omega-electron-dev.log"
-```
-
-- [ ] Chat/Omega renders in the actual window; no blank dark content.
-- [ ] Main and CommonJS preload build artifacts exist.
-- [ ] The application loads `index.js`, not stale `index.mjs`.
-- [ ] Logs lack `Unable to load preload script`, `Cannot use import statement outside a module`, and `window.omega` undefined / React TypeError.
-- [ ] A nonexistent child under a protected GUI checkout is still rejected.
-
-The user reports an agent tested PR #20 and found it good. Original
-local logs/screenshots have not been independently reviewed here;
-CI artifact verification is **not** a replacement for this checklist.
-
-## Safe read-only preflight (optional, before active observation)
-
-From the project root, with Python 3 installed and an **existing**
-`puppy_gui` checkout:
-
-```powershell
-python .\tools\inspect_chatbridge.py --gui-root "C:\path\to\puppy_gui" --offline
-```
-
-With the local GUI **already running**, omit `--offline` to additionally
-perform only `GET /api/health` and `GET /openapi.json` on
-`http://127.0.0.1:8765`. Set `--origin http://127.0.0.1:PORT` for
-a custom loopback port. No prompts, approvals, WebSockets or session
-mutations are requested by the inspector.
-
-- [ ] Record whether the **installed** checkout contains
-  `code_puppy_gui/api/routes_chat.py`. This is a file-presence check,
-  **not proof** of the chat protocol.
-- [ ] Record loopback health and known REST route-presence flags.
-- [ ] Do **not** treat OpenAPI as evidence of a WebSocket route:
-  websocket endpoints are normally absent from that REST schema.
-
-## Explicit opt-in WebSocket ping check (disposable runtime only)
-
-**Do not run this on an existing real-work session.** Opening a WebSocket
-may create/change server-side session records even when no prompt is sent.
-First start the installed Puppy GUI against a disposable project that has
-no important workspace or session data. Record session/project state
-**before and after** the probe using the installed GUI, not Omega's guessed
-context.
+## Build
 
 From `electron`:
 
 ```powershell
-node .\scripts\probe-chatbridge.mjs --origin http://127.0.0.1:8765 --acknowledge-session-side-effects
+npm install; npm test; npm run typecheck; npm run build; npm run verify:build
 ```
 
-Without the acknowledgement flag the command opens **zero** connections.
-With it, the tool attempts one loopback-only `/ws/chat` connection,
-sends exactly `{"action":"ping"}`, ignores all non-pong frames, and closes
-after a bounded timeout or pong. The JSON report contains only outcome
-flags/counts, never server messages, credentials, transcript, or session IDs.
-A `pong_observed` result supports **only** a ping response from that
-instance. It does **not** verify session identity, project cwd, approval
-behavior, reconnects, multiple subscribers, or whether server state changed.
+Then `npm run dev` to open the Electron application. Verify the main/preload
+build paths are `out/main/index.js` and `out/preload/index.js`, and no blank
+window or preload error occurs.
 
-- [ ] Verify actual session count/identity and project context before/after
-  connecting; manually note any effects without publishing sensitive IDs.
-- [ ] Confirm only the fixed ping was sent and no prompts or tool approvals
-  were issued.
-- [ ] If the route is unavailable or side effects are unexpected, leave native
-  dispatch disabled and document only redacted findings.
+## Installed runtime ACP test
 
-## Observe without submitting a task
+- [ ] Confirm your installed `code-puppy --acp` advertises ACP and note its
+  version. If not on PATH, set `CODE_PUPPY_EXECUTABLE` to the exact executable.
+- [ ] Choose a disposable **project** folder and click **Start Code Puppy**.
+  The status should become READY and show a nonempty session ID in Settings.
+- [ ] Submit a harmless prompt, e.g. "Explain the files in this test folder
+  without changing any files." Check text streaming and the final turn status.
+- [ ] Verify no separate GUI process, webview, localhost server, or second
+  monitor WebSocket was started.
+- [ ] With an agent task in progress, request Cancel. Record whether it
+  stops and what the next prompt does; do not assume cancellation without
+  seeing a completed turn/stop reason.
+- [ ] Trigger a harmless approval-required action in the disposable folder.
+  The client should deny the request until the approval UI exists. Inspect
+  the folder afterwards; confirm no unexpected changes.
+- [ ] Choose a new project and ensure the old owned child was stopped;
+  no previous-session stream should appear under the new project.
+- [ ] Open Omega loop: Chat remains mounted; Demo is clearly simulated;
+  Saved entries stay draft-only. Enable Live and confirm the observed
+  turn/tool summary belongs to the same ACP chat session. Individual worker
+  success is **not** inferred from a finished turn.
+- [ ] Test missing Code Puppy executable, unexpected exit, invalid cwd and
+  disconnected state. Ensure errors appear without revealing credentials.
+- [ ] Test keyboard focus, responsive layout, reduced-motion Demo controls,
+  restart and app exit. Check that closing Omega stops only its owned child.
 
-- [ ] Launch Omega. Confirm it **does not spawn Code Puppy** or open an
-  extra ChatBridge WebSocket on startup.
-- [ ] Confirm **Chat opens first**; switch Chat → Omega loop → Chat
-  without resetting the same conversation surface. Check that Omega
-  mode retains a readable chat alongside the graph and the draft drawer
-  can be opened/closed without dispatching work.
-- [ ] In Omega Demo, Tab to the worker map. Confirm each worker lane has a
-  visible focus indicator and Enter/Space opens that worker's inspector.
-  Check the native RESEARCH / BUILD / TEST / REVIEW buttons with keyboard
-  and screen reader. Verify selected states match the inspector.
-- [ ] Enable **Reduce motion** in Settings; confirm Demo no longer advances
-  automatically and **Next demo stage** advances one illustrative phase per
-  click, while Restart resets the phase. Recheck with OS reduced-motion
-  enabled. Confirm Live monitor stays opt-in and no task is submitted.
-- [ ] Inspect Omega loop → Demo, pause/restart, reduced motion, and Saved runs.
-  Confirm every simulated/local status is labeled accordingly.
-- [ ] With an existing disposable-project GUI running, click **Refresh
-  context** in Chat. Compare the reported agent/model/saved-session names
-  against the installed GUI and verify no model, agent or session changed.
-  Test an unavailable route and confirm it displays **Not reported**;
-  no raw tools, credentials or transcript bodies appear in DevTools/IPC.
-- [ ] Switch to Omega mode and confirm the same context bar is present,
-  without implicitly refreshing it or opening the monitor socket.
-- [ ] In Settings, use **Run connection checks** only if the separate GUI is
-  already running. Record HTTP result codes, not response bodies.
-- [ ] In Omega loop → Live, explicitly select **Connect monitor**. Confirm
-  connection state and check whether the GUI creates/modifies a session.
-  **Stop monitor** must close the socket and stop retries.
-- [ ] Open the **Event log** from the sidebar. Filter by severity/worker,
-  search a known synthetic summary and check newest-first ordering. Confirm
-  the view does not persist a transcript and no connection opens until
-  you explicitly choose Connect monitor.
-- [ ] Try a disconnected GUI and a rejected/invalid configured port.
-  No worker should appear live because of a draft or stale event.
+## Safety boundary
 
-## Verify project and chat boundaries
-
-- [ ] Choose the disposable folder and explicitly start the existing GUI.
-  Verify the **actual runtime working directory**, not only Omega's launch
-  `cwd`; confirm the project-local Omega agents load.
-- [ ] With an already-running external GUI, confirm Omega warns that
-  session/project identity is unknown, and requires acknowledgement.
-- [ ] Check conversation pane in Chat and Omega mode; inspect focus, viewport sizing,
-  scroll, keyboard, select/copy, approval dialogs and the narrow-window layout.
-- [ ] Create a **harmless** brief (for example, list files in the disposable
-  project). Submit it manually in the embedded GUI only after confirming the
-  correct project and selected agent.
-- [ ] Check whether the read-only monitor reports the same turn/session.
-  Record event kinds/IDs in **redacted, synthetic** fixtures rather than
-  pasting actual prompts or API tokens into the public repo.
-- [ ] Disconnect/reconnect and cancel a harmless turn. Stale worker activity
-  must not resume as a new running task.
-
-## Verify isolation and shutdown
-
-- [ ] Check that Omega's installer/picker rejects protected paths, including
-  relevant virtualenvs, GUI checkouts and redirected symlinks/junctions.
-- [ ] Confirm no package installation, core patching or global config
-  mutation was initiated by Omega. A manually launched GUI may still perform
-  its own initialization writes: document those separately.
-- [ ] Close Omega. Confirm it stops only a GUI process it launched and never
-  kills an independently started server.
-- [ ] Test `npm run dist:win` or `npm run dist:mac` on a safe build machine;
-  verify app icon, install/uninstall and first launch. Package success is not
-  established by `npm run build` alone.
-
-## Completion evidence
-
-Record exact project path **only if non-sensitive**, installed runtime version,
-pass/fail for each item, redacted event-contract observations, screenshots and
-any failures in the tracking issue. Do **not** enable native prompt dispatch
-until session/workspace binding and approval ownership are proven.
+Even when ACP client permission requests are denied, Code Puppy plugins
+and tools may run under your account. This is not a filesystem sandbox.
+Never run destructive tests against global Code Puppy configuration or a
+real project. Save only redacted evidence in public PR comments.
