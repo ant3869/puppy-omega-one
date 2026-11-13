@@ -8,7 +8,7 @@ declare global {
       acp: {
         get: () => Promise<CodePuppySnapshot>;
         start: (projectDir: string) => Promise<CodePuppySnapshot>;
-        prompt: (text: string) => Promise<CodePuppySnapshot>;
+        prompt: (text: string, expectedProjectDir: string) => Promise<CodePuppySnapshot>;
         cancel: () => Promise<void>;
         stop: () => Promise<void>;
         subscribe: (listener: (snapshot: CodePuppySnapshot) => void) => () => void;
