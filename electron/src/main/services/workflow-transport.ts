@@ -44,6 +44,7 @@ export class WorkflowTransport {
   start(): void {
     if (!this.stopped) return;
     this.stopped = false;
+    this.publish({ ...this.snapshot, monitoring: true });
     this.connect();
   }
 
@@ -59,7 +60,11 @@ export class WorkflowTransport {
       previous.removeAllListeners();
       previous.terminate();
     }
-    this.status('disconnected');
+    this.publish({
+      ...changeWorkflowConnection(this.snapshot, 'disconnected'),
+      monitoring: false,
+      activity: 'Live observation stopped; no event connection'
+    });
   }
 
   private reconnect(): void {
