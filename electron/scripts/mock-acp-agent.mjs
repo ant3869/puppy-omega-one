@@ -27,10 +27,11 @@ process.stdin.on('data', (chunk) => {
     } else if (frame.method === 'session/prompt') {
       waitingPrompt = frame.id;
       send({ method: 'session/update', params: { sessionId, update: {
-        sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Direct ACP works' }
+        sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: frame.params.prompt[0].text === 'long text' ? 'X'.repeat(5013) : 'Direct ACP works' }
       } } });
-      send({ id: 950, method: 'session/request_permission', params: { sessionId, toolCall: { toolCallId: 'fixture-tool', title: 'Mock write' }, options: [] } });
-    } else if (frame.id === 950 && frame.result) {
+      // Bidirectional ACP request IDs legitimately overlap: use the prompt's ID.
+      send({ id: frame.id, method: 'session/request_permission', params: { sessionId, toolCall: { toolCallId: 'fixture-tool', title: 'Mock write' }, options: [] } });
+    } else if (frame.id === waitingPrompt && frame.result && frame.result.outcome) {
       if (frame.result.outcome?.outcome !== 'cancelled') {
         send({ id: waitingPrompt, error: { code: -32000, message: 'Unexpected approval' } });
       } else {
