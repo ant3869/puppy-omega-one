@@ -8,7 +8,7 @@ const api = {
   acp: {
     get: (): Promise<CodePuppySnapshot> => ipcRenderer.invoke('acp:get'),
     start: (projectDir: string): Promise<CodePuppySnapshot> => ipcRenderer.invoke('acp:start', projectDir),
-    prompt: (text: string): Promise<CodePuppySnapshot> => ipcRenderer.invoke('acp:prompt', text),
+    prompt: (text: string, expectedProjectDir: string): Promise<CodePuppySnapshot> => ipcRenderer.invoke('acp:prompt', text, expectedProjectDir),
     cancel: (): Promise<void> => ipcRenderer.invoke('acp:cancel'),
     stop: (): Promise<void> => ipcRenderer.invoke('acp:stop'),
     subscribe: (listener: (snapshot: CodePuppySnapshot) => void): Unsub => {
