@@ -8,6 +8,15 @@ artifact or installed-runtime QA is implied by that version.
 
 ## Unreleased — repository main (2026-11-12)
 
+### Native integration evidence collection
+
+- **PR #18:** Added an explicit, read-only local ChatBridge
+  compatibility inspector. It checks optional GUI source-file presence
+  and makes at most two GET-only requests to a validated loopback
+  health/OpenAPI endpoint, with blocked redirects, no raw API payload
+  storage, and no WebSocket/prompt/session writes. Added Python tests
+  and CI coverage. This **does not** certify native chat integration.
+
 ### Product direction and conversation-first workspace
 
 - **Chat-first harness redesign (PR #17):** Chat is now the application's
