@@ -1,13 +1,30 @@
-# Known issues
+# Known issues (Omega project template)
 
-Gotchas and their fixes. The orchestrator reads this at session start.
+Track **problems observed in this project**, with reproducible
+conditions, fixes and exact verification commands. Do not confuse the
+repository's historical issue tracker with local project results.
 
-## Issues
+## Before the first run
 
-- (none recorded yet — add one every time something bites, with the fix)
+- **Model alias availability is unverified.** The template strings
+  may not exist in your installed Code Puppy provider list. Use
+  `/model` and check before attempting agent delegation.
+- **Runtime project/session identity is unverified.** Opening the
+  separately installed Puppy GUI from a chosen folder does not by
+  itself prove the runtime remained in that folder. Confirm it
+  before giving any worker write-capable tasks.
+- **Core protection is not OS sandboxing.** Agent shell permissions
+  can access paths outside the project. Review permissions and avoid
+  destructive commands until your test environment is isolated.
 
-## Template for a new entry
+## Project incidents
 
-- **Date — Symptom:** what happened.
-  **Fix:** what fixed it / what to do instead.
-  **File touched:** which skill or AGENTS.md line changed, if any.
+- (No incident recorded yet.)
+
+## Incident template
+
+- **Date / symptom:**
+- **How to reproduce safely:**
+- **Observed impact:**
+- **Fix or mitigation:**
+- **Exact verification command and result:**
