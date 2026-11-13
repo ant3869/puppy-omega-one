@@ -1,19 +1,25 @@
-# Decisions
+# Project decisions (Omega template)
 
-What's settled, with the date and why. The orchestrator reads this at
-session start so it doesn't re-litigate settled questions.
+Use this file for decisions made **in the selected project**. The
+statements below are default template constraints; do not assume an
+unverified model, provider rate, or runtime capability is available.
 
-## Decisions
+## Seeded decisions
 
-- 2026-11-12 — Orchestrator runs on Opus, builder and reviewer on
-  Sonnet, tester and researcher on Haiku. Reason: Sonnet scores 70.6%
-  vs Haiku's 39.2% on agentic coding (Terminal-Bench 4.0); Haiku does
-  the checkable, read-only work. See `docs/MODELS.md`. Cost is
-  secondary (work pays); performance decides the tier.
-- 2026-11-12 — Optional user-level compaction at 50% (`compaction_threshold=0.5`), not
-  Omega's 40%, because Code Puppy clamps the value to [0.5, 0.95].
-- 2026-11-12 — Rules live in `AGENTS.md`, not `CLAUDE.md`. Code Puppy
-  never reads `CLAUDE.md`; `.claude/agents/` and the
-  `CLAUDE_CODE_*` env vars are dead in Code Puppy.
-- 2026-11-12 — The orchestrator has no write tools. Session-end doc
-  updates go through `omega-builder`; `omega-researcher` proposes entries read-only.
+- **Project-scoped changes:** work only inside the selected project.
+  Never patch Code Puppy core, global config, its Python environment or
+  Puppy GUI source as part of an Omega task.
+- **Verified model aliases first:** shipped Opus/Sonnet/Haiku alias
+  values are examples. Run `/model` in the installed runtime and record
+  actual working aliases before submitting a goal.
+- **Runnability over claims:** worker reports and local draft records
+  are not completion evidence. The orchestrator reruns the acceptance
+  check before reporting a pass.
+- **User controls global settings:** the Omega installer does not
+  modify `puppy.cfg`, compaction or provider configuration.
+- **No blind dispatch:** existing GUI chat is used for manual execution
+  until session and project binding can be independently verified.
+
+## Project-specific decisions
+
+- (Add dated decisions after a real project session.)
