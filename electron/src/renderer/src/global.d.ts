@@ -23,6 +23,8 @@ declare global {
       };
       workflow: {
         get: () => Promise<WorkflowTelemetry>;
+        connect: () => Promise<WorkflowTelemetry>;
+        disconnect: () => Promise<WorkflowTelemetry>;
         subscribe: (listener: (snapshot: WorkflowTelemetry) => void) => () => void;
       };
       runs: {
