@@ -380,6 +380,12 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 
 @keyframes omega-flow { to { stroke-dashoffset: -64; } }
 @keyframes omega-breathe { 50% { opacity: .4; filter: brightness(1.5); } }
+.omega-diagram.is-paused .omega-connection-energy,
+.omega-diagram.is-paused .omega-connection-fail,
+.omega-diagram.is-paused .omega-junction,
+.omega-diagram.is-paused .omega-pulse-dot {
+  animation-play-state: paused !important;
+}
 .reduce-motion .omega-connection-energy.is-lit,
 .reduce-motion .omega-connection-fail.is-lit,
 .reduce-motion .omega-junction,
