@@ -1,0 +1,34 @@
+name: One-time PR15 branch cleanup
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/prune-pr15-once.yml'
+permissions:
+  contents: write
+  pull-requests: read
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete only the reviewed, merged PR15 branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          branch="docs/current-state-changelog-audit"
+          inspected="9e8e9669bd77007dccff36f2a526d3e71b99fc4c"
+          pr="$(gh api "repos/$REPO/pulls/15")"
+          [[ "$(jq -r '.merged' <<< "$pr")" == true ]]
+          [[ "$(jq -r '.head.ref' <<< "$pr")" == "$branch" ]]
+          [[ "$(jq -r '.head.sha' <<< "$pr")" == "$inspected" ]]
+          gh api "repos/$REPO/pulls?state=open&per_page=100" > "$RUNNER_TEMP/active-prs.json"
+          if jq -e --arg branch "$branch" 'any(.[]; .head.ref == $branch)' "$RUNNER_TEMP/active-prs.json" >/dev/null; then
+            echo "Branch still used by open PR" >&2; exit 1
+          fi
+          sha="$(gh api "repos/$REPO/git/ref/heads/$branch" --jq '.object.sha')"
+          [[ "$sha" == "$inspected" ]] || { echo "Ref changed; aborting" >&2; exit 1; }
+          gh api --method DELETE "repos/$REPO/git/refs/heads/$branch"
+          echo "Deleted merged PR15 branch. No source changed."
