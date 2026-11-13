@@ -8,6 +8,20 @@ artifact or installed-runtime QA is implied by that version.
 
 ## Unreleased — repository main (2026-11-13)
 
+### Explicit local ChatBridge ping preflight
+
+- Added `electron/scripts/probe-chatbridge.mjs` as a standalone, opt-in
+  local WebSocket compatibility probe. It requires acknowledgement of possible
+  server-side session effects, connects only to an exact loopback origin,
+  sends one fixed `ping` action and discards all other incoming content.
+- Added bounded timeouts, frame limits and no-redirect configuration, plus
+  negative tests for unsafe origins, no-acknowledgement, silent connections,
+  redirects and accidental transcript exposure.
+- A pong checks only the live route's response to ping. Session/project
+  identity, approvals, connection side effects and native dispatch remain
+  unverified; nothing about the installed Code Puppy runtime is modified by
+  the repository change.
+
 ### Workflow keyboard and reduced-motion controls
 
 - Added native worker-selection buttons alongside the interactive SVG map,
