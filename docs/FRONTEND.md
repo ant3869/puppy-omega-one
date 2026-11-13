@@ -52,6 +52,20 @@ can perform actions inside that installed GUI if the user submits them.**
 | Settings | Reduced-motion preference; read-only diagnostics; safety context | Not a global model/config editor |
 | Shared chat runtime context bar | Explicit read-only refresh of agent, model and saved-session labels | Not live selection controls, not verified to be the same WebSocket session |
 
+### Omega workflow keyboard and motion controls
+
+The SVG worker lanes remain pointer-selectable and keyboard-operable (Tab,
+Enter or Space), with visible focus styling. A native worker-button strip
+duplicates lane selection in the inspector for keyboard and assistive-technology
+users without relying on SVG interaction. The map is an accessible group rather
+than an image that hides nested controls.
+
+With **Reduce motion** enabled, automatic Demo phase progression stops, and
+**Next demo stage** advances one simulated phase at a time; Restart still
+returns to the beginning. Both controls affect illustrative Demo data only,
+not Code Puppy execution or the opt-in Live Monitor. Manual screen-reader,
+keyboard and contrast QA is still required.
+
 ### Read-only runtime context bar
 
 Chat and Omega mode share a native **Agent / Model / Saved session** header
