@@ -73,3 +73,20 @@ test('long ACP stream chunks retain every character without silent 4k clipping',
     }
   });
 });
+
+test('agent closing stdin produces a recoverable ACP error, not an uncaught EPIPE', async () => {
+  await withProject(async (dir) => {
+    const client = new CodePuppyAcpClient();
+    try {
+      const started = await client.start(dir, process.execPath, [fixture, '--close-stdin']);
+      assert.equal(started.connection, 'ready');
+      // Allow the fixture to close its read end while keeping the process alive.
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      await assert.rejects(client.prompt('hello after stdin closes'), /Code Puppy|connection|prompt/i);
+      assert.equal(client.getSnapshot().connection, 'error');
+      assert.match(client.getSnapshot().error || '', /input pipe|process/i);
+    } finally {
+      client.stop();
+    }
+  });
+});
