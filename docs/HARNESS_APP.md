@@ -64,6 +64,13 @@ This checks only local source-file presence and GET-only health/OpenAPI
 route declarations. It does **not** open `/ws/chat` or attest project
 cwd, agent selections, session/approval ownership or response events.
 
+A separate **opt-in ping-only** CLI, `electron/scripts/probe-chatbridge.mjs`,
+can test one real local WebSocket response after the user acknowledges that
+connecting may itself create/change server sessions. It must be run only
+against a disposable installed GUI project, and its bounded report discards
+all unsolicited frame content. A pong is not evidence of session ownership,
+correct project cwd, approvals, or connection-side-effect safety.
+
 This is a safe **first step**, not Phase A completion. The installed
 runtime's actual WebSocket/session behavior still needs manual verification
 with a disposable project and redacted fixtures.
