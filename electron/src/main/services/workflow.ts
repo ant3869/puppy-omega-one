@@ -9,6 +9,15 @@ let unsubscribe: (() => void) | null = null;
 
 export function registerWorkflowIpc(getWindow: () => BrowserWindow | null): void {
   ipcMain.handle('workflow:get', (): WorkflowTelemetry => transport?.getState() ?? initialWorkflow());
+  ipcMain.handle('workflow:connect', (): WorkflowTelemetry => {
+    if (!transport) throw new Error('Live monitor unavailable: invalid GUI port.');
+    transport.start();
+    return transport.getState();
+  });
+  ipcMain.handle('workflow:disconnect', (): WorkflowTelemetry => {
+    transport?.stop();
+    return transport?.getState() ?? initialWorkflow();
+  });
   unsubscribe?.();
   unsubscribe = transport?.subscribe((snapshot) => {
     const window = getWindow();
@@ -16,10 +25,6 @@ export function registerWorkflowIpc(getWindow: () => BrowserWindow | null): void
       window.webContents.send('workflow:changed', snapshot);
     }
   }) ?? null;
-}
-
-export function startWorkflowEvents(): void {
-  transport?.start();
 }
 
 export function stopWorkflowEvents(): void {
