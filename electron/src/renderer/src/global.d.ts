@@ -4,6 +4,7 @@
 
 import type { OmegaRun, PuppyStatus } from '@shared/types';
 import type { WorkflowTelemetry } from '@shared/workflow-events';
+import type { GuiDiagnostics } from '@shared/gui-diagnostics';
 
 declare global {
   interface Window {
@@ -17,6 +18,7 @@ declare global {
         listSessions: () => Promise<unknown>;
         getActiveSession: () => Promise<unknown>;
         getCost: () => Promise<unknown>;
+        diagnostics: () => Promise<GuiDiagnostics>;
         sendPrompt: (prompt: string) => Promise<unknown>;
       };
       workflow: {
