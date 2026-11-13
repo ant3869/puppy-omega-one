@@ -110,3 +110,9 @@ From Overview, choose **Open chat beside flow**. The real installed Puppy GUI ch
 A project must be selected before chat access. If the GUI is already running externally, or its recorded launch project differs, the chat stays behind an explicit **unverified workspace** acknowledgement. This does not restrict what Code Puppy's shell tools can access: review the actual runtime folder before running write-capable work. The Omega shell does not send prompts or approvals by itself.
 
 Embedded webview navigations and redirects are restricted to the configured loopback GUI origin; unsafe external/file/script URLs are denied. The tests run with `npm test`, including chat access and webview URL policy cases.
+
+## Checking the local GUI without changing it
+
+Go to **Settings → Read-only runtime diagnostics → Run connection checks**. Omega sends only four allowlisted GET requests to the configured loopback GUI: health, agents, models, and active session. It also displays the current event-observer connection status and whether Omega launched the GUI for a chosen workspace. Endpoints that return JSON show **Responded**, not “verified compatible.”
+
+This check cannot confirm that an installed GUI supports native programmatic chat-send, and it does not send a prompt or approve tools. No response bodies, transcripts or secret error text are persisted by the diagnostic report. The tests use a disposable loopback HTTP server (`npm test`).
