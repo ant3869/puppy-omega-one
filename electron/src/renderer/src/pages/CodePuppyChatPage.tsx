@@ -12,23 +12,23 @@ export default function CodePuppyChatPage({
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const connected = snapshot.connection === 'ready' || snapshot.connection === 'working';
+  const sessionActive = snapshot.connection === 'ready' || snapshot.connection === 'working';
+  const matchingSession = sessionActive && Boolean(projectDir && snapshot.projectDir === projectDir);
+  const projectMismatch = sessionActive && !matchingSession;
+  const canSend = matchingSession && snapshot.connection === 'ready';
 
   async function chooseProject() {
     setError(null);
     try {
       const path = await window.omega.app.pickProject();
-      if (path) {
-        if (connected) await window.omega.acp.stop();
-        onProjectChange(path);
-      }
+      if (path) onProjectChange(path);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not choose project');
     }
   }
 
   async function start() {
-    if (!projectDir || busy) return;
+    if (!projectDir || busy || snapshot.connection === 'working' || snapshot.connection === 'connecting') return;
     setBusy(true);
     setError(null);
     try {
@@ -42,12 +42,12 @@ export default function CodePuppyChatPage({
 
   async function send() {
     const prompt = text.trim();
-    if (!prompt || snapshot.connection !== 'ready' || busy) return;
+    if (!prompt || !canSend || !projectDir || busy) return;
     setText('');
     setError(null);
     try {
       // The request stays in progress while ACP streams updates to the UI.
-      await window.omega.acp.prompt(prompt);
+      await window.omega.acp.prompt(prompt, projectDir);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Code Puppy did not complete the prompt');
     }
@@ -80,16 +80,22 @@ export default function CodePuppyChatPage({
         <button type="button" className="omega-button omega-button-secondary" onClick={() => void chooseProject()} disabled={busy || snapshot.connection === 'working' || snapshot.connection === 'connecting'}>
           <FolderOpen size={14}/> {projectDir ? 'Change' : 'Choose project'}
         </button>
-        {connected ? (
+        {sessionActive && !projectMismatch || snapshot.connection === 'working' ? (
           <button type="button" className="omega-button omega-button-secondary" onClick={() => void stop()}>
             <StopCircle size={14}/> Stop
           </button>
         ) : (
-          <button type="button" className="omega-button omega-button-primary" onClick={() => void start()} disabled={!projectDir || busy || snapshot.connection === 'connecting'}>
-            <Play size={14}/> {snapshot.connection === 'connecting' ? 'Connecting…' : 'Start Code Puppy'}
+          <button type="button" className="omega-button omega-button-primary" onClick={() => void start()} disabled={!projectDir || busy || snapshot.connection === 'working' || snapshot.connection === 'connecting'}>
+            <Play size={14}/> {snapshot.connection === 'connecting' ? 'Connecting…' : projectMismatch ? 'Switch to selected project' : 'Start Code Puppy'}
           </button>
         )}
       </div>
+      {projectMismatch && (
+        <p role="alert" className="omega-gui-message is-error">
+          Selected project differs from the active Code Puppy session ({snapshot.projectDir}).
+          Sending is blocked until you start Code Puppy for the selected project.
+        </p>
+      )}
       <div className="omega-native-chat-messages" role="log" aria-label="Code Puppy conversation" aria-live="polite">
         {snapshot.events.length === 0 && (
           <div className="omega-native-chat-empty">
@@ -111,9 +117,9 @@ export default function CodePuppyChatPage({
           <textarea
             rows={3}
             aria-label="Message to Code Puppy"
-            placeholder={connected ? 'Ask Code Puppy…' : 'Start a Code Puppy session to begin…'}
+            placeholder={canSend ? 'Ask Code Puppy…' : 'Start Code Puppy for the selected project to begin…'}
             value={text}
-            disabled={!connected || snapshot.connection === 'working'}
+            disabled={!canSend}
             onChange={(event) => setText(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter' && !event.shiftKey) {
@@ -127,7 +133,7 @@ export default function CodePuppyChatPage({
               <Square size={14}/> Cancel
             </button>
           ) : (
-            <button type="button" className="omega-button omega-button-primary" disabled={snapshot.connection !== 'ready' || !text.trim()} onClick={() => void send()}>
+            <button type="button" className="omega-button omega-button-primary" disabled={!canSend || !text.trim()} onClick={() => void send()}>
               <Send size={14}/> Send
             </button>
           )}
