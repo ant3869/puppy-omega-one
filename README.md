@@ -6,11 +6,14 @@
 Electron desktop console for drafting briefs, viewing a simulated or observed
 workflow, browsing local history, and using the existing Puppy GUI chat.
 
-**Project status:** The desktop UI and its tests are implemented, but **native
-automatic dispatch and installed-GUI session verification are not complete**.
+**Project status:** The desktop app opens directly into a **normal agent chat**.
+**Omega loop** is a mode of the same workspace, with the conversation and
+worker flow side by side. The current chat transport is still the existing
+embedded Puppy GUI; **native session-bound chat and automatic dispatch are
+not yet verified or implemented**.
 This is not a hardened agent sandbox or a verified production release.
 
-[Current capabilities](docs/STATUS.md) · [Changelog](CHANGELOG.md) ·
+[Harness app design](docs/HARNESS_APP.md) · [Current capabilities](docs/STATUS.md) · [Changelog](CHANGELOG.md) ·
 [Architecture](docs/ARCHITECTURE.md) · [Desktop details](docs/FRONTEND.md) ·
 [Manual QA](docs/LOCAL_QA.md) ·
 [Progress tracker](https://github.com/ant3869/puppy-omega-one/issues/4)
@@ -81,19 +84,20 @@ same as creating/test-running a platform installer; see
 
 | Desktop view | What actually happens |
 | --- | --- |
-| **Overview** | Animated workflow; Demo is explicitly simulated |
-| **Compose run** | Creates a **local draft** with a project workspace and acceptance check |
+| **Chat** | First-screen, ordinary conversation using the installed GUI chat transport |
+| **Omega loop** | Switches the same workspace into conversation + animated worker graph mode |
+| **Draft Omega job** | Opens a workspace drawer to prepare a local goal/acceptance-check draft; never auto-sends |
 | **Saved activity** | Search, inspect, copy stored briefs, open chat |
 | **Event log** | Filter/search up to 30 recent sanitized in-memory monitor summaries; never raw transcripts |
 | **Worker briefs / Project docs** | Read local Omega records and project documents |
-| **Harness chat** | Embeds the **real separately installed Puppy GUI**; sending is done inside its UI |
+| **Conversation transport** | Temporarily embeds the **separately installed Puppy GUI**; message send, tools and approvals remain in that GUI until a verified native adapter exists |
 | **Settings** | Reduced motion, read-only local endpoint diagnostics and safety information |
 | **Live** | **Opt-in** read-only WebSocket observer; actual chat/session association unverified |
 
-**No automatic runtime side effects at startup:** Omega does not launch the
+**No automatic runtime launch/monitor connection at startup:** Omega does not launch the
 GUI or open the additional Live Monitor WebSocket just because the app opens.
-Choose a safe project and explicitly start the existing GUI in Harness Chat.
-To observe events, use Overview → Live → **Connect monitor**; **Stop monitor**
+Choose a safe project and explicitly start the existing GUI in the Chat workspace.
+To observe events, use Omega loop → Live → **Connect monitor**; **Stop monitor**
 closes the observer and cancels retries. Those events are never treated as
 verified check passes just because a worker responded.
 
