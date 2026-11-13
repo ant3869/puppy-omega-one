@@ -65,6 +65,16 @@ async function resolveLaunchGui(): Promise<string | null> {
   return null;
 }
 
+async function validateProject(project: string): Promise<string> {
+  const resolvedGui = await resolveLaunchGui();
+  return assertProjectWorkspace(project, {
+    configHome: process.env.XDG_CONFIG_HOME,
+    python: resolvePython(),
+    guiDir: process.env.PUPPY_GUI_DIR,
+    guiLaunch: resolvedGui ?? process.env.PUPPY_GUI_LAUNCH
+  });
+}
+
 async function fileExists(p: string): Promise<boolean> {
   try {
     await fs.access(p);
@@ -90,12 +100,7 @@ async function healthOk(timeoutMs = 2000): Promise<boolean> {
 }
 
 export async function ensureServer(requestedProject: string): Promise<PuppyStatus> {
-  const workspace = assertProjectWorkspace(requestedProject, {
-    configHome: process.env.XDG_CONFIG_HOME,
-    python: resolvePython(),
-    guiDir: process.env.PUPPY_GUI_DIR,
-    guiLaunch: process.env.PUPPY_GUI_LAUNCH
-  });
+  const workspace = await validateProject(requestedProject);
   if (await healthOk()) {
     return launchedWorkspace === workspace && spawnedByUs
       ? currentStatus(true)
@@ -252,18 +257,11 @@ export function registerPuppyIpc(getWindow: () => BrowserWindow | null) {
   });
 
   ipcMain.handle('runs:list', () => loadRuns());
-  ipcMain.handle('runs:save', (_e, run: OmegaRun) => {
+  ipcMain.handle('runs:save', async (_e, run: OmegaRun) => {
     if (!run || typeof run.id !== 'string' || !run.id || !Array.isArray(run.briefs)) {
       throw new Error('Invalid run record');
     }
-    if (run.projectDir !== null) {
-      assertProjectWorkspace(run.projectDir, {
-        configHome: process.env.XDG_CONFIG_HOME,
-        python: resolvePython(),
-        guiDir: process.env.PUPPY_GUI_DIR,
-        guiLaunch: process.env.PUPPY_GUI_LAUNCH
-      });
-    }
+    if (run.projectDir !== null) await validateProject(run.projectDir);
     const write = runWrites.then(async () => {
       const runs = await loadRuns();
       const idx = runs.findIndex((r) => r.id === run.id);
@@ -281,21 +279,11 @@ export function registerPuppyIpc(getWindow: () => BrowserWindow | null) {
     if (res.canceled) return null;
     const selected = res.filePaths[0];
     if (!selected) return null;
-    return assertProjectWorkspace(selected, {
-      configHome: process.env.XDG_CONFIG_HOME,
-      python: resolvePython(),
-      guiDir: process.env.PUPPY_GUI_DIR,
-      guiLaunch: process.env.PUPPY_GUI_LAUNCH
-    });
+    return validateProject(selected);
   });
 
   ipcMain.handle('docs:read', async (_e, projectDir: string) => {
-    const workspace = assertProjectWorkspace(projectDir, {
-      configHome: process.env.XDG_CONFIG_HOME,
-      python: resolvePython(),
-      guiDir: process.env.PUPPY_GUI_DIR,
-      guiLaunch: process.env.PUPPY_GUI_LAUNCH
-    });
+    const workspace = await validateProject(projectDir);
     const out: Record<string, string | null> = {};
     for (const name of ['progress.md', 'decisions.md', 'known-issues.md']) {
       try {
