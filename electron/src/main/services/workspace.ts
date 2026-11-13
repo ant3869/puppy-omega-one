@@ -116,7 +116,14 @@ export function registerWorkspaceIpc(getWindow: () => BrowserWindow | null) {
     const workspace = await validateProject(projectDir);
     return acp.start(workspace);
   });
-  ipcMain.handle('acp:prompt', (_event, text: string) => acp.prompt(text));
+  ipcMain.handle('acp:prompt', async (_event, text: string, expectedProjectDir: string) => {
+    const workspace = await validateProject(expectedProjectDir);
+    const active = acp.getSnapshot();
+    if (active.projectDir !== workspace || !active.sessionId) {
+      throw new Error('Selected project does not match the active Code Puppy session');
+    }
+    return acp.prompt(text);
+  });
   ipcMain.handle('acp:cancel', () => acp.cancel());
   ipcMain.handle('acp:stop', () => acp.stop());
 
