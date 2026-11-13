@@ -69,9 +69,9 @@ function finishRunningWorkers(
   return Object.fromEntries(WORKER_KEYS.map((key) => [
     key,
     workers[key].phase === 'running'
-      ? [key, { ...workers[key], phase: status, detail: message }]
-      : [key, workers[key]]
-  ].map((pair) => pair)) as Record<WorkerKey, WorkerSignal>;
+      ? { ...workers[key], phase: status, detail: message }
+      : workers[key]
+  ])) as Record<WorkerKey, WorkerSignal>;
 }
 
 export function changeWorkflowConnection(previous: WorkflowTelemetry, connection: ConnectionState): WorkflowTelemetry {
