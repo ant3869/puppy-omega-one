@@ -1,119 +1,184 @@
-// pages/LivePage.tsx
-// Puppy Omega One — live run view: one card per worker delegation record.
-// Status comes from the saved run records (runs.json) plus a raw poll of the
-// active puppy_gui session. Runtime event telemetry appears on Overview → Live;
-// these local saved-run cards are not equivalent to runtime events.
-
-import React, { useEffect, useState } from 'react';
-import { tokens } from '../lib/tokens';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Check, Clipboard, Clock3, FileText, FolderOpen, MessageSquare, RefreshCw, Search } from 'lucide-react';
 import type { OmegaRun, RunStatus } from '@shared/types';
 
-const STATUS_COLOR: Record<RunStatus, string> = {
-  draft: tokens.status.idle,
-  queued: tokens.status.idle,
-  running: tokens.status.running,
-  requires_approval: tokens.accent.primary,
-  completed: tokens.status.pass,
-  incomplete: tokens.accent.primary,
-  failed: tokens.status.fail,
-  canceled: tokens.status.idle,
-  unknown: tokens.status.fail
+const STATUS_LABEL: Record<RunStatus, string> = {
+  draft: 'Draft', queued: 'Queued (recorded)', running: 'Running (recorded)',
+  requires_approval: 'Approval (recorded)', completed: 'Completed (recorded)',
+  incomplete: 'Incomplete (recorded)', failed: 'Failed (recorded)',
+  canceled: 'Canceled (recorded)', unknown: 'Unknown'
 };
 
-export default function LivePage() {
+function formatTime(value: string): string {
+  const time = new Date(value);
+  return Number.isNaN(time.getTime()) ? 'Unknown date' : time.toLocaleString();
+}
+
+function briefText(run: OmegaRun): string | null {
+  const text = run.briefs.find((record) => record.brief?.trim())?.brief;
+  return text?.trim() ? text : null;
+}
+
+export default function LivePage({ onOpenChat }: { onOpenChat: () => void }) {
   const [runs, setRuns] = useState<OmegaRun[]>([]);
-  const [session, setSession] = useState<unknown>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      try {
-        const r = await window.omega.runs.list();
-        if (alive) setRuns(r);
-      } catch {
-        // Local run history may be unavailable or corrupt.
+    let active = true;
+    void window.omega.runs.list().then((records) => {
+      if (active) {
+        setRuns(records);
+        setError(null);
       }
-      try {
-        const s = await window.omega.puppy.getActiveSession();
-        if (alive) setSession(s);
-      } catch {
-        if (alive) setSession(null);
-      }
-    };
-    void load();
-    const t = setInterval(load, 5000);
-    return () => {
-      alive = false;
-      clearInterval(t);
-    };
+    }).catch((cause) => {
+      if (active) setError(cause instanceof Error ? cause.message : 'Saved history is unavailable.');
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
 
-  const run = runs[0] ?? null;
+  async function refresh() {
+    setBusy(true);
+    setError(null);
+    try {
+      const records = await window.omega.runs.list();
+      setRuns(records);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Saved history is unavailable.');
+    } finally {
+      setBusy(false);
+    }
+  }
 
-  if (!run) {
-    return (
-      <p className="text-sm" style={{ color: tokens.text.secondary }}>
-        No runs yet. Start one from the Run page.
-      </p>
-    );
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return needle
+      ? runs.filter((run) => [run.goal, run.doneWhen, run.projectDir ?? '', run.id]
+          .some((value) => value.toLowerCase().includes(needle)))
+      : runs;
+  }, [runs, query]);
+
+  const selected = filtered.find((run) => run.id === selectedId) ?? filtered[0] ?? null;
+  const selectedBrief = selected ? briefText(selected) : null;
+
+  async function copyBrief() {
+    if (!selectedBrief) return;
+    setCopied(false);
+    try {
+      await navigator.clipboard.writeText(selectedBrief);
+      setCopied(true);
+      setError(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not copy the brief.');
+    }
   }
 
   return (
-    <div className="max-w-3xl flex flex-col gap-4">
-      <div>
-        <h2 className="text-base font-medium" style={{ color: tokens.text.primary }}>{run.goal}</h2>
-        <p className="text-xs mt-1" style={{ color: tokens.text.secondary }}>
-          Done when: {run.doneWhen} · status: {run.status} · composed{' '}
-          {new Date(run.startedAt).toLocaleString()}
-        </p>
-      </div>
-
-      {run.status === 'draft' && (
-        <p className="text-xs" style={{ color: tokens.text.secondary }}>
-          Draft only — this brief has not been sent to Code Puppy. Copy it from Run and paste into the GUI.
+    <section className="omega-history">
+      <header className="omega-history-header">
+        <div>
+          <div className="omega-eyebrow"><Clock3 size={13} /> LOCAL RECORDS / NOT TELEMETRY</div>
+          <h2>Saved activity</h2>
+          <p>Browse briefs saved by Omega. A draft is not a dispatched run, and saved statuses are not independently verified against Code Puppy.</p>
+        </div>
+        <button type="button" className="omega-button omega-button-secondary" onClick={() => void refresh()} disabled={busy}>
+          <RefreshCw size={14} /> {busy ? 'Refreshing…' : 'Refresh'}
+        </button>
+      </header>
+      <label className="omega-history-search">
+        <Search size={16} aria-hidden="true" />
+        <span className="sr-only">Search saved activity</span>
+        <input
+          type="search"
+          placeholder="Search goal, project, or acceptance criteria…"
+          value={query}
+          onChange={(event) => { setQuery(event.target.value); setCopied(false); }}
+        />
+        <span>{filtered.length} / {runs.length}</span>
+      </label>
+      {error && <p className="omega-history-error" role="alert">{error}</p>}
+      {loading && <p className="omega-history-empty" role="status">Loading saved records…</p>}
+      {!loading && filtered.length === 0 && (
+        <p className="omega-history-empty">
+          {runs.length ? 'No saved records match that search.' : 'No saved briefs yet. Compose one from the Run page.'}
         </p>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {run.briefs.map((b) => (
-          <div
-            key={b.id}
-            className="px-4 py-3 border"
-            style={{ background: tokens.bg.surface1, borderColor: tokens.border.subtle, borderRadius: tokens.radius }}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium" style={{ color: tokens.text.primary }}>{b.childAgent}</span>
-              <span
-                className="text-xs px-2 py-0.5"
-                style={{ background: tokens.bg.surface3, color: STATUS_COLOR[b.status], borderRadius: 4 }}
+      {filtered.length > 0 && (
+        <div className="omega-history-layout">
+          <div className="omega-history-list" role="group" aria-label="Saved records">
+            {filtered.map((run) => (
+              <button
+                type="button"
+                key={run.id}
+                className={'omega-history-entry ' + (selected?.id === run.id ? 'is-selected' : '')}
+                aria-pressed={selected?.id === run.id}
+                onClick={() => { setSelectedId(run.id); setCopied(false); }}
               >
-                {b.status}
-              </span>
-            </div>
-            <p className="text-xs mt-2" style={{ color: tokens.text.secondary }}>{b.model}</p>
-            <p className="text-xs mt-1" style={{ color: tokens.text.secondary }}>
-              Check: {b.checkResult === null ? 'not run' : b.checkResult === 'pass' ? '✓ pass' : '✗ fail'}
-            </p>
-            {b.resultSummary && (
-              <p className="text-xs mt-1" style={{ color: tokens.text.primary }}>{b.resultSummary}</p>
-            )}
-            {b.error && (
-              <p className="text-xs mt-1" style={{ color: tokens.status.fail }}>{b.error}</p>
-            )}
+                <span className="omega-history-entry-top">
+                  <span className="omega-history-entry-date">{formatTime(run.startedAt)}</span>
+                  <span className="omega-history-chip">{STATUS_LABEL[run.status] ?? 'Saved record'}</span>
+                </span>
+                <strong>{run.goal}</strong>
+                <span className="omega-history-entry-meta">
+                  <FolderOpen size={12} /> {run.projectDir ?? 'Project not recorded'}
+                </span>
+                <span className="omega-history-entry-meta">{run.briefs.length} worker brief{run.briefs.length === 1 ? '' : 's'}</span>
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
-
-      <details>
-        <summary className="text-xs cursor-pointer" style={{ color: tokens.text.tertiary }}>
-          Active puppy_gui session (raw · saved record view)
-        </summary>
-        <pre
-          className="mt-2 px-3 py-2 text-xs whitespace-pre-wrap border overflow-auto"
-          style={{ background: tokens.bg.surface1, borderColor: tokens.border.subtle, color: tokens.text.secondary, borderRadius: tokens.radius }}
-        >
-          {JSON.stringify(session, null, 2)}
-        </pre>
-      </details>
-    </div>
+          {selected && (
+            <article className="omega-history-detail" aria-label="Selected saved record">
+              <div className="omega-history-detail-heading">
+                <div>
+                  <span className="omega-history-detail-kicker">RECORD DETAILS / {STATUS_LABEL[selected.status] ?? selected.status}</span>
+                  <h3>{selected.goal}</h3>
+                  <p>{formatTime(selected.startedAt)} · ID: {selected.id}</p>
+                </div>
+                <div className="omega-history-actions">
+                  <button className="omega-button omega-button-secondary" onClick={() => void copyBrief()} disabled={!selectedBrief}>
+                    {copied ? <Check size={15} /> : <Clipboard size={15} />}
+                    {copied ? 'Copied' : 'Copy brief'}
+                  </button>
+                  <button className="omega-button omega-button-secondary" onClick={onOpenChat}>
+                    <MessageSquare size={15} /> Open chat
+                  </button>
+                </div>
+              </div>
+              <div className="omega-history-field">
+                <span>PROJECT WORKSPACE</span>
+                <p>{selected.projectDir ?? 'Not recorded'}</p>
+              </div>
+              <div className="omega-history-field">
+                <span>DONE WHEN</span>
+                <p>{selected.doneWhen}</p>
+              </div>
+              <div className="omega-history-field">
+                <span>WORKER RECORDS</span>
+                <div className="omega-history-workers">
+                  {selected.briefs.map((worker) => (
+                    <div key={worker.id} className="omega-history-worker">
+                      <FileText size={14} />
+                      <div><strong>{worker.childAgent}</strong><small>{worker.model || 'Model not recorded'}</small></div>
+                      <span>{worker.checkResult === 'pass' ? 'Pass (saved)' : worker.checkResult === 'fail' ? 'Fail (saved)' : STATUS_LABEL[worker.status] ?? worker.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="omega-history-field">
+                <span>SAVED BRIEF</span>
+                {selectedBrief
+                  ? <pre className="omega-history-brief">{selectedBrief}</pre>
+                  : <p>No brief text stored for this record.</p>}
+              </div>
+              <p className="omega-history-footnote">Copy this brief into the embedded Puppy GUI to submit it yourself. Omega has not sent it or verified any saved execution claims.</p>
+            </article>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
