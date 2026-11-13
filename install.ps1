@@ -71,8 +71,10 @@ if ($env:XDG_CONFIG_HOME) {
 if ($env:CODE_PUPPY_PYTHON -and [IO.Path]::IsPathRooted($env:CODE_PUPPY_PYTHON)) {
     $pythonBin = Split-Path -Parent $env:CODE_PUPPY_PYTHON
     $binName = Split-Path -Leaf $pythonBin
-    if ($binName -ieq 'Scripts' -or $binName -ieq 'bin') {
-        $protected += (Split-Path -Parent $pythonBin)
+    $candidateRoot = Split-Path -Parent $pythonBin
+    if (($binName -ieq 'Scripts' -or $binName -ieq 'bin') -and
+        (Test-Path -LiteralPath (Join-Path $candidateRoot 'pyvenv.cfg') -PathType Leaf)) {
+        $protected += $candidateRoot
     } else {
         $protected += $pythonBin
     }
