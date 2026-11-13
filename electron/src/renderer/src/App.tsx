@@ -4,7 +4,8 @@ import {
   Settings, PawPrint, X, ScrollText
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import type { PuppyStatus } from '@shared/types';
+import type { CodePuppySnapshot } from '@shared/code-puppy-acp';
+import { unavailableCodePuppy } from '@shared/code-puppy-acp';
 import AgentWorkspacePage, { type WorkspaceMode } from './pages/AgentWorkspacePage';
 import RunPage from './pages/RunPage';
 import LivePage from './pages/LivePage';
@@ -31,7 +32,7 @@ function isWorkspace(id: ModuleId): boolean {
 
 export default function App() {
   const [activeModule, setActiveModule] = useState<ModuleId>('chat');
-  const [status, setStatus] = useState<PuppyStatus | null>(null);
+  const [snapshot, setSnapshot] = useState<CodePuppySnapshot>(unavailableCodePuppy);
   const [projectDir, setProjectDir] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const composerRef = useRef<HTMLElement | null>(null);
@@ -48,20 +49,15 @@ export default function App() {
 
   useEffect(() => {
     let alive = true;
-    const poll = async () => {
-      try {
-        const next = await window.omega.puppy.getStatus();
-        if (alive) setStatus(next);
-      } catch {
-        if (alive) setStatus(null);
-      }
-    };
-    void poll();
-    const timer = setInterval(poll, 5000);
-    return () => {
-      alive = false;
-      clearInterval(timer);
-    };
+    let receivedPush = false;
+    const unsubscribe = window.omega.acp.subscribe((next) => {
+      receivedPush = true;
+      if (alive) setSnapshot(next);
+    });
+    void window.omega.acp.get().then((initial) => {
+      if (alive && !receivedPush) setSnapshot(initial);
+    }).catch(() => undefined);
+    return () => { alive = false; unsubscribe(); };
   }, []);
 
   useEffect(() => {
@@ -133,7 +129,7 @@ export default function App() {
       case 'settings':
         return (
           <SettingsPage
-            status={status}
+            snapshot={snapshot}
             reduceMotion={reduceMotion}
             onReduceMotionChange={changeMotion}
             onOpenChat={() => navigate('chat')}
@@ -187,8 +183,8 @@ export default function App() {
           </div>
           <div className="omega-shell-meta">
             <span>CODING AGENT WORKSPACE</span>
-            <span className="omega-shell-status"><i className={status?.running ? 'is-online' : ''} />
-              {status === null ? 'CHECKING LOCAL GUI' : status.running ? 'LOCAL GUI RESPONDING' : 'LOCAL GUI OFFLINE'}
+            <span className="omega-shell-status"><i className={snapshot.connection === 'ready' || snapshot.connection === 'working' ? 'is-online' : ''} />
+              {'CODE PUPPY ' + snapshot.connection.toUpperCase()}
             </span>
           </div>
         </header>
@@ -196,12 +192,11 @@ export default function App() {
           <div className={'agent-workspace-mount ' + (!workspaceVisible ? 'is-hidden' : '')}>
             <AgentWorkspacePage
               mode={activeModule === 'omega' ? 'omega' : 'chat'}
-              status={status}
+              snapshot={snapshot}
               projectDir={projectDir}
               reduceMotion={reduceMotion}
               onModeChange={(mode: WorkspaceMode) => navigate(mode)}
               onProjectChange={setProjectDir}
-              onStatusChange={setStatus}
               onCompose={() => setComposerOpen(true)}
               onSavedActivity={() => navigate('live')}
             />
@@ -228,7 +223,7 @@ export default function App() {
                 onProjectChange={setProjectDir}
               />
             </div>
-            <p className="agent-composer-foot">Draft only. Paste into your verified Code Puppy chat to run it; nothing is dispatched automatically.</p>
+            <p className="agent-composer-foot">Draft only. Submit a reviewed brief in the direct Code Puppy chat when ready; saving alone does not execute.</p>
           </aside>
         </div>
       )}

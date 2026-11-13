@@ -606,3 +606,24 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
   .omega-inspector-foot { flex-wrap: wrap; }
   .omega-shell-location span:last-child { display: none; }
 }
+
+
+/* Native ACP conversation — no webview or external GUI. */
+.omega-native-chat { display:flex; flex-direction:column; height:100%; min-height:0; background:#0c151e; }
+.omega-native-chat-top { display:flex; align-items:center; gap:9px; padding:12px 14px; border-bottom:1px solid #273743; }
+.omega-native-project { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
+.omega-native-project strong { font-size:12px; font-weight:500; color:#cbdee7; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.omega-native-chat-messages { overflow:auto; flex:1; min-height:0; padding:18px; display:flex; flex-direction:column; gap:12px; }
+.omega-native-chat-empty { margin:auto; text-align:center; max-width:350px; color:#8ba1ae; line-height:1.55; }
+.omega-native-chat-empty h3 { color:#e5f1f6; font-size:17px; }
+.omega-native-message { max-width:95%; border:1px solid #273a46; border-radius:8px; padding:11px 13px; background:#111e29; }
+.omega-native-message.is-user { align-self:flex-end; border-color:#365765; background:#17303b; }
+.omega-native-message.is-thinking { opacity:.82; border-style:dashed; }
+.omega-native-message.is-tool,.omega-native-message.is-status { font-size:12px; color:#a9bdc7; background:#111b24; }
+.omega-native-message.is-error { border-color:#8c4852; color:#ffc7ce; }
+.omega-native-message pre { margin:6px 0 0; font:inherit; font-size:13px; line-height:1.56; white-space:pre-wrap; overflow-wrap:anywhere; user-select:text; }
+.omega-native-chat-composer { border-top:1px solid #263946; padding:12px 14px 9px; display:flex; flex-direction:column; gap:9px; }
+.omega-native-chat-input { display:flex; align-items:flex-end; gap:9px; }
+.omega-native-chat-input textarea { resize:vertical; flex:1; width:100%; min-width:0; min-height:72px; max-height:200px; border:1px solid #36505d; border-radius:7px; background:#0c141c; color:#e8f3f6; padding:10px; }
+.omega-native-chat-input button { flex-shrink:0; margin-bottom:2px; }
+.omega-native-chat-hint { margin:0; color:#7e95a3; font-size:11px; line-height:1.45; }

@@ -174,7 +174,7 @@ export default function LivePage({ onOpenChat }: { onOpenChat: () => void }) {
                   ? <pre className="omega-history-brief">{selectedBrief}</pre>
                   : <p>No brief text stored for this record.</p>}
               </div>
-              <p className="omega-history-footnote">Copy this brief into the embedded Puppy GUI to submit it yourself. Omega has not sent it or verified any saved execution claims.</p>
+              <p className="omega-history-footnote">Copy this brief into the native Code Puppy chat to submit it yourself. Omega has not sent it or verified any saved execution claims.</p>
             </article>
           )}
         </div>

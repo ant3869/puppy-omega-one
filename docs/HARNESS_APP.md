@@ -1,137 +1,55 @@
-# Puppy Omega One — harness application direction
+# Native Code Puppy ACP integration
 
-> Product decision: **Puppy Omega One is a coding-agent application.**
-> The Omega orchestrator/worker loop is its signature **execution mode**,
-> not a separate dashboard layered over another application.
+**Architectural decision (2026-11-13): Puppy Omega One does not integrate
+with a separate Puppy GUI.** The product is a native chat-first coding-agent
+application. The Omega loop is a mode of one conversation.
 
-## The intended everyday experience
+## Direct runtime boundary
 
-1. Open the application in **Chat**, choose a project and use an ordinary
-   agent conversation with files, tools, models, sessions and approvals.
-2. When a task benefits from specialists, choose **Omega loop** from
-   that same workspace. The conversation stays on screen; the graph
-   provides orchestration context alongside it.
-3. Use **Draft Omega job** to compose a structured goal, acceptance
-   check and proposed worker lanes. The user explicitly submits the
-   brief in the conversation until native session binding is verified.
-4. The user should not have to think in terms of a separate “Harness
-   GUI”, “Omega console” or two disconnected applications.
-5. Navigation to history, briefs, logs and project docs is part of
-   the **same application**, not a separate control center.
+The installed Code Puppy core plugins ship `code-puppy --acp`, implementing
+Agent Client Protocol v1 JSON-RPC over stdio. Relevant upstream sources:
 
-## What is implemented in the chat-first UI pass
+- [ACP implementation and limitations](https://github.com/mpfaffenberger/code_puppy_core_plugins/blob/main/code_puppy_core_plugins/acp/README.md)
+- [ACP CLI registration](https://github.com/mpfaffenberger/code_puppy_core_plugins/blob/main/code_puppy_core_plugins/acp/register_callbacks.py)
+- [Code Puppy CLI entry](https://github.com/mpfaffenberger/code_puppy/blob/main/code_puppy/cli_entry.py)
 
-- Chat is the **default landing route**, not an animated dashboard.
-- Chat and Omega loop are **modes of the same mounted workspace**.
-  Switching modes does not deliberately remount the conversation webview.
-- Omega mode displays the animated graph **beside** that conversation.
-  Demo, Saved and Live sources retain their honest labels.
-- The Omega job composer is accessible **inside** the workspace.
-  The existing draft-only save, clipboard and core-isolation guards
-  remain in place.
-- Saved activity, event log, worker briefs, project docs and Settings
-  remain first-party navigation destinations.
-- Opening the app does not start Code Puppy or connect the extra
-  observation WebSocket. Native prompt send is still disabled.
+Electron main owns the spawned process. The renderer receives only a typed,
+bounded IPC snapshot. Nothing starts automatically. On **Start** the main
+process validates a selected project directory, launches `code-puppy --acp`
+there, calls `initialize` and `session/new` with that cwd, then sends
+`session/prompt` to the returned session id on explicit user action.
 
-## Current transport limitation — do not hide it
+The client renders streamed `agent_message_chunk` / `agent_thought_chunk`
+and tool-call summaries from `session/update`. **Cancel** sends
+`session/cancel`; **Stop** ends the child it owns. Startup/network logs
+and raw provider stderr are not forwarded to the UI.
 
-The central conversation is still rendered by an **embedded instance
-of the existing Puppy GUI**. This is a transitional integration, not
-a claim of an independent native ChatBridge client.
+## Safety and runtime uncertainty
 
-Inspection of the checked-in `ant3869/puppy_gui` main branch found:
-- `code_puppy_gui/static/js/chat.js` sends WebSocket actions such as
-  `{ action: "prompt", text }` and renders tool/approval messages.
-- `tests/test_ws.py` describes prompt, response, cancel and ping.
-- `code_puppy_gui/app.py` imports `routes_chat`, but
-  `code_puppy_gui/api/routes_chat.py` **is absent from the checked-in
-  main tree reviewed** (along with other imported route modules).
-  Therefore **this checkout alone cannot verify** the actual installed
-  route, session ownership or approval contract.
+- Requests for `session/request_permission` are answered with
+  `cancelled`. No FS or terminal delegation is advertised. The planned
+  first-party approval dialog must be developed and independently reviewed.
+- Code Puppy itself may run other installed tools/plugins under the OS user's
+  permissions. This is a cautious client, **not a sandbox**.
+- ACP sessions may save state in Code Puppy's own runtime directories.
+  Omega does not patch these locations or global configuration.
+- CI validates a disposable *mock ACP process*, not your installed version.
+  No desktop compatibility or plugin behavior has been manually attested.
+- A streamed tool call and a completed chat turn do **not** establish that
+  any Omega acceptance criterion passed.
 
-**Do not** replace the webview with an attractive nonfunctional
-fake chat, send a prompt over a guessed route, or quietly share a
-WebSocket session without verifying how the installed server behaves.
+## Omega execution roadmap
 
-## Next engineering phases
+1. Verify native ACP handshake, cwd, tools and cancellation on a disposable
+   installed runtime.
+2. Collect and test actual `invoke_agent` tool-call and completion metadata
+   to map specialist lanes without heuristics or fabricated telemetry.
+3. Implement a bounded orchestration controller with immutable goal, checks,
+   review decisions, retry limits and explicit user approval.
+4. Capture proof: child task identity, file/diff evidence, command results,
+   independent verification and final status. Maintain one session's ownership
+   across chat and Omega; never spin up a secondary GUI event feed.
+5. Add the permission UI and safe resumption before scaling up autonomous runs.
 
-### Non-mutating preflight tool now available
-
-Run `python tools/inspect_chatbridge.py --gui-root <existing-puppy_gui-dir>`
-against a local GUI, or add `--offline` to inspect files without HTTP.
-This checks only local source-file presence and GET-only health/OpenAPI
-route declarations. It does **not** open `/ws/chat` or attest project
-cwd, agent selections, session/approval ownership or response events.
-
-A separate **opt-in ping-only** CLI, `electron/scripts/probe-chatbridge.mjs`,
-can test one real local WebSocket response after the user acknowledges that
-connecting may itself create/change server sessions. It must be run only
-against a disposable installed GUI project, and its bounded report discards
-all unsolicited frame content. A pong is not evidence of session ownership,
-correct project cwd, approvals, or connection-side-effect safety.
-
-This is a safe **first step**, not Phase A completion. The installed
-runtime's actual WebSocket/session behavior still needs manual verification
-with a disposable project and redacted fixtures.
-
-### Phase A — verify a real installed backend
-
-- Test against a deliberately disposable project and installed GUI.
-- Verify chat route availability and **whether connecting creates
-  or changes sessions**, including reconnect/multiple subscribers.
-- Verify how agents, model selection, project `cwd`, transcript
-  history, tool approvals and cancellation are associated with a
-  single session.
-- Capture a **redacted protocol fixture** and add contract tests.
-- Never submit destructive tasks or change global Code Puppy config
-  merely to probe integration.
-
-### Native, non-mutating harness context now available
-
-The shared Chat/Omega workspace includes explicit **Refresh context**:
-three fixed, bounded GET calls to the local GUI read the active agent,
-model and current saved-session label. The main process **discards**
-all raw model/agent/session metadata before returning those short names
-to the UI. No automatic polling or switching is enabled. The session
-label is not a verified ChatBridge session ID and does not establish
-workspace identity. This is **not** the native chat adapter.
-
-### Phase B — genuine first-party conversation frontend
-
-Once verified, implement a **single session-bound backend adapter**
-and native conversation UI. It must handle:
-- message send/stream, tool invocation and results, nested workers;
-- agent/model/session selection, file context and transcript resume;
-- prompt approvals, cancellation and reconnect without replaying
-  side-effecting actions;
-- errors, permission boundaries and exact current project identity.
-
-The embedded GUI may remain an **explicit compatibility fallback**,
-but it must not be sold as native chat. One conversation owns its
-session and one event stream drives both chat and Omega graph.
-
-### Phase C — orchestration as first-class behavior
-
-- User chooses **Chat** or **Omega loop** with one conversation and
-  current project/session.
-- Dispatch is explicit and uses verified session/agent APIs.
-- The graph visualizes **actual** delegation, validation, retries
-  and approvals. No invented progress or check passes.
-- Omega's orchestration policy can coexist with general chat,
-  rather than requiring an entirely different app/harness.
-
-## Acceptance criteria
-
-- [x] Chat-first route with Omega as workspace mode.
-- [x] Same conversation component persists while switching modes.
-- [x] Draft composer integrated without enabling unsafe dispatch.
-- [ ] Native chat send, stream, approvals and cancellation verified.
-- [ ] Model/agent/session picker within the first-party chat UI.
-- [ ] Confirm current project and runtime session ID from backend.
-- [ ] Manual desktop UX and real backend tests.
-- [ ] Retire the embedded GUI as the default transport.
-
-This decision supersedes the earlier description of a
-“dashboard first” app; the previous SVG design remains a major
-**feature of the Omega mode** rather than the app's definition.
+The previous GUI/ChatBridge implementation and standalone probes were
+**removed** from active architecture. Do not bring them back as a fallback.

@@ -1,30 +1,21 @@
-// preload.ts
-// Puppy Omega One — safe renderer API via contextBridge.
-// Mirrors ant3869/electron-react-dark-starter src/preload/index.ts:
-// invoke for requests, on+unsubscribe for pushed updates, typed surface.
-
 import { contextBridge, ipcRenderer } from 'electron';
-import type { OmegaRun, PuppyStatus } from '@shared/types';
+import type { OmegaRun } from '@shared/types';
+import type { CodePuppySnapshot } from '@shared/code-puppy-acp';
 import type { WorkflowTelemetry } from '@shared/workflow-events';
-import type { GuiDiagnostics } from '@shared/gui-diagnostics';
-import type { HarnessContext } from '@shared/harness-context';
 
 type Unsub = () => void;
-
 const api = {
-  puppy: {
-    getStatus: (): Promise<PuppyStatus> => ipcRenderer.invoke('puppy:getStatus'),
-    ensureServer: (workspace: string): Promise<PuppyStatus> => ipcRenderer.invoke('puppy:ensureServer', workspace),
-    listAgents: (): Promise<unknown> => ipcRenderer.invoke('puppy:listAgents'),
-    listModels: (): Promise<unknown> => ipcRenderer.invoke('puppy:listModels'),
-    getActiveModel: (): Promise<unknown> => ipcRenderer.invoke('puppy:getActiveModel'),
-    listSessions: (): Promise<unknown> => ipcRenderer.invoke('puppy:listSessions'),
-    getActiveSession: (): Promise<unknown> => ipcRenderer.invoke('puppy:getActiveSession'),
-    getCost: (): Promise<unknown> => ipcRenderer.invoke('puppy:getCost'),
-    diagnostics: (): Promise<GuiDiagnostics> => ipcRenderer.invoke('puppy:diagnostics'),
-    readContext: (): Promise<HarnessContext> => ipcRenderer.invoke('puppy:readContext'),
-    // TODO: not wired — throws until the chat-send endpoint is verified.
-    sendPrompt: (prompt: string): Promise<unknown> => ipcRenderer.invoke('puppy:sendPrompt', prompt)
+  acp: {
+    get: (): Promise<CodePuppySnapshot> => ipcRenderer.invoke('acp:get'),
+    start: (projectDir: string): Promise<CodePuppySnapshot> => ipcRenderer.invoke('acp:start', projectDir),
+    prompt: (text: string, expectedProjectDir: string): Promise<CodePuppySnapshot> => ipcRenderer.invoke('acp:prompt', text, expectedProjectDir),
+    cancel: (): Promise<void> => ipcRenderer.invoke('acp:cancel'),
+    stop: (): Promise<void> => ipcRenderer.invoke('acp:stop'),
+    subscribe: (listener: (snapshot: CodePuppySnapshot) => void): Unsub => {
+      const handler = (_event: Electron.IpcRendererEvent, snapshot: CodePuppySnapshot) => listener(snapshot);
+      ipcRenderer.on('acp:changed', handler);
+      return () => ipcRenderer.removeListener('acp:changed', handler);
+    }
   },
   workflow: {
     get: (): Promise<WorkflowTelemetry> => ipcRenderer.invoke('workflow:get'),
@@ -46,7 +37,5 @@ const api = {
       ipcRenderer.invoke('docs:read', projectDir)
   }
 };
-
 contextBridge.exposeInMainWorld('omega', api);
-
 export type OmegaApi = typeof api;

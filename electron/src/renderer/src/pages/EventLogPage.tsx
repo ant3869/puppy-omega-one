@@ -70,7 +70,7 @@ export default function EventLogPage() {
         <div>
           <div className="omega-eyebrow"><ScrollText size={14} /> OBSERVATION / IN-MEMORY ONLY</div>
           <h2>Event log</h2>
-          <p>Read-only summaries of observed ChatBridge events. No raw transcripts, persisted logs, prompt sending, or automatic session actions.</p>
+          <p>Summaries of observed direct Code Puppy ACP session activity. No raw transcripts, persisted logs, prompt sending, or automatic session actions.</p>
         </div>
         <button
           type="button"
@@ -136,11 +136,11 @@ export default function EventLogPage() {
               ? 'No retained events match these filters.'
               : monitoring
                 ? 'No events observed yet. Connection alone does not prove a live task or correct session.'
-                : 'The monitor is off. Connect only when you intend to observe the local GUI.'}
+                : 'The monitor is off. Connect to view events from the active Code Puppy ACP session; no second server is opened.'}
           </div>
         )}
       </div>
-      <p className="omega-log-disclaimer"><ShieldAlert size={15} /> Stream event/session association with your installed Puppy GUI has not been verified. A worker response or local draft is not a passing check. This page does not start tasks or approve tools.</p>
+      <p className="omega-log-disclaimer"><ShieldAlert size={15} /> Events are bound to Omega's owned ACP session; individual worker attribution and check outcomes are not yet verified. A worker response or local draft is not a passing check. This page does not start tasks or approve tools.</p>
     </section>
   );
 }

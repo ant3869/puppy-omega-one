@@ -3,33 +3,37 @@ import { test } from 'node:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import AgentWorkspacePage, { type WorkspaceMode } from './AgentWorkspacePage';
+import CodePuppyChatPage, { validateChatPrompt } from './CodePuppyChatPage';
+import { unavailableCodePuppy } from '@shared/code-puppy-acp';
 
 function render(mode: WorkspaceMode, reduceMotion = true): string {
   return renderToStaticMarkup(
     React.createElement(AgentWorkspacePage, {
       mode,
-      status: { running: false, spawnedByUs: false, port: 8765, url: 'http://127.0.0.1:8765' },
+      snapshot: unavailableCodePuppy(),
       projectDir: null,
       reduceMotion,
       onModeChange: () => undefined,
       onProjectChange: () => undefined,
-      onStatusChange: () => undefined,
       onCompose: () => undefined,
       onSavedActivity: () => undefined
     })
   );
 }
 
-test('ordinary chat is the main workspace and Omega is optional', () => {
+test('chat-first UI uses direct Code Puppy ACP, not embedded GUI/webview', () => {
   const html = render('chat');
   assert.match(html, /Chat with Code Puppy/);
   assert.match(html, /AGENT CONVERSATION/);
-  assert.match(html, /Choose a workspace|Start your coding workspace/);
+  assert.match(html, /direct ACP/i);
+  assert.match(html, /Choose a project before starting Code Puppy/);
+  assert.match(html, /Start Code Puppy/);
   assert.match(html, /aria-pressed="true"[^>]*>.*Chat</s);
+  assert.doesNotMatch(html, /<webview|<iframe|Existing GUI connection|GUI OFFLINE/);
   assert.doesNotMatch(html, /OMEGA \/ WORKFLOW/);
 });
 
-test('Omega mode keeps the same conversation surface and adds the workflow', () => {
+test('Omega mode shares the native ACP conversation and displays the graph', () => {
   const html = render('omega');
   assert.match(html, /Omega orchestration/);
   assert.match(html, /AGENT CONVERSATION/);
@@ -37,26 +41,14 @@ test('Omega mode keeps the same conversation surface and adds the workflow', () 
   assert.match(html, /Draft Omega job/);
   assert.match(html, /SIMULATED|Demo/i);
   assert.equal((html.match(/agent-chat-surface/g) ?? []).length, 1);
+  assert.doesNotMatch(html, /<webview|<iframe/);
 });
 
-test('app mode labels do not claim native chat or live execution', () => {
+test('no UI claims delegation or verification success from a generic ACP turn', () => {
   for (const mode of ['chat', 'omega'] as const) {
     const html = render(mode);
-    assert.match(html, /native session-linked dispatch is not verified/);
-    assert.match(html, /Existing GUI connection/);
-  }
-});
-
-test('same native context bar appears in Chat and Omega without initiating a read on render', () => {
-  for (const mode of ['chat', 'omega'] as const) {
-    const html = render(mode);
-    assert.match(html, /Read-only local harness context/);
-    assert.match(html, /Agent/);
-    assert.match(html, /Model/);
-    assert.match(html, /Saved session/);
-    assert.match(html, /Not checked/);
-    assert.match(html, /Refresh local GUI context/);
-    assert.match(html, /Start the GUI first/);
+    assert.match(html, /worker attribution and automated delegation are still being implemented/);
+    assert.match(html, /Permissions are denied by default/);
   }
 });
 
@@ -81,4 +73,22 @@ test('reduced motion permits stepping through Demo without autoplay controls', (
   const animated = render('omega', false);
   assert.match(animated, /aria-label="Pause demo"/);
   assert.doesNotMatch(animated, /aria-label="Next demo stage"/);
+});
+
+test('switching the composer project locks chat sending until the matching ACP session starts', () => {
+  const html = renderToStaticMarkup(React.createElement(CodePuppyChatPage, {
+    snapshot: { connection: 'ready', projectDir: '/project-A', sessionId: 'session-A', events: [], error: null },
+    projectDir: '/project-B',
+    onProjectChange: () => undefined
+  }));
+  assert.match(html, /Selected project differs from the active Code Puppy session/);
+  assert.match(html, /Switch to selected project/);
+  assert.match(html, /aria-label="Message to Code Puppy"[^>]*disabled/);
+  assert.match(html, /disabled[^>]*>.*Send</s);
+});
+
+test('oversized Omega briefs are rejected before clearing the composer', () => {
+  assert.equal(validateChatPrompt('a'.repeat(20000)), null);
+  assert.match(validateChatPrompt('a'.repeat(20001)) || '', /maximum 20,000 characters/);
+  assert.match(validateChatPrompt('  ' ) || '', /Enter a message/);
 });

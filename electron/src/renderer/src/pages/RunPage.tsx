@@ -2,8 +2,8 @@
 // Puppy Omega One — goal input / run trigger.
 // Composes a brief in the /omega-brief format and saves the run record.
 // Sending the brief into a live session is NOT wired yet (the chat-send
-// endpoint in puppy_gui is unverified — see docs/FRONTEND.md), so the page
-// copies the brief for pasting into the Puppy GUI chat instead of
+// dispatch is not automatically bound to a reviewed Omega worker plan, so the page
+// copies the brief for sending in native Code Puppy chat instead of
 // pretending to start the run. That is the honest interim trigger.
 
 import React, { useState } from 'react';
@@ -68,7 +68,7 @@ export default function RunPage({ onOpenPuppy, projectDir, onProjectChange }: { 
     const text = [
       `Goal: ${goal.trim()}`,
       `Project workspace: ${projectDir}`,
-      'Isolation: Work only inside the project workspace. Never edit, install, or configure Code Puppy core, its Python environment, user-global agent/config files, or the Puppy GUI source.',
+      'Isolation: Work only inside the project workspace. Never edit, install, or configure Code Puppy core, its Python environment, user-global agent/config files,.',
       'If a task requires those protected locations, stop and report it instead.',
       '',
       'Workers:',
@@ -218,7 +218,7 @@ export default function RunPage({ onOpenPuppy, projectDir, onProjectChange }: { 
               className="px-4 py-2 text-sm border"
               style={{ background: tokens.bg.surface2, borderColor: tokens.border.default, color: tokens.text.primary, borderRadius: tokens.radius }}
             >
-              Open Puppy GUI
+              Open Code Puppy chat
             </button>
           </>
         )}
@@ -229,7 +229,7 @@ export default function RunPage({ onOpenPuppy, projectDir, onProjectChange }: { 
       {brief && (
         <div>
           <p className="text-xs mb-2" style={{ color: tokens.text.secondary }}>
-            Send is not wired yet — paste this brief into the Puppy GUI chat
+            Copy this reviewed brief into the native Code Puppy chat to run it
             with the <code>omega-orchestrator</code> agent. It will fan out the
             workers and verify each check.
           </p>
