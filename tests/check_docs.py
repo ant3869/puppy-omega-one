@@ -13,6 +13,7 @@ REQUIRED = [
     "README.md",
     "CHANGELOG.md",
     "docs/STATUS.md",
+    "docs/HARNESS_APP.md",
     "docs/LOCAL_QA.md",
     "docs/FRONTEND.md",
     "docs/ARCHITECTURE.md",
