@@ -6,7 +6,19 @@ an installed Code Puppy runtime has passed end-to-end testing.
 The Electron package currently declares version `0.1.0`; no release
 artifact or installed-runtime QA is implied by that version.
 
-## Unreleased — repository main (2026-11-12)
+## Unreleased — repository main (2026-11-13)
+
+### Workflow keyboard and reduced-motion controls
+
+- Added native worker-selection buttons alongside the interactive SVG map,
+  visible keyboard focus styling, and accessible map/inspector relationships.
+- When Reduce motion is enabled, Demo advances one illustrative phase only
+  when the user clicks **Next demo stage**; existing Restart remains available.
+  Added renderer markup tests and manual keyboard/assistive-tech QA checks.
+- This is an Omega UI improvement only. It neither verifies the installed
+  chat protocol nor enables native dispatch or automated approvals. Manual
+  desktop accessibility QA remains outstanding.
+
 
 ### Electron startup fix and verification (PRs #20–#21)
 
