@@ -1,229 +1,139 @@
-<img src="assets/logo.png" alt="Puppy Omega One logo — the powered-up Border Collie, glowing cyan eyes, cyan and violet energy aura crackling off his body, the Omega formed by his energy" width="320">
+<img src="assets/logo.png" alt="Puppy Omega One logo" width="320">
 
 # Puppy Omega One
 
-An orchestrator-and-workers setup for Code Puppy, adapted from the
-"Omega" Claude Code pattern (Opus plans, Haiku does the work) to the way
-Code Puppy actually works. **Config + templates at the core** (plus an
-optional Electron shell starter in `electron/`). No backend of its own,
-no service, nothing phones home. You copy the templates into a project,
-Code Puppy picks them up, and the orchestrator runs the loop.
+**Project-scoped orchestration templates for Code Puppy**, with an optional
+Electron desktop console for drafting briefs, viewing a simulated or observed
+workflow, browsing local history, and using the existing Puppy GUI chat.
 
-> **⚠️ PLACEHOLDER MODELS — READ FIRST**
->
-> Every model alias in this repo is a **placeholder**: `claude-opus-5-5`,
-> `claude-sonnet-5-5`, `claude-haiku-5-5`. They match the public API IDs,
-> but the target Code Puppy environment may expose different alias strings.
-> Before your first real run: open your Code Puppy installation, type `/model`,
-> note the real Opus / Sonnet / Haiku alias strings, and swap them into
-> `.code_puppy/agents/*.json` (one `"model"` string per file) and
-> `puppy.cfg`. Nothing here is load-bearing until those match your build.
-> See `docs/MODELS.md` for the full story.
+**Project status:** The desktop UI and its tests are implemented, but **native
+automatic dispatch and installed-GUI session verification are not complete**.
+This is not a hardened agent sandbox or a verified production release.
 
-## What it is
+[Current capabilities](docs/STATUS.md) · [Changelog](CHANGELOG.md) ·
+[Architecture](docs/ARCHITECTURE.md) · [Desktop details](docs/FRONTEND.md) ·
+[Manual QA](docs/LOCAL_QA.md) ·
+[Progress tracker](https://github.com/ant3869/puppy-omega-one/issues/4)
 
-| Piece | What it does |
-|---|---|
-| `omega-orchestrator` (Opus) | Plans the job, writes a brief per worker, checks every result. Is instructed not to write code and has no direct editing tools; its `shell` access is not read-only. |
-| `omega-builder` (Sonnet) | Writes code to a brief, runs the check, reports what it ran. |
-| `omega-reviewer` (Sonnet) | Reads a diff against a brief, lists what fails it. Fixes nothing. |
-| `omega-tester` (Haiku) | Runs tests, triages the output, says PASS/FAIL first. |
-| `omega-researcher` (Haiku) | Searches the codebase, summarizes with file + line cites. No shell or editing tools. |
-| `skills/reflect` | End-of-session review: proposes the smallest skill/`AGENTS.md` edit that would have prevented what went wrong. You approve before anything changes. |
+## Getting started
 
-Model tiers are performance-first (work pays the bill, correctness wins):
-Sonnet does the writing and reviewing because it scores 70.6% vs Haiku's
-39.2% on agentic coding (Terminal-Bench 4.0, Anthropic's own numbers).
-Haiku does the checkable, read-only work — testing, research, summaries —
-where a mistake is cheap to spot. Full reasoning in `docs/MODELS.md`,
-cost math in `docs/COSTS.md`.
+The repository includes five project-local agent definitions:
 
-## Install
+| Agent | Intended role |
+| --- | --- |
+| `omega-orchestrator` | Scope the task, brief specialists, independently verify checks |
+| `omega-builder` | Implement bounded edits and report test results |
+| `omega-reviewer` | Review diffs and risks without making edits |
+| `omega-tester` | Run and triage checks |
+| `omega-researcher` | Read and summarize context |
+
+The manifest model values (`claude-opus-5-5`, `claude-sonnet-5-5`,
+`claude-haiku-5-5`) are **unverified placeholders for this installation**.
+They are **not validated current provider API IDs**. Check `/model` in your
+actual Code Puppy runtime, then update the `model` fields in the installed
+project's `.code_puppy/agents/omega-*.json` as needed. Models and prices
+can change: see [models](docs/MODELS.md) and [cost notes](docs/COSTS.md).
+Omega does not automatically update your user-global model configuration.
+
+### Install the project templates
+
+In PowerShell (Windows):
 
 ```powershell
-# Windows (PowerShell) — from this repo, into your project:
 .\install.ps1 -Target C:\path\to\your-project
+```
 
-# macOS / Linux:
+In Bash (Linux/macOS):
+
+```bash
 ./install.sh /path/to/your-project
 ```
 
-What it does: copies `templates/` into the target project (skips files
-that already exist unless you pass `-Force` / `--force`). **It does not
-modify Code Puppy's global configuration.** The runtime reads
-`~/.code_puppy/puppy.cfg` (or `$XDG_CONFIG_HOME/code_puppy/puppy.cfg`),
-not a file in your project. See `docs/ARCHITECTURE.md`. It prints the manual
-steps at the end — read them, two of them need you.
+The installers copy `templates/` into a **selected project** and skip
+existing files unless `-Force` / `--force` is explicitly requested. They
+refuse identified Code Puppy core/config, known GUI/Python environment paths,
+home directory targets and redirecting symlinks/junctions. They do **not**
+install or patch Code Puppy itself, write global `puppy.cfg`, or provide an
+OS-level sandbox.
 
-Manual steps after install (the script prints these too):
+Launch your installed Code Puppy **from that project directory** so it can
+discover the project-local agents. Select `omega-orchestrator`; verify the
+actual model alias, then give it a goal and a runnable `Done when:` check.
+The intended orchestration loop is specified in project `AGENTS.md` and
+[architecture](docs/ARCHITECTURE.md); behavior depends on your actual
+installed runtime and agent permissions.
 
-1. **Verify the model aliases.** In your Code Puppy installation, run `/model`.
-   Swap the real Opus / Sonnet / Haiku alias strings into
-   `.code_puppy/agents/*.json` (`"model"` field). Delete the `omega` metadata block in an
-   agent JSON if your build rejects unknown keys — `model` is the only
-   load-bearing field.
-2. **Select `omega-orchestrator`** and confirm its model is the expected alias.
-3. **Network access:** connect to any network required by your model provider.
+### Optional desktop console
 
-**Core isolation:** the installer refuses user-home/global Code Puppy paths, virtual
-environment paths, and symlink/junction redirects. It only copies templates into
-an explicitly selected project folder. The desktop app does not automatically
-launch Code Puppy on startup. Your existing global models and settings remain
-untouched by Omega's setup scripts. Agent instructions also forbid touching Code
-Puppy core, but **they are not an OS sandbox**; review shell/tool permissions.
+```bash
+cd electron
+npm install
+npm test
+npm run typecheck
+npm run build
+npm run dev
+```
 
-## Work-computer handoff
+The desktop app is **a console over an independently installed `puppy_gui`
+server**, not a replacement agent backend. `npm run build` is not the
+same as creating/test-running a platform installer; see
+[Electron README](electron/README.md).
 
-Clone the **public harness only** to your work computer, then install
-its templates into the actual project you want Code Puppy to work on:
+| Desktop view | What actually happens |
+| --- | --- |
+| **Overview** | Animated workflow; Demo is explicitly simulated |
+| **Compose run** | Creates a **local draft** with a project workspace and acceptance check |
+| **Saved activity** | Search, inspect, copy stored briefs, open chat |
+| **Worker briefs / Project docs** | Read local Omega records and project documents |
+| **Harness chat** | Embeds the **real separately installed Puppy GUI**; sending is done inside its UI |
+| **Settings** | Reduced motion, read-only local endpoint diagnostics and safety information |
+| **Live** | **Opt-in** read-only WebSocket observer; actual chat/session association unverified |
+
+**No automatic runtime side effects at startup:** Omega does not launch the
+GUI or open the additional Live Monitor WebSocket just because the app opens.
+Choose a safe project and explicitly start the existing GUI in Harness Chat.
+To observe events, use Overview → Live → **Connect monitor**; **Stop monitor**
+closes the observer and cancels retries. Those events are never treated as
+verified check passes just because a worker responded.
+
+When attaching to an already-running GUI, Omega **cannot attest its current
+project directory** and displays a warning before granting access. Native
+`puppy:sendPrompt` deliberately remains disabled until the installed
+server's session/project contract is verified.
+
+**Security boundary:** These are application and installer guardrails, not
+process isolation. The embedded GUI and shell-enabled agents may write files
+where your OS account has permission. Use a disposable project for testing;
+follow [local QA](docs/LOCAL_QA.md) before enabling further automation.
+
+## Working on another computer
 
 ```powershell
 git clone https://github.com/ant3869/puppy-omega-one.git
 cd puppy-omega-one
-.\install.ps1 -Target C:\path\to\your-work-project
+.\install.ps1 -Target C:\path\to\your-project
 ```
 
-Open Code Puppy **from your target project's directory** so it finds
-the project-local agents. Confirm the model aliases on that computer,
-since they may differ from the public Code Puppy build. Keep internal
-source code, tokens, and private configuration out of this public
-harness repository.
+Keep work/private source code, tokens and provider configuration **out of
+this public repository**. Repeat the `/model` check on each runtime because
+provider aliases and installed environments can differ.
 
-To validate the public scaffold itself, see
-`tests/smoke_install.sh` and the GitHub Actions checks. The Electron
-shell is optional and requires a separate `puppy_gui` installation.
+## Documentation and maintenance
 
-## Chat + animated workflow (desktop)
+- [Architecture](docs/ARCHITECTURE.md) — agent roles, delegation and safety.
+- [Desktop frontend](docs/FRONTEND.md) — exact IPC, local data, WebSocket and
+  embedded GUI integration status.
+- [Current status](docs/STATUS.md) — implemented vs unverified features.
+- [Local QA](docs/LOCAL_QA.md) — reproducible runtime/desktop verification.
+- [Models](docs/MODELS.md) and [Costs](docs/COSTS.md) — historical model
+  research and illustrative estimates; recheck provider documentation.
+- [Changelog](CHANGELOG.md) — merged PRs, not assumed releases.
+- [Reference](reference/README.md) — original inspiration and archival
+  feasibility notes. Treat historical claims as historical.
+- [Tracker #4](https://github.com/ant3869/puppy-omega-one/issues/4) — remaining
+  milestones and evidence.
 
-Open the Electron app to see the animated Omega map. Select **Open chat beside flow** to open the **real, embedded Puppy GUI chat** next to the animation, or switch to full chat from the dock header. The dashboard distinguishes Demo, Live ChatBridge observations, and locally saved draft runs. Live stream events are not yet verified as belonging to the same chat session.
-
-Omega requires a project selection and warns before opening an existing GUI whose working directory cannot be verified. It never auto-sends prompts, starts new work, or approves tool calls from the dashboard. Electron restricts embedded GUI navigation to its configured loopback origin. Code Puppy agent tools still operate with your OS user permissions; the runtime is not sandboxed. See [desktop details](docs/FRONTEND.md).
-
-## Run a job — the concrete walkthrough
-
-The trigger for a run is always **you, giving the orchestrator a goal
-plus a runnable "Done when:" check**. There is no daemon, cron, or
-webhook. Day to day it looks like this:
-
-1. `cd` into your project and open **Code Puppy GUI** (or the CLI).
-   The project-local agents in `.code_puppy/agents/` load automatically.
-2. Start a **new chat on the `omega-orchestrator` agent** (Agents view →
-   `omega-orchestrator`, or switch agents in chat). Check the model shown
-   is your Opus alias.
-3. Give it the goal. Either type it freeform, or use the one-line trigger:
-   type `/omega-brief` and fill in the goal — it formats a proper brief
-   (GOAL, FILES TO READ, runnable "Done when:" check) for you to send.
-   Example goal: *"Add a `GET /health` endpoint that returns 200 with
-   `{"status":"ok"}`. Done when: `pytest tests/test_health.py` passes."*
-4. The orchestrator reads `AGENTS.md` + `docs/progress.md`,
-   `docs/decisions.md`, `docs/known-issues.md` (session-start ritual),
-   then writes one brief per worker and **fans out**: it issues several
-   `invoke_agent` / `invoke_agent_with_model` calls in a single response,
-   so the workers run in parallel. In the GUI they show as nested cards
-   under the orchestrator's turn.
-5. Each worker does its brief, runs its check, and reports the exact
-   command it ran plus the output. A worker never reports done until its
-   check passes.
-6. The orchestrator **re-runs every check itself** (it has `shell` +
-   `read_file`) before accepting anything. Pass → it folds the result
-   into its answer. Fail → it sends the work back to the same worker
-   with the failure attached. Same check failing twice → it re-briefs
-   the job one tier up (Haiku worker → Sonnet; Sonnet worker → the
-   orchestrator verifies it line by line).
-7. When the goal is done, the orchestrator tells you what changed, what
-   it ran, and what is still open. You review and approve.
-8. **Session-end ritual** (every session, don't skip it): the
-   orchestrator asks `omega-researcher` for a read-only session summary,
-   briefs `omega-builder` to record dated updates in the project docs,
-   and runs the `reflect` skill. Changes to skills or `AGENTS.md` are
-   proposed for your approval, not applied automatically.
-
-Two rules that make the whole thing work: briefs are **self-contained**
-(workers never see `AGENTS.md` — Code Puppy doesn't inject it into
-subagents, so everything a worker needs goes in the brief), and every
-brief ends with a **runnable check**. No check, no brief.
-
-## The loop (text diagram)
-
-```
-you ── goal + "Done when:" ──▶ omega-orchestrator (Opus, high effort)
-                                      │
-              ┌───────────┬───────────┼───────────┬───────────┐
-              ▼           ▼           ▼           ▼           ▼
-        omega-builder omega-reviewer omega-tester omega-researcher
-        (Sonnet)      (Sonnet)      (Haiku)     (Haiku)
-              │           │           │           │
-              └───────────┴───────────┴───────────┘
-                                      │  report: command + output
-                                      ▼
-                          orchestrator RE-RUNS the check
-                          pass → accept    fail → send back
-                          (2nd fail → re-brief one tier up)
-                                      │
-                                      ▼
-                        session end: docs update + reflect skill
-```
-
-## Model tiers
-
-| Agent | Default | Alternate | Flip up when |
-|---|---|---|---|
-| orchestrator | Opus 5.5 (`claude-opus-5-5`) | Sonnet 5.5 | N/A — if Opus is unavailable, Sonnet runs the chair |
-| builder | Sonnet 5.5 (`claude-sonnet-5-5`) | Haiku 5.5 — small, well-specified, single-file edits | Brief is vague, multi-file, or a refactor → orchestrator verifies line by line |
-| reviewer | Sonnet 5.5 (`claude-sonnet-5-5`) | Haiku 5.5 — lint-level first pass only | Review needs judgment (security, architecture) → stays Sonnet |
-| tester | Haiku 5.5 (`claude-haiku-5-5`) | Sonnet 5.5 | Can't diagnose a failure after one attempt |
-| researcher | Haiku 5.5 (`claude-haiku-5-5`) | Sonnet 5.5 | Ambiguous, multi-hop, needs synthesis |
-| compaction/summarizer | Haiku 5.5 (`claude-haiku-5-5`) | — | — |
-
-Switching a worker's tier is one string: the `"model"` field in its
-`.code_puppy/agents/omega-*.json`, or `/pin_model <agent> <model>` in
-Code Puppy. Also flip any Haiku worker to Sonnet when its brief would
-pass ~100k prompt tokens — past that line Haiku costs 5× more and its
-quality drops fastest. Details in `docs/MODELS.md`.
-
-## Costs (short version)
-
-Opus $4/$20, Sonnet $2/$10, Haiku $0.10/$0.50 per million input/output
-tokens; Haiku jumps to $0.50/$2.50 past 100k-token prompts. Multi-agent
-runs use roughly 15× the tokens of a single chat (Omega's own number) —
-the saving is per-token price, not token count. Work pays, so this
-harness optimizes for correctness; the guardrails are still there
-(short briefs, start with 2–4 workers, Haiku summarizer). Full math in
-`docs/COSTS.md`.
-
-## What's in the repo
-
-```
-puppy-omega-one/
-├── README.md                  # this file
-├── install.ps1 / install.sh   # copy project templates (never modify global puppy.cfg)
-├── assets/
-│   ├── logo.png               # logo art (powered-up puppy, branding)
-│   └── icon.png               # minimal Omega mark (Electron app icon)
-├── templates/
-│   ├── AGENTS.md              # Omega rules, Code Puppy edition (the orchestrator reads this)
-│   ├── .code_puppy/agents/    # omega-orchestrator/builder/reviewer/tester/researcher.json
-│   ├── skills/reflect/SKILL.md
-│   ├── docs/progress.md / decisions.md / known-issues.md   # seeded memory files
-│   ├── .claude/settings.json  # hooks placeholder (session hooks TBD — see ARCHITECTURE.md)
-│   └── .claude/commands/omega-brief.md, omega-review.md
-├── docs/
-│   ├── ARCHITECTURE.md        # Omega → Code Puppy mapping, run mechanism, delegation flow
-│   ├── MODELS.md              # Sonnet vs Haiku research, tier table, placeholder aliases
-│   ├── COSTS.md               # pricing, the 100k cliff, token math, guardrails
-│   └── FRONTEND.md            # Electron shell: architecture, wired vs stub, sources
-└── electron/                  # desktop shell starter (Electron, Mac + Windows) — see docs/FRONTEND.md
-```
-
-## What this is NOT
-
-- Not a Claude Code setup. Code Puppy never reads `CLAUDE.md`,
-  `.claude/agents/`, or the `CLAUDE_CODE_*` env vars — this harness
-  translates Omega into Code Puppy's equivalents instead of pasting the
-  reel's prompt verbatim. Full mapping in `docs/ARCHITECTURE.md`.
-- Not a finished app. The `electron/` folder is a starter shell that
-  wraps the existing puppy_gui server — see `docs/FRONTEND.md` for
-  what's wired vs stub.
-- Not verified against the target Code Puppy environment. The one gating
-  unknown is which model aliases that build exposes. Check `/model`
-  in the target environment first.
+The GitHub Actions validation workflow covers Linux installer/harness smoke
+tests, Windows installer safety tests, Electron typechecking, Node tests and
+an Electron build. **It does not test against a live installed Code Puppy GUI**
+or certify `npm run dist` installers.

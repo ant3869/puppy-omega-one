@@ -1,77 +1,75 @@
-# Costs — pricing, the 100k cliff, and guardrails
+# Token cost planning and runaway-work guardrails
 
-Prices are Anthropic list rates as of Nov 2026, per million tokens.
-Work pays the bill, so this harness optimizes for correctness — but
-the guardrails still matter, because a runaway fan-out burns quota
-fast even when someone else is paying.
+> **Current status (2026-11-12):** Omega does **not** verify provider prices,
+> enforce a token/spend budget, or measure independent cost per worker.
+> Older per-model figures in the original project research were snapshots,
+> **not live verified rates**. Do not use them as a current billing quote.
+> See [models](MODELS.md), [status](STATUS.md) and [changelog](../CHANGELOG.md).
 
-## Price table
+## Cost formula
 
-| Model | Input / MTok | Output / MTok | Notes |
-|---|---|---|---|
-| Opus 5.5 | $4 | $20 | Orchestrator only. Half the price of Fable; best judgment. |
-| Sonnet 5.5 | $2 | $10 | Builder + reviewer. Exactly half of Opus on every line. |
-| Haiku 5.5 | $0.10 / $0.50 | $0.50 / $2.50 | Tester, researcher, summarizer. Cheap tier is prompts ≤100k tokens. |
+For a given provider/model (ignoring caching, reasoning tiers, taxes,
+minimums and other provider-specific adjustments):
 
-Relative prices: Haiku is 20× cheaper than Sonnet and 40× cheaper
-than Opus — **until a prompt crosses 100,000 tokens**. Then Haiku
-jumps 5× (to $0.50/$2.50) and is only 4× cheaper than Sonnet. The
-higher tier applies to the *entire* request once the prompt passes
-100k, including cache reads and writes.
+```text
+estimated input cost  = input tokens  / 1,000,000 × price per million input
+estimated output cost = output tokens / 1,000,000 × price per million output
+estimated total       = sum of both across all agent calls
+```
 
-## The 100k cliff, in plain language
+**Hypothetical math, not provider pricing:** If a model billed
+`$2 / million input` and `$10 / million output`, a call with
+100,000 input and 20,000 output tokens would cost
+`0.1 × $2 + 0.02 × $10 = $0.40`. Real costs depend on the provider,
+account agreement, caching and actual token attribution.
 
-Haiku is the cheapest model in the family by a wide margin, but only
-for short prompts. Agent loops cross 100k tokens faster than most
-teams expect — a long brief plus a big file plus conversation history
-adds up. Past the cliff you are paying Sonnet-adjacent prices for
-Haiku-quality output, which is the worst of both worlds. That is why
-the harness has a hard rule: **any Haiku worker whose brief would
-pass ~100k prompt tokens flips to Sonnet**. Keep briefs short and
-this rarely triggers.
+## Why agent teams can cost more
 
-## Token math — why multi-agent costs more in total
+A single goal may lead to orchestration planning, several independent
+worker contexts, summaries, retries and verification calls. Each call
+can resend context. That can cost substantially more tokens than a
+single monolithic chat; there is **no verified universal 15× factor**
+for this repository.
 
-Omega's own guide admits multi-agent runs use roughly **15× the
-tokens of a single chat**. The saving is per-token price, not token
-count: the bulk of the tokens flow through Haiku ($0.10) and Sonnet
-($2) instead of Opus ($4), and the orchestrator's own thinking stays
-a small share. A rough sense of scale:
+The existing Omega worker briefs **recommend** sensible limits, but
+Omega's current Electron shell has **no enforced fan-out cap or API spend
+limiter**. The GUI cost view, when available, may use user-supplied rates
+and is not a substitute for a provider bill.
 
-- A job that would be ~1M tokens as a single Opus chat (~$4 input)
-  becomes ~15M tokens spread across the team. If 12M of those are
-  Haiku input ($1.20) and 2M are Sonnet input ($4), the total is in
-  the same ballpark — but the work is parallel, checked, and usually
-  better. The win is quality and speed, not a smaller bill.
-- The expensive failure mode is a wide fan-out on Opus-priced
-  verification: 16 workers × long briefs × Opus re-checking
-  everything. Start with 2–4 workers.
+## What to do before a real run
 
-## Guardrails (built into the harness)
+1. Confirm the exact model ID/alias with `/model` in the **installed**
+   Code Puppy runtime. Treat `claude-opus-5-5`,
+   `claude-sonnet-5-5` and `claude-haiku-5-5` in this repo as
+   **unverified configuration examples**.
+2. Check the official provider pricing page or your organization-specific
+   contract **at execution time** for input, output, reasoning, cached
+   tokens, context tiers and per-request surcharges.
+3. Start with one or two narrowly scoped workers and a runnable
+   acceptance check; expand only after verifying actual costs/results.
+4. Keep source excerpts and worker briefs focused. Favor deterministic
+   lint/test commands for checks where possible.
+5. Review the provider's own usage/cost dashboard after a disposable
+   test run; do not infer actual charges from worker names or the
+   simulated animation.
+6. Apply hard budget/concurrency restrictions **at the provider, gateway
+   or OS level if your environment supports them**, not merely in
+   agent system prompts.
 
-1. **Start with 2–4 workers per run**, not 16. There is no fan-out
-   cap in Code Puppy — breadth is your discipline.
-2. **Keep briefs short.** Short briefs keep Haiku under the 100k
-   cliff and keep worker outputs small enough for the orchestrator
-   to actually verify.
-3. **Optional summarization on Haiku.** After verifying your alias,
-   use Code Puppy `/set summarization_model <your Haiku alias>` and
-   `/set compaction_threshold 0.5` if desired. These are **global user**
-   settings; the project installer deliberately leaves them untouched. Compaction is the
-   cheapest token you'll ever buy.
-4. **Tier flips are the safety valve, not a cost control.** A worker
-   that fails twice gets re-briefed one tier up even though it costs
-   more — a wrong answer that ships costs more than a Sonnet call.
-5. **Watch the context gauge.** Type `/context` in Code Puppy during
-   a session. If the orchestrator's window is filling up with worker
-   output, compact or narrow the next fan-out.
+## Global Code Puppy settings
 
-## Reading usage
+Some researched Code Puppy revisions support user-global
+`summarization_model` and `compaction_threshold` settings.
+**Omega's project installer does not read or modify global
+`puppy.cfg`.** Verify configuration support in your installed
+runtime before changing anything. A model alias in a templated agent
+file is not proof the model is available or billed at a specific rate.
 
-Code Puppy GUI has a Cost view (editable per-model rate table + live
-estimate for the active session). The runtime supplies no pricing
-itself — the rates there are user-provided estimates, so set them
-from the table above after you confirm the target environment's actual
-rates. If the target environment bills differently (flat rate, quota,
-or internal chargeback), the per-token math above doesn't apply and
-the tiering still stands on performance alone.
+## Historical context
+
+The original November 2026 feasibility notes discussed a speculative
+Opus/Sonnet/Haiku split, a possible 100k-token pricing threshold and
+a claimed multi-agent 15× token multiplier. These were research
+assumptions, **not tests against this repo's installed runtime or
+verified account billing**. Retained for context in
+[reference/omega-code-puppy-feasibility.md](../reference/omega-code-puppy-feasibility.md).

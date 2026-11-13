@@ -1,128 +1,106 @@
-# Puppy Omega One — Electron shell (starter)
+# Puppy Omega One — Electron desktop console
 
-Desktop front end for the Puppy Omega One harness, built on Ant's
-`electron-react-dark-starter` (electron-vite + React + Tailwind, dark
-mode). This is a **starter, not a finished app** — see
-`../docs/FRONTEND.md` for what's wired vs stub.
+The Electron/React console adds a functional UI around **a separately
+installed Puppy GUI**. It is more than an empty starter shell, but
+**not yet** a native autonomous dispatch implementation. See
+[Current status](../docs/STATUS.md), [Frontend architecture](../docs/FRONTEND.md)
+and [Changelog](../CHANGELOG.md).
 
-## Branding
-
-- `../assets/logo.png` — the logo art (the powered-up Border Collie:
-  black-and-white, glowing cyan eyes, cyan/violet neon aura crackling
-  off his body, the Omega formed by his energy — not a puppy standing
-  in front of a symbol). It sits at the top of the repo README and is
-  the app's branding art (about page, splash, docs).
-- `../assets/icon.png` — the minimal neon-Omega + puppy-face mark.
-  It fits as the small app icon: it is the `BrowserWindow` icon
-  (`src/main/main.ts` resolves it) and the electron-builder icon
-  source (`"icon": "../assets/icon"` in `package.json`, with the
-  assets copied in via `extraResources`).
-- One packaging caveat: electron-builder wants platform files for the
-  installer icon — `icon.icns` (Mac) and `icon.ico` (Windows). Generate
-  those from `assets/icon.png` (e.g. `electron-icon-builder` or any
-  PNG→icns/ico converter) and drop them next to `icon.png` before
-  `npm run dist`. The PNG alone covers the running window icon and
-  the Linux build.
-
-## What it is
-
-A thin Electron shell that:
-
-1. **Starts without spawning Code Puppy.** It detects an existing local
-   `puppy_gui` server on `127.0.0.1:8765`. In **Harness Chat**, choosing a safe project and clicking **Start GUI in this project**
-   explicitly launches the existing GUI from the selected project directory.
-   If a GUI is already running, its working directory is treated as unknown
-   unless it is a process launched by Omega. Omega never installs or patches
-   Code Puppy itself.
-2. Shows Omega views (Run, Live, Briefs, Progress) as native React
-   pages talking to that same server over HTTP.
-3. Embeds the real puppy_gui web UI in a "Puppy GUI" view, so chat,
-   agents, models, sessions, and cost all work exactly as they do in
-   the browser.
-
-## Run it
+## Start and test
 
 ```bash
 cd electron
 npm install
+npm test
+npm run typecheck
+npm run build
 npm run dev
 ```
 
-For local GUI launch, Code Puppy must already be installed. Override its Python with
-`CODE_PUPPY_PYTHON=/path/to/python`. The server port defaults to
-8765 (`PUPPY_GUI_PORT` overrides). The project-folder picker rejects
-paths that overlap known Code Puppy core/config/venv or GUI locations.
-The run composer saves **drafts only** and repeats isolation instructions
-in its output. Normal agent shell access is not an OS sandbox.
+The console can open **without** a Code Puppy installation for Demo mode,
+local saved records and UI inspection. Live embedded chat and actual
+model/session behavior require your own installed Puppy GUI and Code
+Puppy. Omega **does not install or upgrade them**.
 
-## Build it
+Optional environment variables: `PUPPY_GUI_PORT` (default 8765),
+`CODE_PUPPY_PYTHON` (path to installed runtime's Python),
+`PUPPY_GUI_LAUNCH` (path to `launch_gui.py`) or
+`PUPPY_GUI_DIR` (its directory). These must point at your existing
+installation, **not** a copy of core bundled in Omega.
+
+## What you can do
+
+| Location | Behavior |
+| --- | --- |
+| Overview | Animated diagram with clearly labeled Demo, Saved and Live modes |
+| Overview → Open chat beside flow | Dock the existing Puppy GUI webview beside the animated map |
+| Compose run | Select guarded project, set goal / `Done when:`, compose a **draft** |
+| Saved activity | Search historical draft records; inspect/copy briefs and open chat |
+| Worker briefs | Read locally stored worker briefs/check records |
+| Project documents | Read guarded workspace progress/decision/known-issue files |
+| Settings | Reduce animations, read-only GUI diagnostics, safety notes |
+| Overview → Live | Click **Connect monitor** to begin local read-only event observation |
+
+**No automatic chat observer connection, GUI launch, native send or
+approval at startup.** Live Monitor is off until you explicitly connect.
+Clicking **Stop monitor** closes it and cancels retries. A received event
+does not prove it belongs to the same chat session; a worker response
+does not prove a check passed.
+
+For actual chat, select a safe project in Harness Chat and **explicitly**
+start the existing GUI or acknowledge an existing external GUI's unknown
+working directory. You type and submit prompts inside the existing GUI
+webview. Omega's `puppy:sendPrompt` IPC stays deliberately disabled.
+
+## Safety boundary
+
+- Installers and workspace picker guard against known Code Puppy core
+  directories, Python virtualenvs, global config and GUI source checkouts.
+- Omega keeps draft history in its **own** Electron `userData`, not
+  Code Puppy's config. New saves are draft-only and reject forged
+  completions/check passes. Legacy long histories remain readable.
+- Embedded chat navigation is restricted to the configured loopback GUI
+  origin. It runs in a sandboxed/context-isolated Electron renderer.
+- The **installed GUI may update its own state** when explicitly launched
+  or connected. Shell-enabled agents run with your OS permissions.
+  **Omega is not an OS-level sandbox** and cannot guarantee isolation
+  from actions the external runtime chooses to execute.
+
+See [safe local QA](../docs/LOCAL_QA.md) before trying native dispatch or
+destructive tests. Those tests have **not** yet been completed against
+your installed GUI.
+
+## Project structure
+
+```text
+electron/
+  src/main/main.ts                Electron window and guarded webviews
+  src/main/services/puppy.ts      Existing GUI attach/launch, GET IPC, drafts
+  src/main/services/workflow.ts   Explicit live-observer IPC lifecycle
+  src/main/services/diagnostics.ts    GET-only local endpoint checks
+  src/main/services/draft-validation.ts  Draft write and history read validation
+  src/main/services/project-safety.ts    Protected workspace guard
+  src/preload/index.ts            Typed window.omega bridge
+  src/shared/                    Run, monitor and diagnostic contracts
+  src/renderer/src/App.tsx        Overview-first navigation and dock
+  src/renderer/src/pages/        Overview, Run, Live, Briefs, Progress, Chat, Settings
+```
+
+## Build and packaging
 
 ```bash
 npm run build
-npm run typecheck  # tsc --noEmit
-npm run dist:mac   # .dmg
-npm run dist:win   # NSIS .exe
+npm run dist:win
+npm run dist:mac
 ```
 
-## Layout
+The `electron-builder` config declares NSIS and DMG targets. Platform
+installer creation, installation and first-launch behavior still need
+manual tests; a passing `npm run build` is **not** package verification.
+Some packaging configurations may require `assets/icon.ico` or
+`assets/icon.icns` derived from `assets/icon.png`.
 
-```
-electron/
-├── package.json                 # electron-vite app, electron-builder mac dmg + win nsis
-├── electron.vite.config.ts
-├── src/
-│   ├── main/
-│   │   ├── main.ts              # window + puppy server lifecycle + IPC registration
-│   │   ├── services/puppy.ts   # spawn/health/poll, /api passthrough, runs.json store
-│   │   └── services/workflow.ts # read-only WebSocket event observer
-│   ├── preload/index.ts         # contextBridge window.omega API
-│   ├── shared/types.ts          # Run / DelegationRecord / Brief types
-│   ├── shared/workflow-events.ts # pure, tested event-to-UI projection
-│   └── renderer/
-│       ├── index.html
-│       ├── src/main.tsx
-│       ├── src/App.tsx          # overview-first shell, chat, runs, docs, settings
-│       ├── src/lib/tokens.ts    # dark theme tokens (bg, surfaces, orange accent, 8px radius)
-│       └── src/pages/           # WorkflowOverview, Run, Live, Briefs, Progress, Puppy GUI, Settings
-```
-
-## What's wired vs stub
-
-Wired: server spawn + health check, agents/models/sessions/cost reads
-(verified puppy_gui `/api/*` endpoints), progress-file reads,
-draft-brief persistence to `runs.json` (no automatic dispatch).
-
-Live monitor: Overview → Live subscribes **read-only** to the local puppy_gui
-ChatBridge WebSocket. It renders actual received worker events and flags
-disconnection; worker responses do not count as passing verification checks.
-The installed server endpoint still needs an end-to-end compatibility test.
-
-Still stubbed: native chat-send and automatic run dispatch. The Run page
-composes and copies a brief for pasting into the embedded Puppy GUI.
-See `../docs/FRONTEND.md` for confirmed boundaries and setup details.
-
-Run `npm test` for workflow event reducer regressions.
-
-## Chat beside the workflow
-
-From Overview, choose **Open chat beside flow**. The real installed Puppy GUI chat opens alongside the animated worker map. Use **Open full chat** to expand it. The Live graph listens to a separate read-only event connection; event-to-chat-session matching still needs testing against the installed server.
-
-A project must be selected before chat access. If the GUI is already running externally, or its recorded launch project differs, the chat stays behind an explicit **unverified workspace** acknowledgement. This does not restrict what Code Puppy's shell tools can access: review the actual runtime folder before running write-capable work. The Omega shell does not send prompts or approvals by itself.
-
-Embedded webview navigations and redirects are restricted to the configured loopback GUI origin; unsafe external/file/script URLs are denied. The tests run with `npm test`, including chat access and webview URL policy cases.
-
-## Checking the local GUI without changing it
-
-Go to **Settings → Read-only runtime diagnostics → Run connection checks**. Omega sends only four allowlisted GET requests to the configured loopback GUI: health, agents, models, and active session. It also displays the current event-observer connection status and whether Omega launched the GUI for a chosen workspace. Endpoints that return JSON show **Responded**, not “verified compatible.”
-
-This check cannot confirm that an installed GUI supports native programmatic chat-send, and it does not send a prompt or approve tools. No response bodies, transcripts or secret error text are persisted by the diagnostic report. The tests use a disposable loopback HTTP server (`npm test`).
-
-## Saved activity
-
-The **Saved activity** page is a searchable browser for the app's own persisted run briefs, with a detail pane, copy action and link to embedded Puppy GUI chat. A local draft is **not** an executed run. Previously recorded status values are labeled as local records, not independently verified runtime telemetry. Raw active-session JSON is not shown there.
-
-Draft saving is validated in the Electron main process; only draft records with a selected safe workspace and unverified checks are accepted. An invalid or corrupted history file causes an explicit read error instead of silently discarding its contents. See `docs/FRONTEND.md` for the validation boundary and limitations.
-
-## Live monitoring is opt-in
-
-Omega does not open the ChatBridge WebSocket at desktop startup. From **Overview → Live**, click **Connect monitor** to observe events, and **Stop monitor** to close the socket and cancel reconnect attempts. This read-only observer never submits prompts or approves actions, but the server may perform its own connection bookkeeping; verify behavior with your installed GUI before assuming the monitor is completely side-effect-free. Demo and saved records do not require monitoring.
+Automated GitHub CI runs Electron typechecking, Node tests and the
+production Vite bundle, plus the Linux/Windows installer safety tests.
+See the [tracking issue](https://github.com/ant3869/puppy-omega-one/issues/4)
+for remaining work.
