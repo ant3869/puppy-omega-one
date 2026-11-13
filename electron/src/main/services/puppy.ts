@@ -21,7 +21,7 @@ import type { OmegaRun, PuppyStatus } from '../../shared/types';
 import { assertProjectWorkspace } from './project-safety';
 import { guiLaunchSpec } from './gui-launch';
 import { probeGui } from './diagnostics';
-import { assertDraftRun } from './draft-validation';
+import { assertDraftRun, assertStoredRuns } from './draft-validation';
 
 const PORT = Number(process.env.PUPPY_GUI_PORT ?? 8765);
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -208,8 +208,8 @@ async function loadRuns(): Promise<OmegaRun[]> {
     throw error;
   }
   const parsed: unknown = JSON.parse(raw);
-  if (!Array.isArray(parsed)) throw new Error('runs.json is invalid: expected an array');
-  return parsed as OmegaRun[];
+  assertStoredRuns(parsed);
+  return parsed;
 }
 
 async function saveRuns(runs: OmegaRun[]): Promise<void> {
