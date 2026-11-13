@@ -102,6 +102,31 @@ then replace model aliases with the working provider-specific values.
 They are not certified current public API IDs or pricing quotes.
 See [models](docs/MODELS.md) and [cost planning](docs/COSTS.md).
 
+## Read-only installed-backend inspection
+
+Before replacing the embedded GUI with native chat, use the bundled
+**non-mutating compatibility inspector** to check what a local GUI actually
+exposes. It looks for source file presence and makes at most two **GET-only**
+loopback requests (`/api/health` and `/openapi.json`); it never opens a
+WebSocket, sends prompts, touches sessions or edits Code Puppy.
+
+Windows (PowerShell), from the repo root:
+
+```powershell
+python .\tools\inspect_chatbridge.py --gui-root "C:\path\to\puppy_gui"
+```
+
+To inspect only source files without contacting a running server:
+
+```powershell
+python .\tools\inspect_chatbridge.py --gui-root "C:\path\to\puppy_gui" --offline
+```
+
+The JSON summary reports route presence **only**, never credentials,
+transcripts or the full local checkout path. It **cannot verify the
+WebSocket contract or runtime session/project ownership**; follow
+[LOCAL_QA](docs/LOCAL_QA.md) for that separate test.
+
 ## Safety and current limitations
 
 - **Native automatic prompt dispatch is disabled.** No unknown chat
