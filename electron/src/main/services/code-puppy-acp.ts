@@ -229,7 +229,10 @@ export class CodePuppyAcpClient extends EventEmitter {
     }
   }
 
-  async prompt(input: string) {
+  async prompt(input: string, timeoutMs = 120000) {
+    if (!Number.isInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 120000) {
+      throw new Error('Prompt timeout must be between 100 and 120000ms');
+    }
     const text = input.trim();
     if (!text || text.length > MAX_PROMPT) throw new Error('Prompt must contain 1 to 20000 characters');
     if (this.snapshot.connection !== 'ready' || !this.snapshot.sessionId) throw new Error('Start Code Puppy before sending a prompt');
@@ -240,18 +243,18 @@ export class CodePuppyAcpClient extends EventEmitter {
       const result = message(await this.rpc('session/prompt', {
         sessionId,
         prompt: [{ type: 'text', text }]
-      }));
+      }, timeoutMs));
       if (this.snapshot.sessionId === sessionId) {
         this.snapshot.connection = 'ready';
         this.add('status', 'Turn ended: ' + (safeString(result?.stopReason, 60) || 'unknown'));
       }
       return this.getSnapshot();
-    } catch {
+    } catch (error) {
       if (this.snapshot.sessionId === sessionId) {
-        this.snapshot.connection = 'ready';
-        this.add('error', 'Prompt did not complete; verify runtime status before retrying.');
+        const reason = error instanceof Error ? error.message : 'unknown transport error';
+        this.fail('Code Puppy prompt did not complete: ' + safeString(reason, 180));
       }
-      throw new Error('Code Puppy prompt failed');
+      throw new Error('Code Puppy prompt failed; runtime state is unknown, reconnect before retrying');
     }
   }
 
