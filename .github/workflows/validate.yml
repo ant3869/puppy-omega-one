@@ -10,6 +10,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate docs, status and local links
         run: python3 tests/check_docs.py
+      - name: Check non-mutating local ChatBridge inspection
+        run: python3 -m unittest discover -s tests -p test_chatbridge_inspection.py
       - name: Validate shell syntax
         run: bash -n install.sh tests/smoke_install.sh
       - name: Smoke-test installation and agent manifests
