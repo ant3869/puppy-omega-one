@@ -31,6 +31,21 @@ process.stdin.on('data', (chunk) => {
       }
     } else if (frame.method === 'session/prompt') {
       waitingPrompt = frame.id;
+      if (frame.params.prompt[0].text === 'steady progress') {
+        let count = 0;
+        const progress = setInterval(() => {
+          count++;
+          send({ method: 'session/update', params: { sessionId, update: {
+            sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'tick' }
+          } } });
+          if (count === 6) {
+            clearInterval(progress);
+            send({ id: waitingPrompt, result: { stopReason: 'end_turn' } });
+            waitingPrompt = null;
+          }
+        }, 50);
+        continue;
+      }
       send({ method: 'session/update', params: { sessionId, update: {
         sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: frame.params.prompt[0].text === 'long text' ? 'X'.repeat(5013) : 'Direct ACP works' }
       } } });
