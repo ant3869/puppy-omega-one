@@ -1,5 +1,12 @@
 # Architecture — Omega on Code Puppy
 
+> **Scope:** The agent contract below is the **intended behavior of project
+> templates**, not proof of actual installed-runtime execution. Current Electron
+> capabilities, limitations and integration safeguards are maintained in
+> [STATUS.md](STATUS.md) and [FRONTEND.md](FRONTEND.md). For a safe
+> end-to-end check use [LOCAL_QA.md](LOCAL_QA.md).
+
+
 How the Omega pattern maps onto Code Puppy, and how a run actually
 works. Sources: public `mpfaffenberger/code_puppy` (HEAD) and
 `ant3869/puppy_gui` v0.16.2, plus the Omega guide at
@@ -52,10 +59,11 @@ Verified mechanics behind this table:
   `claude-code-*` models. Recursion depth default is 4
   (orchestrator → worker is depth 1, fine). No concurrency cap
   found — breadth is model-driven.
-- **GUI needs no changes.** `puppy_gui` is a thin facade over the
-  `code_puppy` package (FastAPI → service layer → runtime);
-  delegation renders as nested cards. The harness is config +
-  templates, not code.
+- **No GUI/core patch is part of the Omega installation.** The existing
+  `puppy_gui` is a separate FastAPI façade over Code Puppy. The desktop
+  console embeds its UI and can explicitly start its launcher, but native
+  send/session binding is **not yet verified** against an installed server.
+  See [FRONTEND.md](FRONTEND.md).
 
 ## Run mechanism — how a run starts, and how it is driven
 
@@ -189,10 +197,11 @@ harness talks to Code Puppy:
   status, result summary), terminal statuses
   (`completed | incomplete | failed | canceled | unknown`), and the
   rule that admission is never completion — a worker counts as done
-  only when its check passes. Crash recovery (reconcile before retry,
-  never auto re-execute a pending tool call, never resurrect a denied
-  approval) is the same doc's algorithm and applies to the shell's
-  `runs.json` store.
+  only when its check passes. Crash-recovery guidance (reconcile before
+  retry, never auto re-execute pending tools, never resurrect denied
+  approvals) comes from that reference document; **it has not been
+  implemented as a live execution engine**. The current `runs.json`
+  store is draft-only for new writes and preserves old saved histories.
 - **AGENT.md vs AGENTS.md.** The reference says a project-specific
   `AGENT.md` may define local instructions; the source-verified
   loading in Code Puppy is `AGENTS.md` (above). The harness ships
@@ -205,8 +214,10 @@ harness talks to Code Puppy:
   `subagent_invocation.py`). Every brief must be self-contained —
   which is exactly the Omega discipline, but it fails silently if you
   assume workers see project rules.
-- **Compaction floors at 0.5.** "Compact at 40%" is unachievable as
-  written; the harness uses 0.5 and says so everywhere.
+- **Compaction floors at 0.5 in the researched Code Puppy revision.**
+  The project installer **does not set compaction** or edit user-global
+  `puppy.cfg`. Verify supported settings on the installed runtime before
+  choosing a user-level override.
 - **SessionStart/SessionEnd hooks are unconfirmed** in Code Puppy.
   The session rituals are therefore implemented as instructions in
   `AGENTS.md` + the reflect skill, not as hooks.
@@ -217,7 +228,32 @@ harness talks to Code Puppy:
   model, flip rules) is harness documentation. If your build rejects
   unknown keys, delete the block — `"model"` is the only
   load-bearing field.
-- **No fan-out or cost guardrail.** Omega's own page admits
-  multi-agent runs use ~15× the tokens of a chat; Code Puppy has no
-  ultracode equivalent, no parallel cap, and each subagent's result
-  lands back in the orchestrator's context. Start with 2–4 workers.
+- **No enforced cost/fan-out guardrail in Omega.** Historic research
+  cited ~15× total tokens for some multi-agent patterns; this is not a
+  measured factor or cap for this app. Keep initial runs to a small,
+  well-reviewed number of workers and verify live provider charges.
+
+
+## Actual desktop architecture, November 2026
+
+- **Project install:** `install.ps1` / `install.sh` copy templates into a
+  selected project after protected-path preflight. They do not patch the
+  Code Puppy package or global settings. See [STATUS.md](STATUS.md).
+- **UI:** the Electron main process handles guarded IPC, project selection,
+  GUI lifecycle, run-draft persistence and an opt-in read-only WebSocket.
+  The sandboxed renderer shows Overview, Compose, Saved history, Briefs,
+  Project documents, Settings and an embedded GUI webview.
+- **Data:** only Omega-local `userData/runs.json` is written by the draft
+  path. A new draft is **never** a verified running or completed job.
+  Historical records remain readable but unverified.
+- **No automatic chat dispatch:** `puppy:sendPrompt` is disabled until a
+  verified installed server route, project/session identity and approval
+  ownership are established. A separately installed GUI may still execute
+  user-submitted prompts in its own embedded interface.
+- **Live events:** the user explicitly connects the monitor; the event
+  summaries do not attest to the particular GUI chat session. The app
+  never opens the extra observation WebSocket simply by starting.
+
+The next integration milestone is [manual installed-runtime verification](LOCAL_QA.md),
+**not** an assumed ability to control Code Puppy by raw CLI, health HTTP
+responses or an unverified WebSocket prompt format.
