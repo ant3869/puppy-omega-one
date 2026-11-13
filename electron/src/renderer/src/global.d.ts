@@ -1,27 +1,17 @@
-// global.d.ts — full window.omega typing for the renderer.
-// The preload (src/preload/index.ts) is the source of truth for the shape;
-// this file mirrors it so pages get types without importing main-process code.
-
-import type { OmegaRun, PuppyStatus } from '@shared/types';
+import type { OmegaRun } from '@shared/types';
+import type { CodePuppySnapshot } from '@shared/code-puppy-acp';
 import type { WorkflowTelemetry } from '@shared/workflow-events';
-import type { GuiDiagnostics } from '@shared/gui-diagnostics';
-import type { HarnessContext } from '@shared/harness-context';
 
 declare global {
   interface Window {
     omega: {
-      puppy: {
-        getStatus: () => Promise<PuppyStatus>;
-        ensureServer: (workspace: string) => Promise<PuppyStatus>;
-        listAgents: () => Promise<unknown>;
-        listModels: () => Promise<unknown>;
-        getActiveModel: () => Promise<unknown>;
-        listSessions: () => Promise<unknown>;
-        getActiveSession: () => Promise<unknown>;
-        getCost: () => Promise<unknown>;
-        diagnostics: () => Promise<GuiDiagnostics>;
-        readContext: () => Promise<HarnessContext>;
-        sendPrompt: (prompt: string) => Promise<unknown>;
+      acp: {
+        get: () => Promise<CodePuppySnapshot>;
+        start: (projectDir: string) => Promise<CodePuppySnapshot>;
+        prompt: (text: string) => Promise<CodePuppySnapshot>;
+        cancel: () => Promise<void>;
+        stop: () => Promise<void>;
+        subscribe: (listener: (snapshot: CodePuppySnapshot) => void) => () => void;
       };
       workflow: {
         get: () => Promise<WorkflowTelemetry>;
@@ -40,5 +30,4 @@ declare global {
     };
   }
 }
-
 export {};
