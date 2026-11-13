@@ -5,7 +5,7 @@ import { unavailableCodePuppy } from '../../shared/code-puppy-acp';
 
 type Pending = { resolve(value: unknown): void; reject(error: Error): void; timer: NodeJS.Timeout | null };
 const MAX_FRAME = 512 * 1024;
-const MAX_EVENTS = 100;
+const MAX_EVENTS = 256;
 const MAX_PROMPT = 20000;
 
 function message(value: unknown): Record<string, unknown> | null {
