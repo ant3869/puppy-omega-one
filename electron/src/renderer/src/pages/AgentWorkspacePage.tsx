@@ -3,6 +3,7 @@ import { Bot, FolderOpen, GitBranch, MessageSquare, Plus, ShieldAlert } from 'lu
 import type { PuppyStatus } from '@shared/types';
 import PuppyGuiPage from './PuppyGuiPage';
 import WorkflowOverviewPage from './WorkflowOverviewPage';
+import HarnessContextBar from './HarnessContextBar';
 
 export type WorkspaceMode = 'chat' | 'omega';
 
@@ -45,6 +46,8 @@ export default function AgentWorkspacePage({
           </button>
         </div>
       </header>
+
+      <HarnessContextBar status={status} />
 
       <div className={'agent-workspace-layout ' + (omega ? 'with-omega' : '')}>
         <section className="agent-chat-surface" aria-label="Agent chat">
