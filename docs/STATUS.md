@@ -1,6 +1,6 @@
 # Current implementation status
 
-> Updated 2026-11-12 from the merged `main` code and PR/CI history.
+> Updated 2026-11-13 from the merged baseline and the current PR/CI history.
 > **Code-level checks passed; installed-runtime behavior and visual QA remain
 > unverified.** This is not a release-readiness certificate.
 
