@@ -49,6 +49,7 @@ grep -Fxq 'global-venv-untouched' "$tmp/home/.code-puppy-venv/sentinel"
 venv="$tmp/custom-venv"
 package="$venv/lib/python3.13/site-packages/code_puppy"
 mkdir -p "$venv/bin" "$package"
+printf 'home = /usr/bin\n' > "$venv/pyvenv.cfg"
 printf 'venv-untouched\n' > "$package/sentinel"
 if HOME="$tmp/home" CODE_PUPPY_PYTHON="$venv/bin/python" "$repo/install.sh" "$package" --force > "$tmp/blocked.log" 2>&1; then
   echo "Installer allowed Code Puppy package source in custom venv" >&2
@@ -56,6 +57,11 @@ if HOME="$tmp/home" CODE_PUPPY_PYTHON="$venv/bin/python" "$repo/install.sh" "$pa
 fi
 grep -Fxq 'venv-untouched' "$package/sentinel"
 test ! -f "$package/AGENTS.md"
+
+# A system Python binary must NOT turn / or /usr into protected workspaces.
+mkdir -p "$tmp/system-python-project"
+HOME="$tmp/home" CODE_PUPPY_PYTHON=/bin/python3 "$repo/install.sh" "$tmp/system-python-project" > "$tmp/system-python.log"
+test -f "$tmp/system-python-project/AGENTS.md"
 
 # Auto-discovered GUI checkouts are never valid projects.
 mkdir -p "$tmp/home/projects/puppy_gui"
