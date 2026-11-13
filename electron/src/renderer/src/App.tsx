@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Activity, BookOpen, FileText, LayoutDashboard, MessageSquare,
-  Play, Settings, PawPrint
+  Play, Settings, PawPrint, X, Maximize2
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { PuppyStatus } from '@shared/types';
@@ -29,6 +29,7 @@ export default function App() {
   const [activeModule, setActiveModule] = useState<ModuleId>('overview');
   const [status, setStatus] = useState<PuppyStatus | null>(null);
   const [projectDir, setProjectDir] = useState<string | null>(null);
+  const [chatDockOpen, setChatDockOpen] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(() => {
     try {
       const previous = localStorage.getItem('omega:reduce-motion');
@@ -77,18 +78,41 @@ export default function App() {
     switch (activeModule) {
       case 'overview':
         return (
-          <WorkflowOverviewPage
-            server={status}
-            reduceMotion={reduceMotion}
-            onCompose={() => navigate('run')}
-            onChat={() => navigate('puppy')}
-            onRuns={() => navigate('live')}
-          />
+          <div className={'omega-overview-layout ' + (chatDockOpen ? 'is-docked' : '')}>
+            <div className="omega-overview-stage">
+              <WorkflowOverviewPage
+                server={status}
+                reduceMotion={reduceMotion}
+                preferLive={chatDockOpen}
+                onCompose={() => navigate('run')}
+                onChat={() => setChatDockOpen((value) => !value)}
+                onRuns={() => navigate('live')}
+              />
+            </div>
+            {chatDockOpen && (
+              <aside className="omega-chat-dock" aria-label="Embedded harness chat">
+                <div className="omega-chat-dock-header">
+                  <div>
+                    <span className="omega-chat-dock-eyebrow">HARNESS / CONNECTED WORKSPACE</span>
+                    <strong>Code Puppy Chat</strong>
+                  </div>
+                  <div className="omega-chat-dock-actions">
+                    <button className="omega-icon-button" title="Open full chat" aria-label="Open full chat" onClick={() => { setChatDockOpen(false); navigate('puppy'); }}><Maximize2 size={15} /></button>
+                    <button className="omega-icon-button" title="Close chat dock" aria-label="Close chat dock" onClick={() => setChatDockOpen(false)}><X size={17} /></button>
+                  </div>
+                </div>
+                <div className="omega-chat-dock-body">
+                  <PuppyGuiPage status={status} projectDir={projectDir} onProjectChange={setProjectDir} onStatusChange={setStatus} compact />
+                </div>
+                <p className="omega-chat-dock-footer">Embedded Puppy GUI · never auto-sends prompts · agent tools are not sandboxed</p>
+              </aside>
+            )}
+          </div>
         );
       case 'run':
         return <RunPage onOpenPuppy={() => navigate('puppy')} projectDir={projectDir} onProjectChange={setProjectDir} />;
       case 'puppy':
-        return <PuppyGuiPage status={status} projectDir={projectDir} onProjectChange={setProjectDir} />;
+        return <PuppyGuiPage status={status} projectDir={projectDir} onProjectChange={setProjectDir} onStatusChange={setStatus} />;
       case 'live':
         return <LivePage />;
       case 'briefs':
@@ -151,7 +175,7 @@ export default function App() {
             <span className="omega-shell-status"><i className={status?.running ? 'is-online' : ''} /> {status === null ? 'SERVER CHECKING' : status.running ? 'HARNESS CONNECTED' : 'HARNESS OFFLINE'}</span>
           </div>
         </header>
-        <main className={'omega-shell-content ' + (activeModule === 'puppy' ? 'is-full' : '')}>
+        <main className={'omega-shell-content ' + (activeModule === 'puppy' || activeModule === 'overview' && chatDockOpen ? 'is-full' : '')}>
           {renderPage()}
         </main>
       </div>
