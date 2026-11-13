@@ -40,7 +40,7 @@ The central conversation is still rendered by an **embedded instance
 of the existing Puppy GUI**. This is a transitional integration, not
 a claim of an independent native ChatBridge client.
 
-Inspection of the public `ant3869/puppy_gui` main branch found:
+Inspection of the checked-in `ant3869/puppy_gui` main branch found:
 - `code_puppy_gui/static/js/chat.js` sends WebSocket actions such as
   `{ action: "prompt", text }` and renders tool/approval messages.
 - `tests/test_ws.py` describes prompt, response, cancel and ping.
