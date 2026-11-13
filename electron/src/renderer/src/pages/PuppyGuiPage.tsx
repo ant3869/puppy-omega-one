@@ -1,21 +1,33 @@
-import React, { useState } from 'react';
-import { AlertTriangle, FolderOpen, PlayCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AlertTriangle, FolderOpen, PlayCircle, ShieldAlert } from 'lucide-react';
 import { tokens } from '../lib/tokens';
 import type { PuppyStatus } from '@shared/types';
+import { chatAccess } from '@shared/chat-access';
 
 export default function PuppyGuiPage({
   status,
   projectDir,
-  onProjectChange
+  onProjectChange,
+  onStatusChange,
+  compact = false
 }: {
   status: PuppyStatus | null;
   projectDir: string | null;
   onProjectChange: (value: string | null) => void;
+  onStatusChange: (value: PuppyStatus) => void;
+  compact?: boolean;
 }) {
   const [starting, setStarting] = useState(false);
   const [choosing, setChoosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [acceptedKey, setAcceptedKey] = useState<string | null>(null);
+  const access = chatAccess(status, projectDir);
+  const consentKey = [status?.running, status?.spawnedByUs, status?.launchWorkspace ?? '?', projectDir ?? '?'].join('|');
+
+  useEffect(() => {
+    setAcceptedKey(null);
+  }, [consentKey]);
 
   async function chooseProject() {
     setError(null);
@@ -43,9 +55,10 @@ export default function PuppyGuiPage({
     setNotice(null);
     try {
       const result = await window.omega.puppy.ensureServer(projectDir);
+      onStatusChange(result);
       if (!result.running) setError(result.error ?? 'The local GUI did not start.');
       else if (result.error) setNotice(result.error);
-      else setNotice('GUI started from your selected project folder.');
+      else setNotice('GUI process started with the selected folder as its working directory.');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -53,45 +66,74 @@ export default function PuppyGuiPage({
     }
   }
 
-  const mismatched = Boolean(status?.running && (!projectDir || status.launchWorkspace !== projectDir));
+  const projectButton = (
+    <button className="omega-button omega-button-secondary" onClick={() => void chooseProject()} disabled={choosing}>
+      <FolderOpen size={14} /> {choosing ? 'Choosing…' : projectDir ? 'Change project' : 'Choose project'}
+    </button>
+  );
 
-  if (!status?.running) {
+  if (access === 'offline' || access === 'choose-project') {
     return (
-      <div className="omega-gui-launch">
+      <div className={'omega-gui-launch ' + (compact ? 'is-compact' : '')}>
         <div className="omega-eyebrow"><FolderOpen size={14} /> HARNESS / WORKSPACE</div>
-        <h2>Connect the harness</h2>
-        <p>Choose an existing project before starting the installed Puppy GUI. Omega starts the GUI in that project directory so local Omega agents can be discovered. No Code Puppy package files are installed or patched by this action.</p>
+        <h2>{access === 'choose-project' ? 'Choose a workspace' : 'Connect the harness'}</h2>
+        <p>{access === 'choose-project'
+          ? 'A local GUI is already running, but its project is not verified. Choose a project to review access safely.'
+          : 'Select an existing project before starting the installed Puppy GUI. Omega does not install or change Code Puppy packages.'}</p>
         <div className="omega-gui-project">
           <span className="omega-detail-tag">SELECTED PROJECT</span>
           <div className="omega-gui-project-value">{projectDir ?? 'No project selected'}</div>
-          <button className="omega-button omega-button-secondary" onClick={() => void chooseProject()} disabled={choosing}>
-            <FolderOpen size={14} /> {choosing ? 'Choosing…' : projectDir ? 'Change folder' : 'Choose project folder'}
-          </button>
+          {projectButton}
         </div>
-        <button className="omega-button omega-button-primary" onClick={() => void start()} disabled={!projectDir || starting}>
-          <PlayCircle size={16} /> {starting ? 'Starting local GUI…' : 'Start GUI in this project'}
-        </button>
+        {access === 'offline' && (
+          <button className="omega-button omega-button-primary" onClick={() => void start()} disabled={!projectDir || starting}>
+            <PlayCircle size={16} /> {starting ? 'Starting…' : 'Start GUI in this project'}
+          </button>
+        )}
         {error && <p role="alert" className="omega-gui-message is-error">{error}</p>}
         {notice && <p role="status" className="omega-gui-message">{notice}</p>}
-        <p className="omega-gui-footnote">Requires a previously installed Puppy GUI and Code Puppy runtime. Starting that runtime may perform its normal initialization; Omega itself does not edit its installed files. Agent tools are not OS-sandboxed.</p>
+        <p className="omega-gui-footnote">The GUI runs with your account permissions. Agent shell tools are not sandboxed, and normal runtime initialization may write to its own state.</p>
+      </div>
+    );
+  }
+
+  if (access === 'unverified-server' && acceptedKey !== consentKey) {
+    return (
+      <div className={'omega-gui-launch omega-gui-consent ' + (compact ? 'is-compact' : '')}>
+        <div className="omega-eyebrow"><ShieldAlert size={14} /> WORKSPACE VERIFICATION</div>
+        <h2>Existing GUI session</h2>
+        <p>This GUI is already running. Omega cannot confirm that its current working directory matches your selected project. Opening it could allow Code Puppy to work elsewhere, including outside your project.</p>
+        <div className="omega-gui-project">
+          <span className="omega-detail-tag">YOUR SELECTED PROJECT</span>
+          <div className="omega-gui-project-value">{projectDir}</div>
+          <div className="omega-gui-project-value">{status?.launchWorkspace
+            ? 'GUI was launched for: ' + status.launchWorkspace
+            : 'GUI working directory: unknown'}</div>
+          {projectButton}
+        </div>
+        <p className="omega-gui-message is-error"><AlertTriangle size={15} /> Confirm the running GUI's actual workspace before using write-capable tools. This check is not an OS sandbox.</p>
+        <button className="omega-button omega-button-secondary" onClick={() => setAcceptedKey(consentKey)}>
+          I understand — open existing GUI
+        </button>
+        {error && <p role="alert" className="omega-gui-message is-error">{error}</p>}
       </div>
     );
   }
 
   return (
     <div className="omega-embedded-gui">
-      {mismatched && (
-        <div className="omega-gui-warning" role="alert">
+      {access === 'unverified-server' && (
+        <div className="omega-gui-warning" role="status">
           <AlertTriangle size={16} />
-          <span>The existing GUI's working directory is {status.launchWorkspace ? 'a different project' : 'not verified'}.
-            Confirm the intended project in Code Puppy before allowing write-capable tasks. Omega will not automatically restart or switch an existing server.</span>
+          <span>External or mismatched GUI workspace — unverified. Verify the current project before granting file-writing requests.</span>
+          <button className="omega-gui-lock-button" onClick={() => setAcceptedKey(null)}>Lock</button>
         </div>
       )}
       {notice && <p role="status" className="omega-gui-message">{notice}</p>}
       {error && <p role="alert" className="omega-gui-message is-error">{error}</p>}
       <div className="omega-gui-frame">
         {React.createElement('webview', {
-          src: status.url,
+          src: status?.url,
           style: { width: '100%', height: '100%', border: 'none', background: tokens.bg.base }
         })}
       </div>
