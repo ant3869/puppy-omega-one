@@ -378,6 +378,24 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
   .omega-overview-layout.is-docked .omega-overview-stage { padding: 13px; }
 }
 
+
+.omega-settings-note { color: #9bb2bf; font-size: 12px; line-height: 1.55; margin: -5px 0 15px; }
+.omega-diagnostics-list { margin-top: 16px; border-top: 1px solid #33505b; }
+.omega-diagnostics-list > p { color: #8aa2af; font-size: 11px; margin: 12px 0; line-height: 1.5; }
+.omega-diagnostics-item { display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 11px 0; border-bottom: 1px solid #273b47; }
+.omega-diagnostics-item > span:first-child { min-width: 0; display: grid; gap: 4px; }
+.omega-diagnostics-item strong { color: #d6e8ef; font-weight: 600; font-size: 12px; }
+.omega-diagnostics-item small { color: #718d9f; font: 10px ui-monospace, SFMono-Regular, Consolas, monospace; overflow-wrap: anywhere; }
+.omega-diagnostics-status { white-space: nowrap; font-size: 10px; letter-spacing: .06em; color: #a3b5c3; text-align: right; }
+.omega-diagnostics-status.is-responded { color: #7ed9b2; }
+.omega-diagnostics-status.is-missing, .omega-diagnostics-status.is-restricted { color: #f2be78; }
+.omega-diagnostics-status.is-unreachable { color: #f4a3a8; }
+.omega-diagnostics-status.is-unexpected { color: #e2bf8c; }
+@media (max-width: 600px) {
+  .omega-diagnostics-item { align-items: flex-start; }
+  .omega-diagnostics-status { white-space: normal; max-width: 45%; }
+}
+
 @keyframes omega-flow { to { stroke-dashoffset: -64; } }
 @keyframes omega-breathe { 50% { opacity: .4; filter: brightness(1.5); } }
 .omega-diagram.is-paused .omega-connection-energy,
