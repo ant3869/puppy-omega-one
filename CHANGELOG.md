@@ -6,6 +6,27 @@ an installed Code Puppy runtime has passed end-to-end testing.
 The Electron package currently declares version `0.1.0`; no release
 artifact or installed-runtime QA is implied by that version.
 
+## Unreleased — direct ACP architecture (2026-11-13)
+
+### Replace GUI bolt-on with native Code Puppy
+
+- Switched to Code Puppy's official `code-puppy --acp` stdio entrypoint,
+  with explicit project-bound launch, ACP initialization, session creation,
+  native prompt send, streamed text/thought/tool updates, cancellation and
+  stop. The built-in Chat/Omega workspace now uses a native React conversation.
+- Removed the embedded Puppy GUI view and the GUI server/ChatBridge transport,
+  monitor, context/REST probes and related tests. Disabled Electron webviews.
+- Omega's opt-in Live view now projects observed activity from the **same ACP
+  session** as chat. Individual specialist identity and independent check
+  outcomes are still unverified; Demo and saved briefs remain distinct.
+- ACP permission requests are denied until a reviewed approval UI is built.
+  No delegated FS or terminal capabilities are advertised. The agent
+  process still runs with OS account permissions, so this is not a sandbox.
+- Added mock ACP subprocess integration tests and revised implementation,
+  architecture, local QA and frontend documentation.
+- **No installed Code Puppy runtime, GUI project or global configuration
+  was modified.** Manual Windows/installed-ACP verification remains pending.
+
 ## Unreleased — repository main (2026-11-13)
 
 ### Explicit local ChatBridge ping preflight
