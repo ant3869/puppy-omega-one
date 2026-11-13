@@ -219,3 +219,11 @@ When the GUI is already running from a working directory Omega cannot verify, th
 The main process now restricts embedded webview initial URLs, navigation and redirects to the configured `http://127.0.0.1:<port>` origin. Browser-safe external links, when opened by the GUI, go through the host browser rather than navigating the embedded privileged surface. Renderer isolation, sandboxing, and denial of arbitrary preload scripts remain in place. Policy and access decisions are covered by unit tests.
 
 Manual QA still needed: check the GUI's responsive chat layout inside the dock, the installed runtime's actual current project, live-event/session association, and file-writing behavior with an intentionally disposable test project.
+
+## Read-only runtime diagnostics (Settings)
+
+Settings → **Run connection checks** performs four bounded, explicitly **GET-only** requests to `http://127.0.0.1:<configured-port>`: `/api/health`, `/api/agents`, `/api/models`, and `/api/sessions/active`. The main process uses a fixed allowlist, disables redirects and credential forwarding, times out each request, and returns **only** status, result category, and duration. It does not expose endpoint bodies, credentials, transcripts, model settings or secret error messages to the UI.
+
+The diagnostic page also displays a snapshot of the read-only WebSocket observer's connection state and whether the GUI was launched by Omega for a known project. A positive HTTP result means **that an endpoint responded with JSON**, not that the chat-send API is compatible, an individual agent is healthy, or the current runtime's working directory is independently attested.
+
+Diagnostics is initiated explicitly by the user and **never** starts the GUI, sends prompts, approves tools, edits agent config or touches the Code Puppy installation. The checks have Node tests with a disposable loopback HTTP server verifying the exact allowlist, GET-only behavior, error classification and suppression of response bodies. The real installed server remains to be manually tested before any native dispatch API is enabled.
