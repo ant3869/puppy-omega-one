@@ -5,6 +5,7 @@
 import type { OmegaRun, PuppyStatus } from '@shared/types';
 import type { WorkflowTelemetry } from '@shared/workflow-events';
 import type { GuiDiagnostics } from '@shared/gui-diagnostics';
+import type { HarnessContext } from '@shared/harness-context';
 
 declare global {
   interface Window {
@@ -19,6 +20,7 @@ declare global {
         getActiveSession: () => Promise<unknown>;
         getCost: () => Promise<unknown>;
         diagnostics: () => Promise<GuiDiagnostics>;
+        readContext: () => Promise<HarnessContext>;
         sendPrompt: (prompt: string) => Promise<unknown>;
       };
       workflow: {
