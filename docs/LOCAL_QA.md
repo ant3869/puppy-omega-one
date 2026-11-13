@@ -20,11 +20,15 @@ avoid real credentials in screenshots or logs.
 
 - [ ] Launch Omega. Confirm it **does not spawn Code Puppy** or open an
   extra ChatBridge WebSocket on startup.
-- [ ] Inspect Overview → Demo, pause/restart, reduced motion, and Saved runs.
+- [ ] Confirm **Chat opens first**; switch Chat → Omega loop → Chat
+  without resetting the same conversation surface. Check that Omega
+  mode retains a readable chat alongside the graph and the draft drawer
+  can be opened/closed without dispatching work.
+- [ ] Inspect Omega loop → Demo, pause/restart, reduced motion, and Saved runs.
   Confirm every simulated/local status is labeled accordingly.
 - [ ] In Settings, use **Run connection checks** only if the separate GUI is
   already running. Record HTTP result codes, not response bodies.
-- [ ] In Overview → Live, explicitly select **Connect monitor**. Confirm
+- [ ] In Omega loop → Live, explicitly select **Connect monitor**. Confirm
   connection state and check whether the GUI creates/modifies a session.
   **Stop monitor** must close the socket and stop retries.
 - [ ] Open the **Event log** from the sidebar. Filter by severity/worker,
@@ -41,7 +45,7 @@ avoid real credentials in screenshots or logs.
   `cwd`; confirm the project-local Omega agents load.
 - [ ] With an already-running external GUI, confirm Omega warns that
   session/project identity is unknown, and requires acknowledgement.
-- [ ] Open chat dock and full-page chat; check focus, viewport sizing,
+- [ ] Check conversation pane in Chat and Omega mode; inspect focus, viewport sizing,
   scroll, keyboard, select/copy, approval dialogs and the narrow-window layout.
 - [ ] Create a **harmless** brief (for example, list files in the disposable
   project). Submit it manually in the embedded GUI only after confirming the
